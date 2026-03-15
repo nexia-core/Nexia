@@ -1,0 +1,27 @@
+{
+  "name": "OkulNet",
+  "short_name": "OkulNet",
+  "description": "Okul içi güvenli iletişim platformu",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#08080e",
+  "theme_color": "#5b8cff",
+  "lang": "tr",
+  "icons": [
+    {
+      "src": "images/logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "images/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["education", "social"],
+  "screenshots": []
+}

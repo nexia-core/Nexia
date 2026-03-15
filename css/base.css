@@ -1,0 +1,95 @@
+@import url('https://fonts.googleapis.com/css2?family=Geist+Mono:wght@300;400;500;600&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
+
+/* ═══ THEME VARIABLES ═══ */
+:root {
+  --bg: #08080e;
+  --sf: #0f0f18;
+  --sf2: #141420;
+  --sf3: #1a1a28;
+  --bd: #1e1e30;
+  --bd2: #262638;
+  --ac: #5b8cff;
+  --ac-d: rgba(91,140,255,.12);
+  --dg: #ff4545;
+  --dg-d: rgba(255,69,69,.11);
+  --wn: #ffaa00;
+  --wn-d: rgba(255,170,0,.11);
+  --gn: #22c55e;
+  --gn-d: rgba(34,197,94,.11);
+  --an: #a855f7;
+  --an-d: rgba(168,85,247,.11);
+  --tx: #e4e4f0;
+  --t2: #72728a;
+  --t3: #3a3a52;
+  --r: 10px;
+  --r2: 7px;
+}
+
+/* THEME: Forest */
+[data-theme="forest"] {
+  --bg: #060e08; --sf: #0b1610; --sf2: #101d14; --sf3: #15241a;
+  --bd: #1a2e20; --bd2: #223828;
+  --ac: #34d47a; --ac-d: rgba(52,212,122,.12);
+  --tx: #e0f0e6; --t2: #6a8a72; --t3: #344038;
+}
+/* THEME: Sunset */
+[data-theme="sunset"] {
+  --bg: #100808; --sf: #180e0e; --sf2: #201414; --sf3: #281a1a;
+  --bd: #301e1e; --bd2: #3a2828;
+  --ac: #ff6b6b; --ac-d: rgba(255,107,107,.12);
+  --tx: #f0e4e4; --t2: #8a6a6a; --t3: #483030;
+}
+/* THEME: Ocean */
+[data-theme="ocean"] {
+  --bg: #060c14; --sf: #0a1420; --sf2: #0e1c2c; --sf3: #122438;
+  --bd: #162c44; --bd2: #1e3850;
+  --ac: #00c8ff; --ac-d: rgba(0,200,255,.12);
+  --tx: #ddf0f8; --t2: #5a8090; --t3: #2a4058;
+}
+/* THEME: Amethyst */
+[data-theme="amethyst"] {
+  --bg: #0c080e; --sf: #140f18; --sf2: #1c1422; --sf3: #24192c;
+  --bd: #2c1e34; --bd2: #38283e;
+  --ac: #c084fc; --ac-d: rgba(192,132,252,.12);
+  --tx: #ede0f4; --t2: #806a90; --t3: #3c2a50;
+}
+/* THEME: Mono */
+[data-theme="mono"] {
+  --bg: #080808; --sf: #101010; --sf2: #181818; --sf3: #202020;
+  --bd: #282828; --bd2: #303030;
+  --ac: #e0e0e0; --ac-d: rgba(224,224,224,.1);
+  --tx: #f0f0f0; --t2: #707070; --t3: #383838;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+html,body { height:100%; overflow:hidden; }
+body { background:var(--bg); color:var(--tx); font-family:'Instrument Sans',sans-serif; font-size:14px; transition:background .3s,color .3s; }
+
+/* ─── LOCK SCREEN ─── */
+#lock { position:fixed; inset:0; z-index:9999; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+.lock-bg { position:absolute; inset:0; background:radial-gradient(ellipse 80% 60% at 50% 50%, rgba(91,140,255,.07) 0%, transparent 70%); }
+.lock-particles { position:absolute; inset:0; overflow:hidden; }
+.lock-particles span { position:absolute; width:1px; height:1px; background:var(--ac); border-radius:50%; animation:float linear infinite; opacity:0; }
+@keyframes float { 0%{transform:translateY(100vh) scale(0);opacity:0} 10%{opacity:.6} 90%{opacity:.3} 100%{transform:translateY(-20px) scale(1);opacity:0} }
+.lock-grid { position:absolute; inset:0; background-image:linear-gradient(rgba(91,140,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(91,140,255,.03) 1px,transparent 1px); background-size:48px 48px; animation:gridPulse 6s ease-in-out infinite; }
+@keyframes gridPulse { 0%,100%{opacity:.5} 50%{opacity:1} }
+.lock-glow { position:absolute; width:400px; height:400px; border-radius:50%; background:radial-gradient(circle,rgba(91,140,255,.08) 0%,transparent 70%); animation:glowMove 8s ease-in-out infinite; pointer-events:none; }
+@keyframes glowMove { 0%,100%{transform:translate(-50%,-50%) scale(1);top:50%;left:50%} 33%{transform:translate(-50%,-50%) scale(1.2);top:40%;left:60%} 66%{transform:translate(-50%,-50%) scale(.9);top:60%;left:40%} }
+.lock-card { position:relative; z-index:2; width:340px; background:rgba(15,15,24,.9); border:1px solid var(--bd2); border-radius:20px; padding:36px; backdrop-filter:blur(20px); animation:cardIn .8s cubic-bezier(.34,1.56,.64,1) both; }
+@keyframes cardIn { from{opacity:0;transform:translateY(30px) scale(.95)} to{opacity:1;transform:translateY(0) scale(1)} }
+.lock-logo { display:flex; align-items:center; gap:10px; margin-bottom:28px; }
+.lock-logo-dot { width:10px; height:10px; border-radius:50%; background:var(--ac); box-shadow:0 0 12px var(--ac); animation:dotPulse 2s ease-in-out infinite; }
+@keyframes dotPulse { 0%,100%{box-shadow:0 0 8px var(--ac)} 50%{box-shadow:0 0 20px var(--ac),0 0 40px rgba(91,140,255,.3)} }
+.lock-logo-text { font-family:'Geist Mono',monospace; font-size:13px; font-weight:600; letter-spacing:2px; color:var(--ac); }
+.lock-card h2 { font-size:22px; font-weight:700; margin-bottom:6px; }
+.lock-card p { font-size:13px; color:var(--t2); margin-bottom:22px; line-height:1.55; }
+.lfi { width:100%; background:rgba(20,20,32,.8); border:1px solid var(--bd2); border-radius:var(--r); padding:12px 14px; color:var(--tx); font-family:'Geist Mono',monospace; font-size:13px; letter-spacing:1px; outline:none; margin-bottom:10px; transition:border-color .2s,box-shadow .2s; }
+.lfi:focus { border-color:var(--ac); box-shadow:0 0 0 3px rgba(91,140,255,.1); }
+.lbtn { width:100%; padding:12px; background:var(--ac); border:none; border-radius:var(--r); color:#fff; font-weight:700; font-size:14px; cursor:pointer; transition:all .2s; position:relative; overflow:hidden; }
+.lbtn::after { content:''; position:absolute; inset:0; background:linear-gradient(135deg,rgba(255,255,255,.1) 0%,transparent 50%); pointer-events:none; }
+.lbtn:hover { opacity:.88; transform:translateY(-1px); box-shadow:0 6px 20px rgba(91,140,255,.3); }
+.lbtn:active { transform:translateY(0); }
+.lerr { min-height:18px; font-size:12px; color:var(--dg); text-align:center; margin-top:8px; font-family:'Geist Mono',monospace; }
+#ls_chpw { display:none; }
+.step-badge { font-family:'Geist Mono',monospace; font-size:10px; letter-spacing:1.5px; color:var(--wn); background:var(--wn-d); border:1px solid rgba(255,170,0,.25); border-radius:4px; padding:3px 8px; display:inline-block; margin-bottom:14px; }
+.pw-rules { font-size:11px; color:var(--t3); margin-top:-4px; margin-bottom:10px; font-family:'Geist Mono',monospace; }
