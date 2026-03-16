@@ -9,6 +9,15 @@ function rA() { rIbx(); rUT(); rSpy(); rAL(); rOG(); rML(); rStats(); checkBirth
 // DUYURU YAYINLA
 // ──────────────────────────────────────────────────
 
+function sann() {
+  const txt = q('#annTxt').value.trim();
+  if (!txt) { toast('Duyuru metni boş olamaz', 'w'); return; }
+  gm.push({ id: Date.now(), type: 'ann', text: txt, time: new Date() });
+  q('#annTxt').value = '';
+  rG();
+  toast('Duyuru yayınlandı! 📢', 's');
+  addNotif('📢', 'Yeni Duyuru', txt.substring(0, 60), () => sw('g'));
+}
 
 // ──────────────────────────────────────────────────
 // GELEN KUTUSU

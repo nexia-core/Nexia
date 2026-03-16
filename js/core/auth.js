@@ -590,7 +590,7 @@ function demo() {
 // ══════════════════════════════════════════════════
 
 function sw(t) {
-  ['g','d','ch','bot','fr','games','media','w','a'].forEach(x => {
+  ['g','d','ch','bot','pr','fr','games','media','w','a'].forEach(x => {
     const p = document.getElementById('p' + x);
     const b = document.getElementById('t' + x);
     if (p) p.classList.toggle('on', x === t);
@@ -604,6 +604,7 @@ function sw(t) {
   if (t === 'fr')     rFriends();
   if (t === 'ch')     rChannels();
   if (t === 'media')  switchMediaTab('draw');
+  if (t === 'pr')     renderProfilePage();
 }
 
 // ══════════════════════════════════════════════════
@@ -822,7 +823,13 @@ document.getElementById('psett').addEventListener('click', function(e) {
 });
 
 function openMyProfile() {
-  if (!me || me.isAdmin) return;
+  if (!me) return;
+  if (me.isAdmin) { openProfileSettings(); return; }
+  sw('pr');
+}
+
+function openProfileSettings() {
+  if (!me) return;
   const p = profiles[me.name] || {};
   q('#pBio').value    = p.bio    || '';
   q('#pClass').value  = p.cls    || '';

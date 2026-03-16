@@ -58,6 +58,8 @@ let pinnedMsgId = null;  // sabitlenen mesaj ID'si
 let notes = [];          // ders notları
 let stories = [];        // hikayeler (24 saatlik)
 let friends = [];        // arkadaş listesi (isimler dizisi)
+let userPosts = {};      // kullanıcı gönderileri { name: [{ id, img, caption, time, likes:[] }] }
+let highlights = {};     // öne çıkanlar { name: [{ id, title, coverImg, items:[{img,text}] }] }
 
 let channels = [         // odalar/kanallar
   { id:'ch1', name:'10-A Sınıfı',   desc:'10-A öğrenci odası',            emoji:'📚', members:[], msgs:[] },

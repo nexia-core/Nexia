@@ -237,6 +237,76 @@
 </div>
 
 
+<!-- OTURUM UYARI BANNER -->
+<div id="sessionWarningBanner" style="display:none;" class="">
+  <span style="font-size:13px;color:var(--wn);flex:1;">⏱ Oturumunuz <strong id="sessionCountdown">60</strong> saniye içinde sona erecek!</span>
+  <button onclick="sessionExtend()" style="padding:6px 14px;background:var(--wn);border:none;border-radius:6px;color:#000;font-weight:700;font-size:12px;cursor:pointer;white-space:nowrap;">Uzat</button>
+</div>
+
+<!-- ŞİKAYET MENÜSÜ (SAĞ TIK) -->
+<div id="reportMenu" style="display:none;position:fixed;z-index:9000;background:var(--sf);border:1px solid var(--bd2);border-radius:10px;padding:5px;min-width:170px;box-shadow:0 8px 32px rgba(0,0,0,.5);">
+  <div class="ctx-item danger" onclick="openReportModal()">🚩 Şikayet Et</div>
+</div>
+
+<!-- ŞİKAYET MODAL -->
+<div id="reportModal" style="display:none;position:fixed;inset:0;z-index:9100;background:rgba(0,0,0,.7);align-items:center;justify-content:center;backdrop-filter:blur(4px);">
+  <div style="background:var(--sf);border:1px solid var(--bd2);border-radius:14px;padding:24px;width:100%;max-width:320px;margin:0 12px;animation:popIn .25s cubic-bezier(.34,1.56,.64,1) both;">
+    <h3 style="font-size:15px;font-weight:700;margin-bottom:14px;">🚩 Mesajı Şikayet Et</h3>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="radio" name="reportReason" value="Küfür/Hakaret" style="accent-color:var(--dg);"/> Küfür / Hakaret</label>
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="radio" name="reportReason" value="Zorbalık" style="accent-color:var(--dg);"/> Zorbalık</label>
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="radio" name="reportReason" value="Uygunsuz İçerik" style="accent-color:var(--dg);"/> Uygunsuz İçerik</label>
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;"><input type="radio" name="reportReason" value="Spam" style="accent-color:var(--dg);"/> Spam</label>
+    </div>
+    <textarea id="reportNote" class="sett-ta" placeholder="Ek açıklama (isteğe bağlı)" maxlength="200" style="min-height:60px;margin-bottom:12px;"></textarea>
+    <div class="psett-btns">
+      <button class="psb-ok" onclick="submitReport()">Gönder</button>
+      <button class="psb-cancel" onclick="closeReport()">İptal</button>
+    </div>
+  </div>
+</div>
+
+<!-- GÜVENİLİR CİHAZ MODAL -->
+<div id="trustedDeviceModal" style="display:none;position:fixed;inset:0;z-index:9200;background:rgba(0,0,0,.7);align-items:center;justify-content:center;backdrop-filter:blur(4px);">
+  <div style="background:var(--sf);border:1px solid var(--bd2);border-radius:14px;padding:24px;width:100%;max-width:320px;margin:0 12px;animation:popIn .25s cubic-bezier(.34,1.56,.64,1) both;">
+    <h3 style="font-size:15px;font-weight:700;margin-bottom:8px;">🔐 Yeni Cihaz Algılandı</h3>
+    <p style="font-size:13px;color:var(--t2);margin-bottom:6px;">Merhaba <strong id="tdModalName"></strong>!</p>
+    <p style="font-size:13px;color:var(--t2);margin-bottom:18px;line-height:1.5;">Bu cihazı daha önce kullanmadınız. Güvenilir olarak kaydetmek ister misiniz?</p>
+    <div class="psett-btns">
+      <button id="tdTrustBtn" class="psb-ok">🔐 Güvenilir Kaydet</button>
+      <button id="tdSkipBtn" class="psb-cancel">Şimdi Değil</button>
+    </div>
+  </div>
+</div>
+
+<!-- GİRİŞ GEÇMİŞİ MODAL -->
+<div id="loginHistoryModal" style="display:none;position:fixed;inset:0;z-index:9300;background:rgba(0,0,0,.7);align-items:center;justify-content:center;backdrop-filter:blur(4px);">
+  <div style="background:var(--sf);border:1px solid var(--bd2);border-radius:14px;padding:24px;width:100%;max-width:420px;max-height:85vh;display:flex;flex-direction:column;margin:0 12px;animation:popIn .25s cubic-bezier(.34,1.56,.64,1) both;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <h3 style="font-size:15px;font-weight:700;">📱 Giriş Geçmişim</h3>
+      <button onclick="closeLoginHistory()" style="background:transparent;border:1px solid var(--bd2);border-radius:7px;color:var(--t2);width:28px;height:28px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;">✕</button>
+    </div>
+    <div id="myLoginHistoryList" style="flex:1;overflow-y:auto;"></div>
+    <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--bd);display:flex;gap:8px;">
+      <button class="psb-cancel" style="flex:1;" onclick="reportSuspiciousLogin()">⚠️ Şüpheli Bildir</button>
+      <button class="psb-cancel" style="flex:1;" onclick="closeLoginHistory()">Kapat</button>
+    </div>
+  </div>
+</div>
+
+<!-- HESAP KİLİTLEME MODAL -->
+<div id="selfFreezeModal" style="display:none;position:fixed;inset:0;z-index:9400;background:rgba(0,0,0,.7);align-items:center;justify-content:center;backdrop-filter:blur(4px);">
+  <div style="background:var(--sf);border:1px solid var(--bd2);border-radius:14px;padding:24px;width:100%;max-width:320px;margin:0 12px;animation:popIn .25s cubic-bezier(.34,1.56,.64,1) both;">
+    <h3 style="font-size:15px;font-weight:700;margin-bottom:8px;">🔒 Hesabını Kilitle</h3>
+    <p style="font-size:13px;color:var(--t2);margin-bottom:14px;line-height:1.5;">Hesabının kilitlenmesi için admin onayı gerekir. İstersen bir sebep belirtebilirsin.</p>
+    <textarea id="selfFreezeReason" class="sett-ta" placeholder="Sebep (isteğe bağlı)..." maxlength="200" style="min-height:60px;margin-bottom:14px;"></textarea>
+    <div class="psett-btns">
+      <button class="psb-ok" onclick="submitSelfFreeze()">İstek Gönder</button>
+      <button class="psb-cancel" onclick="closeSelfFreezeModal()">İptal</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 <div class="lightbox" id="lightbox" onclick="q('#lightbox').classList.remove('op')"><img id="lbImg" src="" alt=""/></div>
 <input type="file" id="mediaFileInput" accept="image/*,video/*" style="display:none" onchange="onMediaFile(event)"/>
@@ -256,6 +326,7 @@
 
       <button class="tbtn"    id="tch"     onclick="sw('ch')">🏠 Odalar</button>
       <button class="tbtn"    id="tbot"    onclick="sw('bot')">⚡ NEXUS</button>
+      <button class="tbtn"    id="tpr"     onclick="sw('pr')">👤 Profil</button>
       <button class="tbtn"    id="tfr"     onclick="sw('fr')">👥 Kullanıcılar</button>
       <button class="tbtn"    id="tw"      onclick="sw('w')">✉️ Yönetime Yaz</button>
       <button class="tbtn"    id="ta"      onclick="sw('a')" style="display:none">🛡 Admin</button>
@@ -343,6 +414,54 @@
       </div>
     </div>
 
+    <!-- PROFİL SAYFASI PANEL -->
+    <div class="panel" id="ppr">
+      <div class="profile-page" id="profilePage"></div>
+    </div>
+
+    <!-- Gönderi Ekleme Modalı -->
+    <div class="pp-add-modal" id="ppAddModal" onclick="if(event.target===this)closePostModal()">
+      <div class="pp-add-box">
+        <h3>Yeni Gönderi</h3>
+        <div class="pp-add-preview" id="ppAddPreview" onclick="q('#ppPostFileInput').click()">+</div>
+        <input type="file" id="ppPostFileInput" accept="image/*" style="display:none" onchange="onPostImgSelect(event)"/>
+        <div class="sett-row"><div class="sett-lbl">Açıklama</div><textarea class="sett-ta" id="ppPostCaption" placeholder="Bir şeyler yaz..." maxlength="500"></textarea></div>
+        <div class="psett-btns">
+          <button class="psb-ok" onclick="publishPost()">Paylaş</button>
+          <button class="psb-cancel" onclick="closePostModal()">İptal</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Gönderi Görüntüleme Modalı -->
+    <div class="pp-modal" id="ppViewModal">
+      <button class="pp-modal-close" onclick="closeViewModal()">✕</button>
+      <div class="pp-modal-card" id="ppViewCard"></div>
+    </div>
+
+    <!-- Öne Çıkan Ekleme Modalı -->
+    <div class="pp-hl-modal" id="ppHlAddModal" onclick="if(event.target===this)closeHlModal()">
+      <div class="pp-add-box">
+        <h3>Yeni Öne Çıkan</h3>
+        <div class="sett-row"><div class="sett-lbl">Başlık</div><input class="sett-inp" id="ppHlTitle" placeholder="Örn: Tatil, Okul..." maxlength="20"/></div>
+        <div class="pp-add-preview" id="ppHlCoverPreview" onclick="q('#ppHlCoverInput').click()">+</div>
+        <input type="file" id="ppHlCoverInput" accept="image/*" style="display:none" onchange="onHlCoverSelect(event)"/>
+        <div class="sett-row" style="margin-top:8px;"><div class="sett-lbl">İçerik Görselleri</div></div>
+        <div id="ppHlItemsList" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;"></div>
+        <button class="note-upload-file" onclick="q('#ppHlItemInput').click()" style="margin-bottom:10px;">+ Görsel Ekle</button>
+        <input type="file" id="ppHlItemInput" accept="image/*" style="display:none" onchange="onHlItemSelect(event)" multiple/>
+        <div class="psett-btns">
+          <button class="psb-ok" onclick="publishHighlight()">Oluştur</button>
+          <button class="psb-cancel" onclick="closeHlModal()">İptal</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Öne Çıkan Görüntüleyici -->
+    <div class="pp-hl-viewer" id="ppHlViewer" onclick="closeHlViewer()">
+      <div class="pp-hl-content" id="ppHlViewContent" onclick="event.stopPropagation()"></div>
+    </div>
+
     <!-- ARKADAŞLAR PANEL -->
     <div class="panel" id="pfr">
       <div class="friends-panel">
@@ -387,119 +506,133 @@
         <!-- JARVIS TERMINAL -->
         <div class="acard jarvis-card" style="border: 2px solid var(--ac); box-shadow: 0 0 20px rgba(91,140,255,0.2);">
           <div class="ach" style="background: var(--ac); color: #fff;">
-            <h3 style="display:flex; align-items:center; gap:8px;">🤖 JARVIS Terminal <span style="font-size:10px; font-weight:normal; opacity:0.8;">v2.0 (Full Access)</span></h3>
+            <h3 style="display:flex; align-items:center; gap:8px;">🤖 JARVIS Terminal <span style="font-size:10px; font-weight:normal; opacity:0.8;">v6.0 (Full Access)</span></h3>
           </div>
-          <div class="acb" style="padding:0; background:#000; font-family:'Geist Mono', monospace; height:450px; display:flex; flex-direction:column;">
+          <div class="acb" style="padding:0; background:#000; font-family:'Geist Mono', monospace; height:380px; display:flex; flex-direction:column;">
             <div id="jarvisDisplay" style="flex:1; padding:15px; overflow-y:auto; color:var(--ac); font-size:13px; line-height:1.6; border-bottom:1px solid #222;">
-              <div class="jarvis-msg bot">Sistem çekirdeği aktif efendim. Sizi dinliyorum Sayın Talha.</div>
+              <div class="jarvis-msg bot">Sistem aktif efendim. Ban, engel kaldırma, susturma, kick, duyuru ve daha fazlası hazır.</div>
             </div>
             <div style="padding:10px; display:flex; gap:10px; background:#111;">
               <span style="color:var(--ac); align-self:center;">&gt;</span>
-              <input type="text" id="jarvisInp" placeholder="Sistem komutu veya soru girin..." 
+              <input type="text" id="jarvisInp" placeholder="Komut girin... (ör: Ali'yi banla, duyuru yap...)"
                      onkeydown="jarvisKey(event)"
                      style="flex:1; background:transparent; border:none; color:#fff; outline:none; font-family:inherit; font-size:14px;"/>
-              <button class="ts tb" onclick="askJarvis()" style="padding:4px 12px; font-size:12px;">Çalıştır</button>
+              <button class="ts tb2" onclick="askJarvis()" style="padding:4px 12px; font-size:12px;">Gönder</button>
             </div>
           </div>
         </div>
 
+        <!-- ═══ GENEL BAKIŞ ═══ -->
+        <div class="admin-section-header" style="font-size:11px;font-family:'Geist Mono',monospace;letter-spacing:1.5px;text-transform:uppercase;color:var(--t3);padding:4px 2px;margin-top:4px;">GENEL BAKIS</div>
+
         <div class="acard">
-          <div class="ach"><h3>📊 İstatistikler</h3></div>
+          <div class="ach"><h3>📊 Genel Istatistikler</h3></div>
           <div class="acb" id="statsPanel"></div>
         </div>
 
         <div class="acard" id="bdayCard" style="display:none">
-          <div class="ach"><h3>🎂 Doğum Günü Bildirimleri</h3></div>
+          <div class="ach"><h3>🎂 Dogum Günü Bildirimleri</h3></div>
           <div class="acb" id="bdayList"></div>
         </div>
 
-        <div class="acard">
-          <div class="ach"><h3>📢 Duyuru Yap</h3></div>
-          <div class="acb"><div class="act"><textarea id="annTxt" placeholder="Kısa duyuru..."></textarea><button class="abtn" onclick="sann()">Yayınla →</button></div></div>
-        </div>
-
-        <div class="acard">
-          <div class="ach"><h3>📊 Anket Oluştur</h3></div>
-          <div class="acb">
-            <div class="sett-row"><input class="sett-inp" id="pollQ" placeholder="Anket sorusu..." style="border-color:var(--bd2);border-radius:var(--r2);padding:9px 12px;background:var(--sf2);color:var(--tx);outline:none;width:100%;"/></div>
-            <div class="poll-create-opts" id="pollOpts">
-              <div class="poll-create-opt"><input placeholder="Seçenek A"/><button class="poll-rm-opt" onclick="rmPollOpt(this)">−</button></div>
-              <div class="poll-create-opt"><input placeholder="Seçenek B"/><button class="poll-rm-opt" onclick="rmPollOpt(this)">−</button></div>
-            </div>
-            <div class="poll-add-opt" onclick="addPollOpt()">+ Seçenek ekle</div>
-            <button class="abtn" onclick="publishPoll()">Anketi Yayınla →</button>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;" class="admin-dual-grid">
+          <div class="acard" style="margin:0;">
+            <div class="ach"><h3>🟢 Aktif Kullanicilar</h3></div>
+            <div class="acb"><div class="og" id="og"></div></div>
+          </div>
+          <div class="acard" style="margin:0;">
+            <div class="ach"><h3>⏱ Aktif Oturumlar</h3></div>
+            <div class="acb" id="activeSessionsList"></div>
           </div>
         </div>
 
-        <div class="acard">
-          <div class="ach"><h3>✉️ Kullanıcı Mesajları</h3><span class="ach-s" id="ibCnt">0 mesaj</span></div>
-          <div class="acb"><div class="ib" id="ibx"></div></div>
-        </div>
+        <!-- ═══ KULLANICI YÖNETİMİ ═══ -->
+        <div class="admin-section-header" style="font-size:11px;font-family:'Geist Mono',monospace;letter-spacing:1.5px;text-transform:uppercase;color:var(--t3);padding:4px 2px;margin-top:8px;">KULLANICI YÖNETIMI</div>
 
         <div class="acard">
-          <div class="ach"><h3>👥 Kullanıcı Yönetimi</h3><span class="ach-s">İsme tıkla → Detay</span></div>
+          <div class="ach"><h3>👥 Kullanici Yönetimi</h3><span class="ach-s">Isme tikla → Detay</span></div>
           <div class="acb">
-            <table class="tbl"><thead><tr><th>İsim</th><th>Kod</th><th>Durum</th><th>İşlemler</th></tr></thead><tbody id="utbody"></tbody></table>
+            <div class="tbl-wrap"><table class="tbl"><thead><tr><th>Isim</th><th>Kod</th><th>Durum</th><th>Islemler</th></tr></thead><tbody id="utbody"></tbody></table></div>
             <div class="ar"><input type="text" id="ncInp" placeholder="Yeni kod" style="text-transform:uppercase"/><button class="arb" onclick="addC()">+ Ekle</button></div>
           </div>
         </div>
 
         <div class="acard">
-          <div class="ach"><h3>🔍 Tüm Yazışmalar</h3><span class="ach-s">Tıkla → Aç</span></div>
+          <div class="ach"><h3>👁 Anonim Kimlik Kaydi</h3><span class="ach-s">Sadece sen</span></div>
+          <div class="acb"><div class="alog" id="anoL"></div></div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;" class="admin-dual-grid">
+          <div class="acard" style="margin:0;">
+            <div class="ach"><h3>❄️ Dondurulmus Hesaplar</h3></div>
+            <div class="acb" id="frozenAccountsList"></div>
+          </div>
+          <div class="acard" style="margin:0;">
+            <div class="ach"><h3>🔒 Kilitleme Istekleri</h3></div>
+            <div class="acb" id="freezeRequestsList"></div>
+          </div>
+        </div>
+
+        <!-- ═══ İÇERİK YÖNETİMİ ═══ -->
+        <div class="admin-section-header" style="font-size:11px;font-family:'Geist Mono',monospace;letter-spacing:1.5px;text-transform:uppercase;color:var(--t3);padding:4px 2px;margin-top:8px;">ICERIK YÖNETIMI</div>
+
+        <div class="acard">
+          <div class="ach"><h3>📢 Duyuru Yap</h3></div>
+          <div class="acb"><div class="act"><textarea id="annTxt" placeholder="Kisa duyuru..."></textarea><button class="abtn" onclick="sann()">Yayinla →</button></div></div>
+        </div>
+
+        <div class="acard">
+          <div class="ach"><h3>📊 Anket Olustur</h3></div>
+          <div class="acb">
+            <div class="sett-row"><input class="sett-inp" id="pollQ" placeholder="Anket sorusu..." style="border-color:var(--bd2);border-radius:var(--r2);padding:9px 12px;background:var(--sf2);color:var(--tx);outline:none;width:100%;"/></div>
+            <div class="poll-create-opts" id="pollOpts">
+              <div class="poll-create-opt"><input placeholder="Secenek A"/><button class="poll-rm-opt" onclick="rmPollOpt(this)">−</button></div>
+              <div class="poll-create-opt"><input placeholder="Secenek B"/><button class="poll-rm-opt" onclick="rmPollOpt(this)">−</button></div>
+            </div>
+            <div class="poll-add-opt" onclick="addPollOpt()">+ Secenek ekle</div>
+            <button class="abtn" onclick="publishPoll()">Anketi Yayinla →</button>
+          </div>
+        </div>
+
+        <div class="acard">
+          <div class="ach"><h3>✉️ Kullanici Mesajlari</h3><span class="ach-s" id="ibCnt">0 mesaj</span></div>
+          <div class="acb"><div class="ib" id="ibx"></div></div>
+        </div>
+
+        <!-- ═══ İZLEME & LOGLAR ═══ -->
+        <div class="admin-section-header" style="font-size:11px;font-family:'Geist Mono',monospace;letter-spacing:1.5px;text-transform:uppercase;color:var(--t3);padding:4px 2px;margin-top:8px;">IZLEME & LOGLAR</div>
+
+        <div class="acard">
+          <div class="ach"><h3>🔍 Tüm Yazismalar</h3><span class="ach-s">Tikla → Ac</span></div>
           <div class="acb" id="spyP"></div>
         </div>
 
         <div class="acard">
-          <div class="ach"><h3>👁 Anonim Kimlik Kaydı</h3><span class="ach-s">Sadece sen</span></div>
-          <div class="acb"><div class="alog" id="anoL"></div></div>
-        </div>
-
-        <div class="acard">
-          <div class="ach"><h3>🟢 Aktif Kullanıcılar</h3></div>
-          <div class="acb"><div class="og" id="og"></div></div>
-        </div>
-
-        <div class="acard">
-          <div class="ach"><h3>📋 Global Mesaj Akışı</h3></div>
+          <div class="ach"><h3>📋 Global Mesaj Akisi</h3></div>
           <div class="acb"><div class="mlog" id="mlog"></div></div>
         </div>
 
         <div class="acard">
-          <div class="ach"><h3>🔐 Giriş Monitörü</h3><span class="ach-s">Son 30 giriş</span></div>
+          <div class="ach"><h3>🔐 Giris Monitörü</h3><span class="ach-s">Son 30 giris</span></div>
           <div class="acb" id="loginHistoryList"></div>
         </div>
 
-        <div class="acard">
-          <div class="ach"><h3>⏱ Aktif Oturumlar</h3></div>
-          <div class="acb" id="activeSessionsList"></div>
-        </div>
+        <!-- ═══ GÜVENLİK ═══ -->
+        <div class="admin-section-header" style="font-size:11px;font-family:'Geist Mono',monospace;letter-spacing:1.5px;text-transform:uppercase;color:var(--t3);padding:4px 2px;margin-top:8px;">GÜVENLIK</div>
 
         <div class="acard">
-          <div class="ach"><h3>❄️ Dondurulmuş Hesaplar</h3></div>
-          <div class="acb" id="frozenAccountsList"></div>
-        </div>
-
-        <div class="acard">
-          <div class="ach"><h3>⚠️ Şüpheli Mesajlar</h3></div>
+          <div class="ach"><h3>⚠️ Süpheli Mesajlar</h3></div>
           <div class="acb" id="suspiciousMsgList"></div>
         </div>
 
-        <!-- ŞİKAYETLER -->
         <div class="acard">
-          <div class="ach"><h3>🚩 Şikayetler</h3><span class="ach-s" id="reportsCnt"></span></div>
+          <div class="ach"><h3>🚩 Sikayetler</h3><span class="ach-s" id="reportsCnt"></span></div>
           <div class="acb" id="reportsList"></div>
         </div>
 
-        <!-- GÜVENLİK OLAYLARI -->
         <div class="acard">
-          <div class="ach"><h3>🛡️ Güvenlik Olayları</h3><span class="ach-s">Son 20 olay</span></div>
+          <div class="ach"><h3>🛡️ Güvenlik Olaylari</h3><span class="ach-s">Son 20 olay</span></div>
           <div class="acb" id="securityFeedList"></div>
-        </div>
-
-        <!-- KİLİTLEME İSTEKLERİ -->
-        <div class="acard">
-          <div class="ach"><h3>🔒 Hesap Kilitleme İstekleri</h3></div>
-          <div class="acb" id="freezeRequestsList"></div>
         </div>
 
       </div>
@@ -509,9 +642,9 @@
 </div>
 
 <!-- ── CORE JS ── -->
-<script src="js/core/state.js"></script>
+<script src="js/core/state.js?v=2"></script>
 <script src="js/core/utils.js"></script>
-<script src="js/core/auth.js"></script>
+<script src="js/core/auth.js?v=2"></script>
 
 <!-- ── FEATURES JS ── -->
 <script src="js/features/chat.js"></script>
@@ -520,11 +653,13 @@
 <script src="js/features/bot.js"></script>
 <script src="js/features/friends.js"></script>
 <script src="js/features/channels.js"></script>
-<script src="js/admin/jarvis.js"></script>
+<script src="js/features/profile.js?v=2"></script>
+<script src="js/admin/jarvis.js?v=7b"></script>
 
 <!-- ── ADMIN JS ── -->
 <script src="js/admin/panel.js"></script>
 <script src="js/admin/monitor.js"></script>
+<script src="js/admin/stats.js"></script>
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function() {
