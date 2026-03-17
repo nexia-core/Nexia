@@ -3,8 +3,8 @@
 // Strateji: Cache-first (statik), Network-first (dinamik)
 // ══════════════════════════════════════════════════
 
-const CACHE_NAME    = 'okulnet-v1';
-const CACHE_STATIC  = 'okulnet-static-v1';
+const CACHE_NAME    = 'okulnet-v3';
+const CACHE_STATIC  = 'okulnet-static-v3';
 
 // Kurulumda önbelleğe al
 const PRECACHE_URLS = [
@@ -25,8 +25,7 @@ const PRECACHE_URLS = [
   '/js/features/friends.js',
   '/js/features/channels.js',
   '/js/features/profile.js',
-  '/js/features/games.js',
-  '/js/features/media.js',
+  '/js/admin/jarvis.js',
   '/js/admin/panel.js',
   '/js/admin/stats.js',
   '/js/admin/monitor.js',
@@ -37,7 +36,11 @@ const PRECACHE_URLS = [
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_STATIC)
-      .then(cache => cache.addAll(PRECACHE_URLS))
+      .then(cache => Promise.all(
+        PRECACHE_URLS.map(url =>
+          fetch(url, { cache: 'reload' }).then(r => cache.put(url, r))
+        )
+      ))
       .then(() => self.skipWaiting())
   );
 });
@@ -102,7 +105,12 @@ async function staleWhileRevalidate(request) {
     return response;
   }).catch(() => null);
 
-  return cached || fetchPromise || new Response('Çevrimdışısınız', { status: 503 });
+  // Önbellekte varsa hemen dön (arka planda yenile)
+  if (cached) return cached;
+
+  // Önbellekte yoksa ağı bekle
+  const fresh = await fetchPromise;
+  return fresh || new Response('Çevrimdışısınız', { status: 503 });
 }
 
 // ─── PUSH BİLDİRİMLERİ (opsiyonel) ────────────────

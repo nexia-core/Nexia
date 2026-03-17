@@ -55,7 +55,9 @@ function rDL() {
     const inner = c.isGroup ? '👥' : (p && p.photo ? `<img src="${p.photo}" style="width:100%;height:100%;object-fit:cover;"/>` : ot[0]?.toUpperCase() || '?');
     const d = document.createElement('div'); d.className = 'di' + (activeDm?.id === c.id ? ' on' : '');
     d.onclick = () => openC(c.id);
-    d.innerHTML = `<div class="av ${avc}" style="overflow:hidden;">${inner}</div>
+    const otR = c.isGroup ? null : (c.fromReal === me.name ? c.toReal : c.fromReal);
+    const avClick = !c.isGroup && otR ? `onclick="event.stopPropagation();showProfile('${esc(otR)}',false)" style="overflow:hidden;cursor:pointer;flex-shrink:0;"` : `style="overflow:hidden;flex-shrink:0;"`;
+    d.innerHTML = `<div class="av ${avc}" ${avClick}>${inner}</div>
     <div class="di-i"><div class="din">${esc(ot)}</div><div class="dip">${esc(prev)}</div></div>
     ${c.isGroup ? '<span class="grp-tag">GRUP</span>' : (c.status === 'pending' && c.toReal === me.name ? '<span class="ptag">İstek</span>' : '')}`;
     el.appendChild(d);
@@ -114,9 +116,10 @@ function rAC(c) {
   const p = otReal ? profiles[otReal] : null; const avc = avColor(ot, false);
   const inner = c.isGroup ? '👥' : (p && p.photo ? `<img src="${p.photo}" style="width:100%;height:100%;object-fit:cover;"/>` : ot[0]?.toUpperCase());
   const memberInfo = c.isGroup ? `<div class="dcs">${c.members.join(', ')}</div>` : '';
+  const profClick = !c.isGroup && otReal ? `onclick="showProfile('${esc(otReal)}',false)" style="overflow:hidden;cursor:pointer;"` : `style="overflow:hidden;"`;
   el.innerHTML = `
-    <div class="dch"><div class="av ${avc}" style="overflow:hidden;">${inner}</div>
-    <div><div class="dcn">${esc(ot)}</div>${memberInfo}${!c.isGroup ? `<div class="dcs">Aktif sohbet</div>` : ''}</div>
+    <div class="dch"><div class="av ${avc}" ${profClick}>${inner}</div>
+    <div><div class="dcn"${!c.isGroup && otReal ? ` onclick="showProfile('${esc(otReal)}',false)" style="cursor:pointer;"` : ''}>${esc(ot)}</div>${memberInfo}${!c.isGroup ? `<div class="dcs">Aktif sohbet</div>` : ''}</div>
     ${!c.isGroup ? `<div class="dmat ${ma ? 'on' : ''}" onclick="togDa('${c.id}')"><div class="adot" style="${ma ? 'background:var(--an)' : ''}"></div><span>${ma ? 'Anonim: Açık' : 'Anonim: Kapalı'}</span></div>` : ''}</div>
     <div class="msgs" id="dmm-${c.id}"></div>
     <div class="reply-bar" id="dReplyBar-${c.id}">
@@ -144,6 +147,8 @@ function rDM(c) {
   if (!c.msgs.length) { el.appendChild(mkS('Sohbet başladı!')); return; }
   c.msgs.forEach(m => {
     if (m.isSys) { el.appendChild(mkS(m.text)); return; }
+    // Engellenen kullanıcının mesajlarını gizle
+    if (typeof shouldHideMessage === 'function' && shouldHideMessage(m)) return;
     const isMe = m.fromReal === me.name, avc = avColor(m.from, m.isAnon), nc = m.isAnon ? 'an' : (isMe ? 'me' : '');
     let rev = ''; if (me.isAdmin && m.isAnon) { const r = aReg[m.from] || m.fromReal || '?'; rev = `<span class="rpill" onclick="ri(this,'${esc(r)}')">👁</span>`; }
     const p = profiles[m.fromReal] || {};
@@ -166,7 +171,7 @@ function rDM(c) {
     d.innerHTML = `<div class="msg-av ${avc}" onclick="showProfile('${esc(m.from)}',${m.isAnon})">${inner}</div>
     <div class="mb"><div class="mh"><span class="mn ${nc}" onclick="showProfile('${esc(m.from)}',${m.isAnon})">${esc(m.from)}</span>${rev}<span class="mt">${ft(m.time)}</span></div>${textContent}${reactHTML}${seenHTML}</div>
     ${!m.recalled && !m.editing ? `<div class="msg-actions"><button class="mac" onclick="showEmojiPicker(this.closest('.msg-actions'),${m.id},'dm','${c.id}')">😊</button><button class="mac" onclick="setDReply(convs['${c.id}'],convs['${c.id}'].msgs.find(x=>x.id===${m.id}))">↩</button>${isMe || me.isAdmin ? `<button class="mac" onclick="showCtx(event,${m.id},'${c.id}','dm')">⋯</button>` : ''}</div>` : ''}`;
-    if ((isMe || me.isAdmin) && !m.recalled && !m.editing) d.addEventListener('contextmenu', e => { e.preventDefault(); showCtx(e, m.id, c.id, 'dm'); });
+    if ((isMe || me.isAdmin) && !m.recalled && !m.editing) d.addEventListener('contextmenu', e => { e.preventDefault(); e.stopPropagation(); showCtx(e, m.id, c.id, 'dm'); });
     el.appendChild(d);
   });
   sbot('dmm-' + c.id);
@@ -183,6 +188,7 @@ function scrollToDMsg(cid, id) {
 // ══════════════════════════════════════════════════
 
 function setDReply(c, msg) {
+  if (!c || !msg) return;
   dmReplies[c.id] = { id: msg.id, name: msg.from, text: msg.text, isAnon: msg.isAnon };
   const nameEl = document.getElementById('dReplyName-' + c.id);
   const textEl = document.getElementById('dReplyText-' + c.id);
@@ -206,6 +212,13 @@ function sD(id) {
   if (isMuted(me.name)) { toast('Susturuldunuz.', 'e'); return; }
   const c = convs[id], inp = document.getElementById('dmi-' + id); if (!inp) return;
   const txt = inp.value.trim(); if (!txt) return;
+  // Karşılıklı engelleme kontrolü
+  if (!c.isGroup) {
+    const other = c.fromReal === me.name ? c.toReal : c.fromReal;
+    if (other && (isBlockedByMe(other) || (blockedUsers[other] || []).includes(me.name))) {
+      toast('Bu kişiyle mesajlaşamazsınız 🚫', 'e'); return;
+    }
+  }
   const ma = c.isGroup ? false : (c.fromReal === me.name ? c.fromAnon : c.toAnon), dn = ma ? me.anonId : me.name;
   const replyTo = dmReplies[id] ? { ...dmReplies[id] } : null;
   c.msgs.push({ id: Date.now(), from: dn, fromReal: me.name, text: txt, isAnon: ma, isMe: true, time: new Date(), recalled: false, edited: false, reactions: {}, replyTo });

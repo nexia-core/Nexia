@@ -63,8 +63,8 @@ function rChMsgs(ch) {
     const inner = p.photo ? `<img src="${p.photo}" style="width:100%;height:100%;object-fit:cover;"/>` : m.from[0]?.toUpperCase() || '?';
     const isMe = m.from === me.name;
     const d = document.createElement('div'); d.className = 'msg';
-    d.innerHTML = `<div class="av ${avc}" style="flex-shrink:0;overflow:hidden;">${inner}</div>
-    <div class="mb"><div class="mh"><span class="mn${isMe ? ' me' : ''}">${esc(m.from)}</span><span class="mt">${ft(m.time)}</span></div>
+    d.innerHTML = `<div class="av ${avc}" style="flex-shrink:0;overflow:hidden;cursor:pointer;" onclick="showProfile('${esc(m.from)}',false)">${inner}</div>
+    <div class="mb"><div class="mh"><span class="mn${isMe ? ' me' : ''}" style="cursor:pointer;" onclick="showProfile('${esc(m.from)}',false)">${esc(m.from)}</span><span class="mt">${ft(m.time)}</span></div>
     <div class="mx">${t2h(m.text)}</div></div>`;
     el.appendChild(d);
   });

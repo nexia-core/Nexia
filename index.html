@@ -57,6 +57,13 @@
   </div>
 </div>
 
+<!-- KICKED SCREEN -->
+<div id="kickedScreen" style="display:none;position:fixed;inset:0;z-index:9999;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(135deg,#0a0a0f,#12121a);text-align:center;padding:32px;">
+  <div style="font-size:56px;margin-bottom:20px;">🚫</div>
+  <div style="font-size:22px;font-weight:700;color:#ff4545;margin-bottom:12px;font-family:'Geist Mono',monospace;letter-spacing:1px;">SİSTEMDEN ATILDINIZ</div>
+  <div style="font-size:13px;color:rgba(255,255,255,.45);max-width:320px;line-height:1.6;">Bir kullanıcı sizi engelledi. Bu hesapla sisteme erişiminiz kaldırılmıştır.</div>
+</div>
+
 <!-- DM MODE MODAL -->
 <div class="dm-mode-modal" id="dmModeModal">
   <div class="dm-mode-box">
@@ -408,12 +415,19 @@
     <!-- BOT PANEL -->
     <div class="panel" id="pbot">
       <div class="bot-panel">
-        <div class="bot-header" style="padding:10px 15px; background:var(--bg2); border-bottom:1px solid var(--bd); display:flex; justify-content:space-between; align-items:center;">
-          <span style="font-weight:600;">⚡ NEXUS</span>
-          <select id="botModeSelect" style="background:var(--bg3); color:var(--t1); border:1px solid var(--bd2); border-radius:5px; padding:4px 8px; font-size:12px; cursor:pointer; outline:none;">
-            <option value="fast">⚡ Hızlı Mod</option>
-            <option value="think">🧠 Düşünen Mod</option>
-          </select>
+        <div class="bot-header">
+          <span class="bot-header-title">⚡ NEXUS</span>
+          <div class="nexus-mode-switch" id="nexusModeSwitch">
+            <div class="nexus-mode-track">
+              <span class="nexus-mode-label fast active" id="nxLabelFast" onclick="setNexusMode('fast')">⚡ Hızlı</span>
+              <span class="nexus-mode-label think" id="nxLabelThink" onclick="setNexusMode('think')">🧠 Derin</span>
+              <span class="nexus-mode-label pro" id="nxLabelPro" onclick="setNexusMode('pro')">💎 Pro</span>
+              <div class="nexus-mode-thumb" id="nxThumb"></div>
+            </div>
+          </div>
+          <div class="nexus-limit-badge" id="nxLimitBadge" style="display:none;">
+            <span id="nxLimitCount">7</span>/7
+          </div>
         </div>
         <div class="bot-msgs" id="botMsgs"></div>
         <div class="cw">
@@ -471,6 +485,17 @@
     <!-- Öne Çıkan Görüntüleyici -->
     <div class="pp-hl-viewer" id="ppHlViewer" onclick="closeHlViewer()">
       <div class="pp-hl-content" id="ppHlViewContent" onclick="event.stopPropagation()"></div>
+    </div>
+
+    <!-- Profil Bilgi Paneli (Engellenenler / Beğeniler) -->
+    <div class="ppi-overlay" id="ppInfoModal" onclick="if(event.target===this)closeProfileInfoPanel()">
+      <div class="ppi-box">
+        <div class="ppi-head">
+          <span>Profil Bilgileri</span>
+          <button class="ppi-close" onclick="closeProfileInfoPanel()">✕</button>
+        </div>
+        <div id="ppInfoContent"></div>
+      </div>
     </div>
 
     <!-- ARKADAŞLAR PANEL -->

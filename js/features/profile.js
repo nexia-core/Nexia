@@ -110,9 +110,23 @@ function renderProfilePage(name) {
   html += '<div class="pp-top-row">';
   html += '<div class="pp-name">' + esc(target) + '</div>';
   if (isMe) {
+    html += '<div style="display:flex;gap:8px;align-items:center;">';
     html += '<button class="pp-edit-btn" onclick="openProfileSettings()">Profili Düzenle</button>';
+    html += '<button class="pp-info-btn" onclick="openProfileInfoPanel()" title="Engellenenler & Beğeniler">☰</button>';
+    html += '</div>';
   }
   html += '</div>';
+
+  // Başka kullanıcı profili — aksiyon butonları
+  if (!isMe && me) {
+    var isFriend = friends.includes(target);
+    var isBlocked = typeof isBlockedByMe === 'function' && isBlockedByMe(target);
+    html += '<div class="pp-action-btns">';
+    html += '<button class="pp-follow-btn' + (isFriend ? ' following' : '') + '" onclick="ppToggleFollow(\'' + esc(target) + '\')">' + (isFriend ? '✓ Takiptesin' : '+ Takip Et') + '</button>';
+    html += '<button class="pp-msg-btn" onclick="openDmModeModal(\'' + esc(target) + '\')">Mesaj Gönder</button>';
+    html += '<button class="pp-block-btn' + (isBlocked ? ' blocked' : '') + '" onclick="ppToggleBlock(\'' + esc(target) + '\')">' + (isBlocked ? 'Engeli Kaldır' : 'Engelle') + '</button>';
+    html += '</div>';
+  }
   html += '<div class="pp-tag">' + tagParts.join(' · ') + '</div>';
   html += '<div class="pp-bio">' + (p.bio ? esc(p.bio) : '<span style="opacity:.4">Henüz biyografi eklenmemiş</span>') + '</div>';
 
@@ -265,6 +279,30 @@ function openUserProfile(name) {
   _ppTab = 'posts';
   sw('pr');
   renderProfilePage(name);
+}
+
+// ─── Profil Sayfası Aksiyon Butonları ───────────
+
+function ppToggleFollow(name) {
+  var idx = friends.indexOf(name);
+  if (idx >= 0) {
+    friends.splice(idx, 1);
+    toast('Takipten çıkıldı', 'w');
+  } else {
+    friends.push(name);
+    toast(name + ' takip edildi', 's');
+  }
+  renderProfilePage(_ppTarget);
+  if (typeof rFriends === 'function') rFriends();
+}
+
+function ppToggleBlock(name) {
+  if (typeof isBlockedByMe === 'function' && isBlockedByMe(name)) {
+    if (typeof unblockUser === 'function') unblockUser(name);
+  } else {
+    if (typeof blockUser === 'function') blockUser(name);
+  }
+  renderProfilePage(_ppTarget);
 }
 
 // ═══════════════════════════════════════════════════
@@ -528,10 +566,86 @@ function deleteHighlight(hlIdx) {
   toast('Öne çıkan silindi', 's');
 }
 
+// ═══════════════════════════════════════════════════
+// PROFİL BİLGİ PANELİ (Engellenenler / Beğeniler)
+// ═══════════════════════════════════════════════════
+
+var _ppInfoTab = 'blocked';
+
+function openProfileInfoPanel() {
+  _ppInfoTab = 'blocked';
+  renderProfileInfoPanel();
+  q('#ppInfoModal').classList.add('op');
+}
+
+function closeProfileInfoPanel() {
+  q('#ppInfoModal').classList.remove('op');
+}
+
+function switchInfoTab(tab) {
+  _ppInfoTab = tab;
+  renderProfileInfoPanel();
+}
+
+function renderProfileInfoPanel() {
+  var blocked = blockedUsers[me ? me.name : ''] || [];
+
+  // Beğenilen gönderiler: tüm kullanıcıların postlarında me.name geçenler
+  var liked = [];
+  Object.keys(userPosts).forEach(function(uname) {
+    (userPosts[uname] || []).forEach(function(post, idx) {
+      if (post.likes && post.likes.includes(me.name)) {
+        liked.push({ owner: uname, post: post, idx: idx });
+      }
+    });
+  });
+
+  var tabHtml = '<div class="ppi-tabs">'
+    + '<div class="ppi-tab' + (_ppInfoTab === 'blocked' ? ' on' : '') + '" onclick="switchInfoTab(\'blocked\')">🚫 Engellenenler <span class="ppi-badge">' + blocked.length + '</span></div>'
+    + '<div class="ppi-tab' + (_ppInfoTab === 'likes' ? ' on' : '') + '" onclick="switchInfoTab(\'likes\')">❤️ Beğeniler <span class="ppi-badge">' + liked.length + '</span></div>'
+    + '</div>';
+
+  var bodyHtml = '';
+  if (_ppInfoTab === 'blocked') {
+    if (!blocked.length) {
+      bodyHtml = '<div class="ppi-empty">Hiç engellenmiş kişi yok.</div>';
+    } else {
+      bodyHtml = '<div class="ppi-list">';
+      blocked.forEach(function(name) {
+        var p = profiles[name] || {};
+        var avc = avColor(name, false);
+        var avInner = p.photo ? '<img src="' + p.photo + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%;"/>' : (name[0] ? name[0].toUpperCase() : '?');
+        bodyHtml += '<div class="ppi-row">'
+          + '<div class="av ' + avc + '" style="width:34px;height:34px;font-size:13px;flex-shrink:0;overflow:hidden;">' + avInner + '</div>'
+          + '<span class="ppi-name">' + esc(name) + '</span>'
+          + '<button class="ppi-unblock-btn" onclick="unblockUser(\'' + esc(name) + '\');renderProfileInfoPanel();">Engeli Kaldır</button>'
+          + '</div>';
+      });
+      bodyHtml += '</div>';
+    }
+  } else {
+    if (!liked.length) {
+      bodyHtml = '<div class="ppi-empty">Henüz beğendiğin gönderi yok.</div>';
+    } else {
+      bodyHtml = '<div class="ppi-likes-grid">';
+      liked.forEach(function(item) {
+        bodyHtml += '<div class="ppi-like-item" onclick="viewPost(\'' + esc(item.owner) + '\',' + item.idx + ')">'
+          + '<img src="' + item.post.img + '" alt="" loading="lazy"/>'
+          + '<div class="ppi-like-owner">' + esc(item.owner) + '</div>'
+          + '</div>';
+      });
+      bodyHtml += '</div>';
+    }
+  }
+
+  q('#ppInfoContent').innerHTML = tabHtml + bodyHtml;
+}
+
 // ─── Escape handler ──────────────────────────────
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') {
-    if (q('#ppHlViewer').classList.contains('op')) closeHlViewer();
+    if (q('#ppInfoModal') && q('#ppInfoModal').classList.contains('op')) closeProfileInfoPanel();
+    else if (q('#ppHlViewer').classList.contains('op')) closeHlViewer();
     else if (q('#ppViewModal').classList.contains('op')) closeViewModal();
     else if (q('#ppAddModal').classList.contains('op')) closePostModal();
     else if (q('#ppHlAddModal').classList.contains('op')) closeHlModal();

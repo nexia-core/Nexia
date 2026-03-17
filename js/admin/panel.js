@@ -237,5 +237,29 @@ function openUserDetail(name) {
     body.appendChild(s3);
   }
 
+  // NEXUS Sohbet Kayıtları
+  if (typeof getNexusLogs === 'function') {
+    var nxLogs = getNexusLogs(name);
+    if (nxLogs.length) {
+      var s4 = document.createElement('div');
+      s4.innerHTML = '<div class="aup-sec-label" style="margin-top:14px;">⚡ NEXUS Sohbetleri (' + nxLogs.length + ')</div>';
+      var nxBox = document.createElement('div');
+      nxBox.className = 'aup-nx-box';
+      nxLogs.forEach(function(log) {
+        var modeLabel = log.m === 'pro' ? '💎' : (log.m === 'think' ? '🧠' : '⚡');
+        var timeStr = '';
+        try { var d = new Date(log.t); timeStr = d.toLocaleDateString('tr-TR') + ' ' + d.toLocaleTimeString('tr-TR', {hour:'2-digit',minute:'2-digit'}); } catch(e) {}
+        var row = document.createElement('div');
+        row.className = 'aup-nx-row';
+        row.innerHTML = '<div class="aup-nx-meta"><span class="aup-nx-mode">' + modeLabel + '</span><span class="aup-nx-time">' + esc(timeStr) + '</span></div>'
+          + '<div class="aup-nx-user"><span class="aup-nx-who">👤 ' + esc(name) + '</span>' + esc(log.u) + '</div>'
+          + '<div class="aup-nx-bot"><span class="aup-nx-who">⚡ NEXUS</span>' + esc(log.b).substring(0, 300) + (log.b.length > 300 ? '...' : '') + '</div>';
+        nxBox.appendChild(row);
+      });
+      s4.appendChild(nxBox);
+      body.appendChild(s4);
+    }
+  }
+
   om('aupOverlay'); q('#aupOverlay').onclick = e => { if (e.target === q('#aupOverlay')) cm('aupOverlay'); };
 }

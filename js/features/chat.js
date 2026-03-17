@@ -36,7 +36,12 @@ function showEmojiPicker(el, msgId, scope, convId) {
     picker.appendChild(s);
   });
   el.style.position = 'relative'; el.appendChild(picker);
-  setTimeout(() => document.addEventListener('click', () => picker.remove(), { once: true }), 10);
+  setTimeout(() => document.addEventListener('click', function _closePicker(e) {
+    if (!e.target.closest('.emoji-picker')) {
+      picker.remove();
+      document.removeEventListener('click', _closePicker);
+    }
+  }), 10);
 }
 
 // ══════════════════════════════════════════════════
@@ -106,6 +111,9 @@ function rG() {
     }
     if (m.type === 'poll') { el.appendChild(buildPollEl(m)); return; }
 
+    // Sadece admin tarafından sistemden atılan kullanıcıların mesajları gizlenir
+    if (typeof _isKickedUser === 'function' && _isKickedUser(m.realName || m.name)) return;
+
     const isMe = m.realName === me.name;
     const nc = m.isAnon ? 'an' : (m.isAdmin ? 'adm' : (isMe ? 'me' : ''));
     const avc = avColor(m.name, m.isAnon);
@@ -142,6 +150,7 @@ function rG() {
     ${!m.recalled && !m.editing ? `<div class="msg-actions"><button class="mac" title="Tepki ver" onclick="showEmojiPicker(this.closest('.msg-actions'),${m.id},'global',null)">😊</button><button class="mac" title="Yanıtla" onclick="setGReply(gm.find(x=>x.id===${m.id}))">↩</button>${isMe || me.isAdmin ? `<button class="mac" title="Daha fazla" onclick="showCtx(event,${m.id},null,'global')">⋯</button>` : ''}${me.isAdmin && isMuted(m.realName) ? `<button class="mac" style="color:var(--gn)" title="Sesi aç" onclick="unmuteUser('${esc(m.realName)}')">🔇</button>` : ''}</div>` : ''}`;
     if (!m.recalled && !m.editing) d.addEventListener('contextmenu', e => {
       e.preventDefault();
+      e.stopPropagation(); // Doküman düzeyindeki şikayet menüsünün çift açılmasını önle
       if (isMe || me.isAdmin) {
         // Kendi mesajı veya admin → eski ctx menüsü (düzenle, sil vb.)
         showCtx(e, m.id, null, 'global');

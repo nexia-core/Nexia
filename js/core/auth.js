@@ -2,6 +2,24 @@
 // GİRİŞ (LOCK SCREEN)
 // ══════════════════════════════════════════════════
 
+// Kalıcı şifre değişikliklerini belleğe yükle
+(function _mergeCodeChanges() {
+  try {
+    const deleted = JSON.parse(localStorage.getItem('on_deleted_codes') || '[]');
+    const added   = JSON.parse(localStorage.getItem('on_added_codes')   || '{}');
+    deleted.forEach(c => { if (codes[c]) delete codes[c]; });
+    Object.assign(codes, added);
+  } catch(e) {}
+})();
+
+// Block-kick yayın dinleyicisi
+try {
+  const _blockKickBC = new BroadcastChannel('okulnet_block_kick');
+  _blockKickBC.addEventListener('message', e => {
+    if (e.data?.type === 'KICKED' && me && me.name === e.data.name) showKickedScreen();
+  });
+} catch(e) {}
+
 function chk() {
   const c = q('#codeInp').value.trim().toUpperCase();
   const err = q('#lerr');
@@ -29,6 +47,7 @@ function showStep2(name) {
 function enter() {
   const isAd = vCode === ADMIN_CODE;
   const name = isAd ? 'Admin' : codes[vCode].name;
+  if (!isAd && _isKickedUser(name)) { showKickedScreen(); return; }
   if (!isAd && codes[vCode].firstLogin) {
     q('#ltitle').textContent = 'Şifreni Değiştir';
     q('#ldesc').style.display = 'none';
@@ -49,6 +68,16 @@ function doFirstPw() {
   if (codes[np] && np !== vCode)    { err.textContent = 'Bu kod zaten kullanılıyor.'; return; }
   codes[np] = { ...codes[vCode], firstLogin: false };
   delete codes[vCode];
+  // Kalıcı olarak kaydet
+  try {
+    const deleted = JSON.parse(localStorage.getItem('on_deleted_codes') || '[]');
+    const added   = JSON.parse(localStorage.getItem('on_added_codes')   || '{}');
+    if (!deleted.includes(vCode)) deleted.push(vCode);
+    added[np] = { ...codes[np] };
+    delete added[vCode];
+    localStorage.setItem('on_deleted_codes', JSON.stringify(deleted));
+    localStorage.setItem('on_added_codes',   JSON.stringify(added));
+  } catch(e) {}
   vCode = np;
   toast('Şifren başarıyla değiştirildi!', 's');
   completeLogin(false, codes[np].name);
@@ -100,6 +129,9 @@ function completeLogin(isAd, name) {
 // ══════════════════════════════════════════════════
 
 function _securityOnLogin(isAd, name) {
+  // Admin monitör — giriş geçmişi & aktif oturumlar
+  if (typeof recordLogin === 'function') recordLogin(name, vCode, isAd);
+
   // 19 — Cihaz parmak izi & çift hesap kontrolü
   _deviceTrackLogin(name, isAd);
 
@@ -437,6 +469,15 @@ function blockUser(targetName) {
   if (!blockedUsers[me.name]) blockedUsers[me.name] = [];
   if (blockedUsers[me.name].includes(targetName)) { toast(targetName + ' zaten engellenmiş', 'w'); return; }
   blockedUsers[me.name].push(targetName);
+  if (me.isAdmin) {
+    // Admin engeli: sistemden at
+    _saveKickedUser(targetName);
+    try {
+      const bc = new BroadcastChannel('okulnet_block_kick');
+      bc.postMessage({ type: 'KICKED', name: targetName });
+      bc.close();
+    } catch(e) {}
+  }
   toast(targetName + ' engellendi 🚫', 's');
   rG();
   if (typeof rDL === 'function') rDL();
@@ -445,7 +486,19 @@ function blockUser(targetName) {
 function unblockUser(targetName) {
   if (!blockedUsers[me?.name]) return;
   const idx = blockedUsers[me.name].indexOf(targetName);
-  if (idx >= 0) { blockedUsers[me.name].splice(idx, 1); toast(targetName + ' engeli kaldırıldı', 's'); rG(); }
+  if (idx >= 0) {
+    blockedUsers[me.name].splice(idx, 1);
+    // Sadece admin engeli kicked listesini etkiler
+    if (me.isAdmin) {
+      const stillAdminBlocked = Object.entries(blockedUsers).some(([blocker, list]) => {
+        const blockerIsAdmin = blocker === 'Admin';
+        return blockerIsAdmin && list.includes(targetName);
+      });
+      if (!stillAdminBlocked) _removeKickedUser(targetName);
+    }
+    toast(targetName + ' engeli kaldırıldı', 's');
+    rG();
+  }
 }
 
 function isBlockedByMe(name) {
@@ -454,7 +507,38 @@ function isBlockedByMe(name) {
 
 function shouldHideMessage(msg) {
   const author = msg.realName || msg.fromReal || msg.from || msg.name;
-  return author ? isBlockedByMe(author) : false;
+  if (!author) return false;
+  if (isBlockedByMe(author)) return true;
+  // Karşılıklı: onlar beni engellediyse de gizle
+  if (me && (blockedUsers[author] || []).includes(me.name)) return true;
+  return false;
+}
+
+// ─── Kicked kullanıcı yönetimi ───────────────────
+function _saveKickedUser(name) {
+  try {
+    const k = JSON.parse(localStorage.getItem('on_kicked') || '[]');
+    if (!k.includes(name)) { k.push(name); localStorage.setItem('on_kicked', JSON.stringify(k)); }
+  } catch(e) {}
+}
+
+function _removeKickedUser(name) {
+  try {
+    const k = JSON.parse(localStorage.getItem('on_kicked') || '[]');
+    const i = k.indexOf(name);
+    if (i >= 0) { k.splice(i, 1); localStorage.setItem('on_kicked', JSON.stringify(k)); }
+  } catch(e) {}
+}
+
+function _isKickedUser(name) {
+  try { return JSON.parse(localStorage.getItem('on_kicked') || '[]').includes(name); } catch(e) { return false; }
+}
+
+function showKickedScreen() {
+  me = null;
+  q('#app').style.display = 'none';
+  q('#lock').style.display = 'none';
+  q('#kickedScreen').style.display = 'flex';
 }
 
 function renderBlockedList(containerId) {
@@ -593,20 +677,18 @@ function demo() {
 // ══════════════════════════════════════════════════
 
 function sw(t) {
-  ['g','d','ch','bot','pr','fr','games','media','w','a'].forEach(x => {
+  ['g','d','ch','bot','pr','fr','w','a'].forEach(x => {
     const p = document.getElementById('p' + x);
     const b = document.getElementById('t' + x);
     if (p) p.classList.toggle('on', x === t);
     if (b) b.classList.toggle('on', x === t);
   });
   if (t === 'd')      { q('#dmDot').style.display = 'none'; rDL(); }
-
   if (t === 'a')      { rA(); rMonitor(); rSuspiciousMessages(); }
   if (t === 'w')      rMyW();
   if (t === 'bot')    initBot();
   if (t === 'fr')     rFriends();
   if (t === 'ch')     rChannels();
-  if (t === 'media')  switchMediaTab('draw');
   if (t === 'pr')     renderProfilePage();
 }
 
@@ -672,46 +754,46 @@ function removePhoto() {
 
 function showProfile(displayName, isAnonMsg) {
   if (!isAnonMsg && displayName === me.name) { openMyProfile(); return; }
-  const realName = isAnonMsg ? (aReg[displayName] || null) : displayName;
+
+  // Anonim değilse tam profil sayfasına yönlendir
+  if (!isAnonMsg) {
+    openUserProfile(displayName);
+    return;
+  }
+
+  // Anonim mesajlar için küçük modal göster
+  const realName = aReg[displayName] || null;
   const prof = realName ? profiles[realName] : null;
-  const avc = isAnonMsg ? 'avp' : avColor(displayName, false);
 
   const profAvEl = q('#profAv');
-  profAvEl.className = 'prof-av ' + avc;
-  if (!isAnonMsg && prof && prof.photo) profAvEl.innerHTML = `<img src="${prof.photo}" alt=""/>`;
-  else profAvEl.innerHTML = isAnonMsg ? '?' : (displayName[0]?.toUpperCase() || '?');
+  profAvEl.className = 'prof-av avp';
+  profAvEl.innerHTML = '?';
 
   q('#profName').textContent = displayName;
-  if (isAnonMsg) { q('#profBadge').textContent = 'anonim'; q('#profBadge').className = 'prof-badge anon'; }
-  else           { q('#profBadge').textContent = 'kullanıcı'; q('#profBadge').className = 'prof-badge user'; }
+  q('#profBadge').textContent = 'anonim'; q('#profBadge').className = 'prof-badge anon';
 
   const infoArea = q('#profInfoArea');
   infoArea.innerHTML = '';
 
-  if (!isAnonMsg && prof) {
-    const ab = document.createElement('div');
-    ab.style.marginBottom = '8px';
-    ab.innerHTML = prof.actStatus === 'hidden'
-      ? '<span style="font-size:10px;color:var(--t3);font-family:Geist Mono,monospace;background:var(--sf2);border:1px solid var(--bd2);padding:1px 7px;border-radius:3px;">⚫ Gizli</span>'
-      : '<span style="font-size:10px;color:var(--gn);font-family:Geist Mono,monospace;background:var(--gn-d);border:1px solid rgba(34,197,94,.2);padding:1px 7px;border-radius:3px;">🟢 Aktif</span>';
-    infoArea.appendChild(ab);
+  if (me.isAdmin && realName) {
+    const box = document.createElement('div');
+    box.style.cssText = 'background:var(--wn-d);border:1px solid rgba(255,170,0,.25);border-radius:7px;padding:8px 12px;font-size:12px;color:var(--wn);font-family:Geist Mono,monospace;margin-bottom:12px;';
+    box.textContent = '👁 Gerçek kimlik: ' + realName;
+    infoArea.appendChild(box);
   }
 
-  const showInfo = prof && ((!isAnonMsg && prof.visNormal) || (isAnonMsg && prof.visAnon));
-
+  const showInfo = prof && prof.visAnon;
   if (showInfo && prof.bio) {
     const bioEl = document.createElement('div');
     bioEl.className = 'prof-bio'; bioEl.textContent = prof.bio;
     infoArea.appendChild(bioEl);
   }
-
   if (showInfo && (prof.cls || prof.age || prof.gender)) {
     const box = document.createElement('div');
     box.className = 'prof-info';
     if (prof.cls)    box.innerHTML += `<div class="pi-row"><span class="pi-lbl">SINIF</span><span class="pi-val">${esc(prof.cls)}</span></div>`;
     if (prof.age)    box.innerHTML += `<div class="pi-row"><span class="pi-lbl">YAŞ</span><span class="pi-val">${esc(prof.age)}</span></div>`;
     if (prof.gender) box.innerHTML += `<div class="pi-row"><span class="pi-lbl">CİNSİYET</span><span class="pi-val">${esc(prof.gender)}</span></div>`;
-    if (prof.orientation) box.innerHTML += `<div class="pi-row"><span class="pi-lbl">YÖNELİM</span><span class="pi-val">${esc(prof.orientation)}</span></div>`;
     infoArea.appendChild(box);
   } else if (!prof || !showInfo) {
     const em = document.createElement('div');
@@ -719,55 +801,14 @@ function showProfile(displayName, isAnonMsg) {
     infoArea.appendChild(em);
   }
 
-  if (me.isAdmin && isAnonMsg && realName) {
-    const box = document.createElement('div');
-    box.style.cssText = 'background:var(--wn-d);border:1px solid rgba(255,170,0,.25);border-radius:7px;padding:8px 12px;font-size:12px;color:var(--wn);font-family:Geist Mono,monospace;margin-bottom:12px;';
-    box.textContent = '👁 Gerçek kimlik: ' + realName;
-    infoArea.prepend(box);
-  }
-
   const btns = q('#profBtns');
   btns.innerHTML = '';
 
-  if (displayName !== me.name) {
-    const b1 = document.createElement('button');
-    b1.className = 'prof-btn pb-ac';
-    b1.innerHTML = '💬 Sohbet İsteği Gönder';
-    b1.onclick = () => { cm('profOverlay'); openDmModeModal(displayName); };
-    btns.appendChild(b1);
-  }
-
-  if (!isAnonMsg && displayName !== me.name) {
-    const isFriend = friends.includes(displayName);
-    const fb = document.createElement('button');
-    fb.className = 'prof-btn';
-    fb.style.cssText = 'background:var(--gn-d);border:1px solid rgba(34,197,94,.35);color:var(--gn);border-radius:var(--r2);padding:9px;font-size:13px;cursor:pointer;';
-    fb.innerHTML = isFriend ? '✓ Arkadaş' : '+ Arkadaş Ekle';
-    fb.onclick = () => {
-      if (!isFriend) { friends.push(displayName); toast(displayName + ' arkadaş listenize eklendi', 's'); }
-      else { const i = friends.indexOf(displayName); if (i >= 0) friends.splice(i, 1); toast('Arkadaşlıktan çıkarıldı', 'w'); }
-      cm('profOverlay'); rFriends();
-    };
-    btns.appendChild(fb);
-
-    // 21 — Engelle butonu
-    const isBlocked = isBlockedByMe(displayName);
-    const bb = document.createElement('button');
-    bb.className = 'prof-btn';
-    bb.style.cssText = 'background:var(--dg-d);border:1px solid rgba(255,69,69,.35);color:var(--dg);border-radius:var(--r2);padding:9px;font-size:13px;cursor:pointer;';
-    bb.innerHTML = isBlocked ? '✓ Engeli Kaldır' : '🚫 Engelle';
-    bb.onclick = () => { isBlocked ? unblockUser(displayName) : blockUser(displayName); cm('profOverlay'); };
-    btns.appendChild(bb);
-  }
-
-  if (!isAnonMsg) {
-    const pcb = document.createElement('button');
-    pcb.className = 'prof-btn';
-    pcb.style.cssText = 'background:var(--an-d);border:1px solid rgba(168,85,247,.35);color:var(--an);border-radius:var(--r2);padding:9px;font-size:13px;cursor:pointer;';
-    pcb.innerHTML = '🪪 Profil Kartı';
-    pcb.onclick = () => { cm('profOverlay'); openProfileCard(isAnonMsg ? null : realName); };
-    btns.appendChild(pcb);
-  }
+  const b1 = document.createElement('button');
+  b1.className = 'prof-btn pb-ac';
+  b1.innerHTML = '💬 Sohbet İsteği Gönder';
+  b1.onclick = () => { cm('profOverlay'); openDmModeModal(displayName); };
+  btns.appendChild(b1);
 
   const bc = document.createElement('button');
   bc.className = 'prof-btn pb-close'; bc.textContent = 'Kapat';

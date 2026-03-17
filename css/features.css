@@ -129,6 +129,8 @@
 
 /* ─── OKULBOT ─── */
 .bot-panel { display:flex; flex-direction:column; height:100%; }
+.bot-header { padding:10px 15px; background:var(--bg2); border-bottom:1px solid var(--bd); display:flex; align-items:center; gap:12px; }
+.bot-header-title { font-weight:700; font-size:14px; font-family:'Geist Mono',monospace; white-space:nowrap; }
 .bot-msgs { flex:1; overflow-y:auto; padding:14px 18px; display:flex; flex-direction:column; gap:8px; }
 .bot-msgs::-webkit-scrollbar { width:3px; }
 .bot-msgs::-webkit-scrollbar-thumb { background:var(--bd2); }
@@ -136,6 +138,26 @@
 .bot-bubble.user { background:var(--ac-d); border:1px solid rgba(91,140,255,.3); color:var(--tx); align-self:flex-end; border-bottom-right-radius:4px; }
 .bot-bubble.bot { background:var(--sf2); border:1px solid var(--bd2); color:var(--tx); align-self:flex-start; border-bottom-left-radius:4px; }
 .bot-bubble.bot .bot-name { font-size:10px; color:var(--ac); font-family:'Geist Mono',monospace; margin-bottom:4px; font-weight:700; }
+
+/* ─── NEXUS Mode Switch (3 modes) ─── */
+.nexus-mode-switch { position:relative; user-select:none; }
+.nexus-mode-track { position:relative; display:flex; width:210px; height:32px; background:var(--sf2); border:1px solid var(--bd2); border-radius:16px; overflow:hidden; transition:border-color .3s, box-shadow .3s; }
+.nexus-mode-switch:hover .nexus-mode-track { border-color:var(--ac); }
+.nexus-mode-switch.fast-active .nexus-mode-track { border-color:rgba(91,140,255,.4); box-shadow:0 0 12px rgba(91,140,255,.1); }
+.nexus-mode-switch.think-active .nexus-mode-track { border-color:rgba(168,85,247,.5); box-shadow:0 0 12px rgba(168,85,247,.15); }
+.nexus-mode-switch.pro-active .nexus-mode-track { border-color:rgba(255,170,50,.5); box-shadow:0 0 12px rgba(255,170,50,.2); }
+.nexus-mode-label { position:relative; z-index:2; flex:1; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:600; font-family:'Geist Mono',monospace; color:var(--t3); transition:color .3s; white-space:nowrap; cursor:pointer; }
+.nexus-mode-label.active { color:#fff; }
+.nexus-mode-thumb { position:absolute; top:2px; left:2px; width:calc(33.333% - 2px); height:calc(100% - 4px); border-radius:14px; background:linear-gradient(135deg,var(--ac),#4a7aff); transition:transform .35s cubic-bezier(.4,.0,.2,1), background .35s; z-index:1; }
+.nexus-mode-switch.think-active .nexus-mode-thumb { background:linear-gradient(135deg,#a855f7,#7c3aed); }
+.nexus-mode-switch.pro-active .nexus-mode-thumb { background:linear-gradient(135deg,#f59e0b,#ef4444); }
+
+/* Limit badge */
+.nexus-limit-badge { display:flex; align-items:center; gap:2px; font-size:10px; font-family:'Geist Mono',monospace; color:var(--t3); background:var(--sf2); border:1px solid var(--bd2); border-radius:10px; padding:2px 8px; margin-left:auto; white-space:nowrap; }
+.nexus-limit-badge span { color:var(--ac); font-weight:700; }
+.nexus-limit-badge.low span { color:var(--dg); }
+.nexus-limit-badge.low { border-color:rgba(255,69,69,.3); }
+
 .bot-suggestions { display:flex; flex-wrap:wrap; gap:6px; padding:8px 18px; border-top:1px solid var(--bd); }
 .bot-sug { padding:5px 12px; background:var(--sf2); border:1px solid var(--bd2); border-radius:100px; font-size:12px; cursor:pointer; transition:all .15s; }
 .bot-sug:hover { border-color:var(--ac); color:var(--ac); }
@@ -254,7 +276,7 @@
 .profile-page::-webkit-scrollbar-thumb { background:var(--bd2); border-radius:4px; }
 
 .pp-header { max-width:600px; margin:0 auto; padding:20px 20px 0; }
-.pp-banner { height:120px; border-radius:16px; background:linear-gradient(135deg,var(--ac)25,var(--ac)08); position:relative; margin-bottom:50px; }
+.pp-banner { height:120px; border-radius:16px; background:linear-gradient(135deg,var(--ac-d),var(--an-d)); position:relative; margin-bottom:50px; }
 .pp-avatar-wrap { position:absolute; bottom:-40px; left:20px; }
 .pp-avatar-standalone { display:flex; justify-content:center; padding:10px 0 16px; }
 .pp-avatar { width:80px; height:80px; border-radius:50%; border:4px solid var(--bg); display:flex; align-items:center; justify-content:center; font-size:28px; font-weight:700; overflow:hidden; cursor:pointer; }
@@ -265,6 +287,16 @@
 .pp-name { font-size:20px; font-weight:800; }
 .pp-edit-btn { padding:5px 14px; background:var(--sf2); border:1px solid var(--bd2); border-radius:8px; font-size:12px; font-weight:600; color:var(--tx); cursor:pointer; transition:all .15s; font-family:'Geist Mono',monospace; }
 .pp-edit-btn:hover { border-color:var(--ac); color:var(--ac); }
+.pp-action-btns { display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap; }
+.pp-follow-btn { flex:1; min-width:100px; padding:8px 16px; background:var(--ac); border:2px solid var(--ac); border-radius:10px; color:#fff; font-size:13px; font-weight:700; cursor:pointer; transition:all .2s; font-family:'Geist Mono',monospace; }
+.pp-follow-btn:hover { opacity:.85; }
+.pp-follow-btn.following { background:transparent; color:var(--ac); }
+.pp-follow-btn.following:hover { background:rgba(91,140,255,.1); }
+.pp-msg-btn { flex:1; min-width:100px; padding:8px 16px; background:var(--sf2); border:2px solid var(--bd2); border-radius:10px; color:var(--tx); font-size:13px; font-weight:600; cursor:pointer; transition:all .2s; font-family:'Geist Mono',monospace; }
+.pp-msg-btn:hover { border-color:var(--ac); color:var(--ac); }
+.pp-block-btn { padding:8px 14px; background:transparent; border:2px solid var(--bd2); border-radius:10px; color:var(--t3); font-size:12px; cursor:pointer; transition:all .2s; font-family:'Geist Mono',monospace; }
+.pp-block-btn:hover { border-color:var(--dg); color:var(--dg); }
+.pp-block-btn.blocked { border-color:rgba(255,69,69,.4); color:var(--dg); background:var(--dg-d); }
 .pp-tag { font-size:12px; color:var(--t2); margin-bottom:8px; }
 .pp-bio { font-size:13px; color:var(--t2); line-height:1.5; margin-bottom:14px; white-space:pre-wrap; }
 
@@ -340,6 +372,31 @@
 .pp-hl-nav { display:flex; gap:16px; margin-top:10px; }
 .pp-hl-nav button { padding:8px 20px; border-radius:8px; border:1px solid rgba(255,255,255,.2); background:rgba(255,255,255,.1); color:#fff; font-size:13px; cursor:pointer; }
 .pp-hl-nav button:hover { background:rgba(255,255,255,.2); }
+
+/* Profil Bilgi Paneli */
+.pp-info-btn { width:32px; height:32px; border-radius:8px; border:1px solid var(--bd2); background:var(--sf2); color:var(--tx); font-size:15px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all .15s; flex-shrink:0; }
+.pp-info-btn:hover { border-color:var(--ac); color:var(--ac); }
+.ppi-overlay { position:fixed; inset:0; background:rgba(0,0,0,.7); z-index:5300; display:none; align-items:center; justify-content:center; padding:20px; }
+.ppi-overlay.op { display:flex; }
+.ppi-box { background:var(--sf); border:1px solid var(--bd2); border-radius:16px; width:100%; max-width:440px; max-height:80vh; display:flex; flex-direction:column; animation:popIn .2s cubic-bezier(.34,1.56,.64,1) both; }
+.ppi-head { display:flex; align-items:center; justify-content:space-between; padding:16px 18px 0; font-size:14px; font-weight:700; }
+.ppi-close { background:none; border:none; font-size:18px; color:var(--t3); cursor:pointer; width:28px; height:28px; display:flex; align-items:center; justify-content:center; border-radius:50%; }
+.ppi-close:hover { background:var(--sf2); color:var(--tx); }
+.ppi-tabs { display:flex; gap:0; border-bottom:1px solid var(--bd2); margin:10px 0 0; }
+.ppi-tab { flex:1; padding:9px 12px; font-size:12px; font-weight:600; color:var(--t3); cursor:pointer; text-align:center; border-bottom:2px solid transparent; transition:all .15s; display:flex; align-items:center; justify-content:center; gap:6px; }
+.ppi-tab.on { color:var(--ac); border-bottom-color:var(--ac); }
+.ppi-badge { background:var(--sf2); color:var(--t2); font-size:10px; padding:1px 6px; border-radius:10px; font-family:'Geist Mono',monospace; }
+.ppi-list { display:flex; flex-direction:column; gap:6px; padding:12px 16px; overflow-y:auto; max-height:56vh; }
+.ppi-row { display:flex; align-items:center; gap:10px; padding:8px 10px; background:var(--sf2); border-radius:10px; }
+.ppi-name { flex:1; font-size:13px; font-weight:600; }
+.ppi-unblock-btn { padding:4px 10px; border-radius:7px; border:1px solid rgba(255,69,69,.4); background:transparent; color:var(--dg); font-size:11px; cursor:pointer; white-space:nowrap; }
+.ppi-unblock-btn:hover { background:rgba(255,69,69,.1); }
+.ppi-likes-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:3px; padding:12px 16px; overflow-y:auto; max-height:56vh; }
+.ppi-like-item { position:relative; aspect-ratio:1; overflow:hidden; border-radius:6px; cursor:pointer; }
+.ppi-like-item img { width:100%; height:100%; object-fit:cover; transition:transform .2s; }
+.ppi-like-item:hover img { transform:scale(1.05); }
+.ppi-like-owner { position:absolute; bottom:0; left:0; right:0; background:linear-gradient(transparent,rgba(0,0,0,.7)); color:#fff; font-size:10px; padding:12px 5px 4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.ppi-empty { padding:32px 20px; text-align:center; color:var(--t3); font-size:13px; }
 
 /* Empty state */
 .pp-empty { padding:40px 20px; text-align:center; color:var(--t3); }

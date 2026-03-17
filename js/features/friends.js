@@ -17,8 +17,8 @@ function rFriends() {
       const p = profiles[name] || {}; const avc = avColor(name, false);
       const inner = p.photo ? `<img src="${p.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;"/>` : name[0]?.toUpperCase() || '?';
       const d = document.createElement('div'); d.className = 'friend-item';
-      d.innerHTML = `<div class="av ${avc}" style="flex-shrink:0;overflow:hidden;">${inner}</div>
-      <div class="friend-info"><div class="friend-name">${esc(name)} ${c.banned ? '🚫' : ''}</div><div class="friend-cls">${esc(p.cls || 'Öğrenci')}</div></div>
+      d.innerHTML = `<div class="av ${avc}" style="flex-shrink:0;overflow:hidden;cursor:pointer;" onclick="showProfile('${esc(name)}',false)">${inner}</div>
+      <div class="friend-info"><div class="friend-name" style="cursor:pointer;" onclick="showProfile('${esc(name)}',false)">${esc(name)} ${c.banned ? '🚫' : ''}</div><div class="friend-cls">${esc(p.cls || 'Öğrenci')}</div></div>
       <div class="friend-actions">
         <button class="ts tb2" onclick="ondm('${esc(name)}');sw('d')">Mesaj Gönder</button>
       </div>`;
@@ -34,8 +34,8 @@ function rFriends() {
       const p = profiles[name] || {}; const avc = avColor(name, false);
       const inner = p.photo ? `<img src="${p.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;"/>` : name[0]?.toUpperCase() || '?';
       const d = document.createElement('div'); d.className = 'friend-item';
-      d.innerHTML = `<div class="av ${avc}" style="flex-shrink:0;overflow:hidden;">${inner}</div>
-      <div class="friend-info"><div class="friend-name">${esc(name)}</div><div class="friend-cls">${esc(p.cls || 'Sınıf belirtilmemiş')}</div></div>
+      d.innerHTML = `<div class="av ${avc}" style="flex-shrink:0;overflow:hidden;cursor:pointer;" onclick="showProfile('${esc(name)}',false)">${inner}</div>
+      <div class="friend-info"><div class="friend-name" style="cursor:pointer;" onclick="showProfile('${esc(name)}',false)">${esc(name)}</div><div class="friend-cls">${esc(p.cls || 'Sınıf belirtilmemiş')}</div></div>
       <div class="friend-actions">
         <button class="friend-btn msg" onclick="openDmModeModal('${esc(name)}');sw('d')">💬</button>
         <button class="friend-btn rm" onclick="removeFriend('${esc(name)}')">✕</button>
@@ -53,8 +53,8 @@ function rFriends() {
     const isFr = friends.includes(name);
     const inner = p.photo ? `<img src="${p.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;"/>` : name[0]?.toUpperCase() || '?';
     const d = document.createElement('div'); d.className = 'friend-item';
-    d.innerHTML = `<div class="av ${avc}" style="flex-shrink:0;overflow:hidden;">${inner}</div>
-    <div class="friend-info"><div class="friend-name">${esc(name)}</div><div class="friend-cls">${esc(p.cls || '')} ${p.actStatus === 'hidden' ? '⚫' : '🟢'}</div></div>
+    d.innerHTML = `<div class="av ${avc}" style="flex-shrink:0;overflow:hidden;cursor:pointer;" onclick="showProfile('${esc(name)}',false)">${inner}</div>
+    <div class="friend-info"><div class="friend-name" style="cursor:pointer;" onclick="showProfile('${esc(name)}',false)">${esc(name)}</div><div class="friend-cls">${esc(p.cls || '')} ${p.actStatus === 'hidden' ? '⚫' : '🟢'}</div></div>
     <button class="add-friend-btn${isFr ? ' added' : ''}" onclick="toggleFriend('${esc(name)}',this)">${isFr ? '✓ Arkadaş' : '+ Ekle'}</button>`;
     aEl.appendChild(d);
   });
