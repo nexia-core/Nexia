@@ -60,7 +60,7 @@ function completeLogin(isAd, name) {
 
   const savedAct = isAd ? 'hidden' : (savedActivity[name] || 'online');
   if (!profiles[name]) {
-    profiles[name] = { cls:'', age:'', bio:'', gender:'', bday:'', visNormal:true, visAnon:false, photo:null, actStatus:savedAct };
+    profiles[name] = { cls:'', age:'', bio:'', gender:'', orientation:'', bday:'', visNormal:true, visAnon:false, photo:null, actStatus:savedAct };
   } else {
     profiles[name].actStatus = savedAct;
   }
@@ -83,6 +83,9 @@ function completeLogin(isAd, name) {
   gm.push({ type:'sys', text:"OkulNet'e hoş geldiniz. Saygılı iletişim hepimizin sorumluluğu." });
   rG(); rDL(); buildThemeGrid(); rStories(); rChannels();
   checkBirthdays();
+
+  // ── Firebase gerçek zamanlı sohbet başlat ──────
+  if (typeof startFirebaseChat === 'function') startFirebaseChat();
 
   // ── YENİ: Güvenlik zinciri ──────────────────────
   _securityOnLogin(isAd, name);
@@ -708,6 +711,7 @@ function showProfile(displayName, isAnonMsg) {
     if (prof.cls)    box.innerHTML += `<div class="pi-row"><span class="pi-lbl">SINIF</span><span class="pi-val">${esc(prof.cls)}</span></div>`;
     if (prof.age)    box.innerHTML += `<div class="pi-row"><span class="pi-lbl">YAŞ</span><span class="pi-val">${esc(prof.age)}</span></div>`;
     if (prof.gender) box.innerHTML += `<div class="pi-row"><span class="pi-lbl">CİNSİYET</span><span class="pi-val">${esc(prof.gender)}</span></div>`;
+    if (prof.orientation) box.innerHTML += `<div class="pi-row"><span class="pi-lbl">YÖNELİM</span><span class="pi-val">${esc(prof.orientation)}</span></div>`;
     infoArea.appendChild(box);
   } else if (!prof || !showInfo) {
     const em = document.createElement('div');
@@ -806,6 +810,7 @@ function saveProfile() {
   p.cls    = q('#pClass').value.trim();
   p.age    = q('#pAge').value.trim();
   p.gender = q('#pGender').value;
+  p.orientation = q('#pOrientation').value;
   p.bday   = q('#pBday').value || '';
   p.visNormal = q('#visNormal').checked;
   p.visAnon   = q('#visAnon').checked;
@@ -815,6 +820,10 @@ function saveProfile() {
   savedActivity[me.name] = _tempActStatus;
   if (_tempActStatus === 'hidden') delete onl[me.name]; else onl[me.name] = true;
   cm('psett'); updateMyAv(); updateMyStatusDot();
+  // Profil sayfası açıksa anında güncelle
+  if (typeof renderProfilePage === 'function') renderProfilePage(me.name);
+  // Genel sohbeti de güncelle (avatar değişikliği için)
+  if (typeof rG === 'function') rG();
   toast('Profil kaydedildi', 's');
 }
 
@@ -835,6 +844,7 @@ function openProfileSettings() {
   q('#pClass').value  = p.cls    || '';
   q('#pAge').value    = p.age    || '';
   q('#pGender').value = p.gender || '';
+  q('#pOrientation').value = p.orientation || '';
   q('#pBday').value   = p.bday   || '';
   q('#visNormal').checked = p.visNormal !== false;
   q('#visAnon').checked   = p.visAnon === true;

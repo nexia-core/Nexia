@@ -20,7 +20,7 @@ function openProfileCard(name) {
   q('#procardAv').className = 'procard-avatar ' + avc;
   q('#procardAv').innerHTML = inner;
   q('#procardName').textContent = target;
-  q('#procardTag').textContent = (p.cls ? p.cls + ' · ' : '') + (p.gender || '');
+  q('#procardTag').textContent = (p.cls ? p.cls + ' · ' : '') + (p.gender || '') + (p.orientation ? ' · ' + p.orientation : '');
   q('#procardBio').textContent = p.bio || 'Biyografi yok.';
   q('#procardStats').innerHTML = `
     <div class="procard-stat"><div class="procard-stat-val">${msgCount}</div><div class="procard-stat-lbl">Mesaj</div></div>
@@ -92,18 +92,18 @@ function renderProfilePage(name) {
   var tagParts = [];
   if (p.cls) tagParts.push(esc(p.cls));
   if (p.gender) tagParts.push(esc(p.gender));
+  if (p.orientation) tagParts.push(esc(p.orientation));
   if (p.age) tagParts.push(esc(p.age) + ' yaş');
   if (p.actStatus === 'hidden') tagParts.push('Gizli');
   else tagParts.push('<span style="color:var(--gn)">Aktif</span>');
 
   var html = '';
 
-  // Banner + Avatar
+  // Avatar (banner kaldırıldı)
   html += '<div class="pp-header">';
-  html += '<div class="pp-banner" style="background:linear-gradient(135deg,' + accent + '25,' + accent + '08);">';
-  html += '<div class="pp-avatar-wrap">';
+  html += '<div class="pp-avatar-standalone">';
   html += '<div class="pp-avatar ' + avc + '">' + avInner + '</div>';
-  html += '</div></div></div>';
+  html += '</div></div>';
 
   // Info
   html += '<div class="pp-info">';

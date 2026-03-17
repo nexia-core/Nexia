@@ -154,6 +154,17 @@
         <option value="Diğer">Diğer</option>
       </select>
     </div>
+    <div class="sett-row">
+      <div class="sett-lbl">Yönelim</div>
+      <select class="sett-sel" id="pOrientation">
+        <option value="">Belirtmek istemiyorum</option>
+        <option value="Heteroseksüel">Heteroseksüel</option>
+        <option value="Homoseksüel">Homoseksüel</option>
+        <option value="Biseksüel">Biseksüel</option>
+        <option value="Aseksüel">Aseksüel</option>
+        <option value="Diğer">Diğer</option>
+      </select>
+    </div>
     <div style="margin-bottom:10px;font-size:11px;color:var(--t2);font-family:'Geist Mono',monospace;">— Aktiflik —</div>
     <div class="activity-sel-row">
       <div><div class="vis-label">Aktiflik durumu</div></div>
@@ -641,19 +652,22 @@
   </div>
 </div>
 
+<!-- ── FIREBASE MODULE ── -->
+<script type="module" src="js/core/firebase.js?v=2"></script>
+
 <!-- ── CORE JS ── -->
 <script src="js/core/state.js?v=2"></script>
 <script src="js/core/utils.js"></script>
-<script src="js/core/auth.js?v=2"></script>
+<script src="js/core/auth.js?v=4"></script>
 
 <!-- ── FEATURES JS ── -->
-<script src="js/features/chat.js"></script>
+<script src="js/features/chat.js?v=2"></script>
 <script src="js/features/dm.js"></script>
 <script src="js/features/stories.js"></script>
 <script src="js/features/bot.js"></script>
 <script src="js/features/friends.js"></script>
 <script src="js/features/channels.js"></script>
-<script src="js/features/profile.js?v=2"></script>
+<script src="js/features/profile.js?v=3"></script>
 <script src="js/admin/jarvis.js?v=7b"></script>
 
 <!-- ── ADMIN JS ── -->

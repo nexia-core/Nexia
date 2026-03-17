@@ -70,6 +70,8 @@ function sg() {
   gm.push(m);
   mld.push({ who: m.name, real: me.name, isAnon, text: txt, time: new Date() });
   clearGReply(); inp.value = ''; inp.style.height = '42px'; rG(); sbot('gMsgs');
+  // Firebase'e gönder (gerçek zamanlı senkronizasyon)
+  if (typeof sendToFirestore === 'function') sendToFirestore(m);
 }
 
 // Global medya
