@@ -8,7 +8,8 @@ const BAD = ["uyuşturucu","tehdit","saldır","öldür","kumar","hakaret","şidd
 const EMOJIS = ['👍','❤️','😂','😮','😢','🔥'];
 
 const THEMES = [
-  { id:'dark',    name:'Gece',        bg:'#08080e', ac:'#5b8cff', dots:['#5b8cff','#a855f7','#22c55e'] },
+  { id:'dark',    name:'Gece',        bg:'#08080e', ac:'#F97316', dots:['#F97316','#a855f7','#22c55e'] },
+  { id:'light',   name:'Açık',        bg:'#f5f5f7', ac:'#F97316', dots:['#F97316','#6b7280','#16a34a'] },
   { id:'forest',  name:'Orman',       bg:'#060e08', ac:'#34d47a', dots:['#34d47a','#22c55e','#86efac'] },
   { id:'sunset',  name:'Gün Batımı',  bg:'#100808', ac:'#ff6b6b', dots:['#ff6b6b','#ff8c42','#ffd6d6'] },
   { id:'ocean',   name:'Okyanus',     bg:'#060c14', ac:'#00c8ff', dots:['#00c8ff','#3b82f6','#67e8f9'] },

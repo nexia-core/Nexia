@@ -144,7 +144,7 @@ function rG() {
     }
 
     const reactHTML = (!m.recalled && !m.editing) ? buildReactions(m, 'global', null) : '';
-    const d = document.createElement('div'); d.className = 'msg'; d.dataset.msgId = m.id; d.id = 'msg-' + m.id;
+    const d = document.createElement('div'); d.className = 'msg ' + (isMe ? 'msg-out' : 'msg-in'); d.dataset.msgId = m.id; d.id = 'msg-' + m.id;
     d.innerHTML = `<div class="msg-av ${avc}" onclick="showProfile('${esc(m.name)}',${m.isAnon})">${init}</div>
     <div class="mb"><div class="mh"><span class="mn ${nc}" onclick="showProfile('${esc(m.name)}',${m.isAnon})">${esc(m.name)}</span>${rev}<span class="mt">${ft(m.time)}</span></div>${textContent}${reactHTML}</div>
     ${!m.recalled && !m.editing ? `<div class="msg-actions"><button class="mac" title="Tepki ver" onclick="showEmojiPicker(this.closest('.msg-actions'),${m.id},'global',null)">😊</button><button class="mac" title="Yanıtla" onclick="setGReply(gm.find(x=>x.id===${m.id}))">↩</button>${isMe || me.isAdmin ? `<button class="mac" title="Daha fazla" onclick="showCtx(event,${m.id},null,'global')">⋯</button>` : ''}${me.isAdmin && isMuted(m.realName) ? `<button class="mac" style="color:var(--gn)" title="Sesi aç" onclick="unmuteUser('${esc(m.realName)}')">🔇</button>` : ''}</div>` : ''}`;
@@ -316,7 +316,7 @@ function votePoll(pollId, optIdx) {
 
 function buildPollEl(m) {
   const poll = polls.find(p => p.id === m.pollId);
-  const wrap = document.createElement('div'); wrap.className = 'msg'; wrap.style.alignItems = 'flex-start';
+  const wrap = document.createElement('div'); wrap.className = 'msg msg-in'; wrap.style.alignItems = 'flex-start';
   if (!poll) { wrap.innerHTML = '<div style="color:var(--t3);font-size:12px;">Anket bulunamadı.</div>'; return wrap; }
   const total = poll.options.reduce((s, o) => s + o.voters.length, 0);
   const myVote = poll.options.findIndex(o => o.voters.includes(me.name));

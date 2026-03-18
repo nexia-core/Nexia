@@ -15,7 +15,7 @@ function openProfileCard(name) {
     ? `<img src="${p.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;"/>`
     : target[0]?.toUpperCase() || '?';
 
-  const accent = getComputedStyle(document.documentElement).getPropertyValue('--ac').trim() || '#5b8cff';
+  const accent = getComputedStyle(document.documentElement).getPropertyValue('--ac').trim() || '#F97316';
   q('#procardBanner').style.background = `linear-gradient(135deg,${accent}30,${accent}10)`;
   q('#procardAv').className = 'procard-avatar ' + avc;
   q('#procardAv').innerHTML = inner;
@@ -73,7 +73,7 @@ function renderProfilePage(name) {
   var p = profiles[target] || {};
   var avc = avColor(target, false);
   var isMe = me && target === me.name;
-  var accent = getComputedStyle(document.documentElement).getPropertyValue('--ac').trim() || '#5b8cff';
+  var accent = getComputedStyle(document.documentElement).getPropertyValue('--ac').trim() || '#F97316';
 
   // İstatistikler
   var posts = (userPosts[target] || []);
@@ -101,6 +101,7 @@ function renderProfilePage(name) {
 
   // Avatar (banner kaldırıldı)
   html += '<div class="pp-header">';
+  html += '<button class="pp-back-btn" onclick="sw(\'g\')" title="Geri"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>';
   html += '<div class="pp-avatar-standalone">';
   html += '<div class="pp-avatar ' + avc + '">' + avInner + '</div>';
   html += '</div></div>';
@@ -110,10 +111,7 @@ function renderProfilePage(name) {
   html += '<div class="pp-top-row">';
   html += '<div class="pp-name">' + esc(target) + '</div>';
   if (isMe) {
-    html += '<div style="display:flex;gap:8px;align-items:center;">';
     html += '<button class="pp-edit-btn" onclick="openProfileSettings()">Profili Düzenle</button>';
-    html += '<button class="pp-info-btn" onclick="openProfileInfoPanel()" title="Engellenenler & Beğeniler">☰</button>';
-    html += '</div>';
   }
   html += '</div>';
 

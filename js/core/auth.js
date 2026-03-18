@@ -104,6 +104,7 @@ function completeLogin(isAd, name) {
 
   if (isAd) {
     q('#ta').style.display = '';
+    q('#tfr').style.display = '';
     q('#myAv').className = 'av avo';
     q('#tw').style.display = 'none';
   }
@@ -677,7 +678,7 @@ function demo() {
 // ══════════════════════════════════════════════════
 
 function sw(t) {
-  ['g','d','ch','bot','pr','fr','w','a'].forEach(x => {
+  ['g','d','ch','bot','pr','fr','w','a','settings'].forEach(x => {
     const p = document.getElementById('p' + x);
     const b = document.getElementById('t' + x);
     if (p) p.classList.toggle('on', x === t);
@@ -690,6 +691,21 @@ function sw(t) {
   if (t === 'fr')     rFriends();
   if (t === 'ch')     rChannels();
   if (t === 'pr')     renderProfilePage();
+  if (t === 'settings') {
+    const main = document.getElementById('settingsMainView');
+    const help = document.getElementById('settingsHelpView');
+    const privacy = document.getElementById('settingsPrivacyView');
+    if (main) main.style.display = '';
+    if (help) help.style.display = 'none';
+    if (privacy) privacy.style.display = 'none';
+  }
+}
+
+function openSettingsBlockedUsers() {
+  const el = q('#settingsBlockedContent');
+  if (!el) return;
+  renderBlockedList('settingsBlockedContent');
+  om('settingsBlockedModal');
 }
 
 // ══════════════════════════════════════════════════
@@ -874,7 +890,7 @@ document.getElementById('psett').addEventListener('click', function(e) {
 
 function openMyProfile() {
   if (!me) return;
-  if (me.isAdmin) { openProfileSettings(); return; }
+  _ppTab = 'posts';
   sw('pr');
 }
 
@@ -902,7 +918,6 @@ function openProfileSettings() {
     q('#removePhotoBtn').style.display = 'none';
   }
   q('#myPhotoPreview').dataset.tempPhoto = p.photo || '';
-  buildThemeGrid();
   om('psett');
 }
 

@@ -4,7 +4,7 @@
 // ══════════════════════════════════════════════════
 
 // ─── API Ayarları ────────────────────────────────────────────────
-var JARVIS_API_KEY = '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';
+var JARVIS_API_KEY = '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';
 var JARVIS_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 var JARVIS_MODEL = 'llama-3.3-70b-versatile';
 

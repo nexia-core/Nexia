@@ -2,19 +2,29 @@
 // js/features/channels.js
 // ══════════════════════════════════════════════════
 
+const _chPalette = ['#F97316','#a855f7','#22c55e','#00c8ff','#ff6b6b','#ffaa00','#34d47a','#c084fc'];
+function _chColor(idx) { return _chPalette[idx % _chPalette.length]; }
+
 function rChannels() {
   const el = q('#channelList'); if (!el) return; el.innerHTML = '';
-  channels.forEach(ch => {
+  channels.forEach((ch, idx) => {
     const isMember = ch.members.includes(me?.name || '') || me?.isAdmin;
     const isActive = activeChannel?.id === ch.id;
-    const d = document.createElement('div'); d.className = 'channel-item' + (isActive ? ' on' : '');
-    d.innerHTML = `<span class="ch-hash">${ch.emoji || '#'}</span><span class="ch-name">${esc(ch.name)}</span>
-    <span class="ch-badge">${ch.members.length}</span>
-    ${(!isMember && !me?.isAdmin) ? `<button class="ch-join-btn" onclick="joinChannel('${ch.id}',event)">Katıl</button>` : ''}`;
-    d.onclick = (e) => {
-      if (e.target.classList.contains('ch-join-btn')) return;
-      if (!isMember && !me?.isAdmin) { toast('Önce odaya katılman gerekiyor', 'w'); return; }
-      openChannel(ch.id);
+    const lastMsg = ch.msgs.filter(m => !m.isSys).slice(-1)[0];
+    const subtitle = lastMsg
+      ? `${esc(lastMsg.from)}: ${esc(lastMsg.text.substring(0, 45))}`
+      : (ch.desc || 'Henüz mesaj yok');
+    const d = document.createElement('div');
+    d.className = 'channel-item' + (isActive ? ' on' : '');
+    d.innerHTML = `
+      <div class="ch-av" style="background:${_chColor(idx)}">${ch.emoji || ch.name[0]?.toUpperCase() || '#'}</div>
+      <div class="ch-body">
+        <div class="ch-item-name">${esc(ch.name)}</div>
+        <div class="ch-item-sub">${subtitle}</div>
+      </div>
+      <span class="ch-badge">${ch.members.length}</span>`;
+    d.onclick = () => {
+      if (!isMember && !me?.isAdmin) { joinChannel(ch.id, null); } else { openChannel(ch.id); }
     };
     el.appendChild(d);
   });

@@ -91,6 +91,14 @@ function isMuted(name) {
 function applyTheme(id) {
   currentTheme = id;
   document.documentElement.setAttribute('data-theme', id === 'dark' ? '' : id);
+  const btn = document.getElementById('themeToggleBtn');
+  if (btn) btn.textContent = id === 'light' ? '🌙' : '☀️';
+}
+
+function toggleLightDark() {
+  const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+  applyTheme(newTheme);
+  buildThemeGrid();
 }
 
 function buildThemeGrid() {

@@ -1,15 +1,21 @@
 /* ─── APP ─── */
-#app { display:none; height:100vh; flex-direction:column; }
-.tb { display:flex; align-items:center; height:52px; padding:0 14px; gap:8px; background:var(--sf); border-bottom:1px solid var(--bd); flex-shrink:0; }
-.tb-logo { font-family:'Geist Mono',monospace; font-size:13px; font-weight:600; color:var(--ac); flex-shrink:0; display:flex; align-items:center; gap:7px; }
+#app { display:none; height:100vh; flex-direction:row; }
+
+/* ─── LEFT SIDEBAR ─── */
+.tb { display:flex; flex-direction:column; width:260px; height:100%; background:var(--sf); border-right:1px solid var(--bd); flex-shrink:0; position:relative; z-index:2; overflow:hidden; }
+.tb-logo { font-family:'Geist Mono',monospace; font-size:13px; font-weight:600; color:var(--ac); flex-shrink:0; display:flex; align-items:center; gap:8px; padding:0 16px; height:60px; border-bottom:1px solid var(--bd); }
+.tb-logo-img { width:24px; height:24px; object-fit:contain; }
 .tb-logo-dot { width:7px; height:7px; border-radius:50%; background:var(--ac); box-shadow:0 0 8px var(--ac); }
-.tabs { display:flex; gap:2px; background:var(--sf2); border-radius:8px; padding:3px; }
-.tbtn { padding:5px 12px; border-radius:6px; font-size:12px; font-weight:500; cursor:pointer; border:none; background:transparent; color:var(--t2); transition:all .15s; white-space:nowrap; position:relative; }
-.tbtn.on { background:var(--sf); color:var(--tx); }
-.nd { position:absolute; top:4px; right:3px; width:6px; height:6px; background:var(--dg); border-radius:50%; }
-.tb-r { display:flex; align-items:center; gap:7px; margin-left:auto; }
-.apill { display:flex; align-items:center; gap:6px; background:var(--sf2); border:1px solid var(--bd2); border-radius:100px; padding:4px 11px 4px 7px; cursor:pointer; font-size:12px; font-weight:500; user-select:none; transition:all .2s; }
-.apill.on { background:var(--an-d); border-color:var(--an); color:var(--an); }
+.tabs { display:flex; flex-direction:column; gap:3px; background:transparent; border-radius:0; padding:10px 8px; flex:1; overflow-y:auto; }
+.tabs::-webkit-scrollbar { width:3px; }
+.tabs::-webkit-scrollbar-thumb { background:var(--bd2); }
+.tbtn { padding:13px 16px; border-radius:12px; font-size:14px; font-weight:500; cursor:pointer; border:none; background:transparent; color:var(--t2); transition:all .15s; white-space:nowrap; position:relative; text-align:left; width:100%; }
+.tbtn.on { background:var(--ac-d); color:var(--ac); font-weight:600; }
+.tbtn:not(.on):hover { background:var(--sf2); color:var(--tx); }
+.nd { position:absolute; top:8px; right:10px; width:7px; height:7px; background:var(--dg); border-radius:50%; border:2px solid var(--sf); }
+.tb-r { display:flex; align-items:center; gap:8px; flex-shrink:0; padding:12px 14px; border-top:1px solid var(--bd); background:var(--sf2); flex-wrap:wrap; }
+.apill { display:flex; align-items:center; gap:6px; background:var(--sf3); border:none; border-radius:100px; padding:4px 11px 4px 7px; cursor:pointer; font-size:12px; font-weight:500; user-select:none; transition:all .2s; }
+.apill.on { background:var(--an-d); color:var(--an); }
 .adot { width:7px; height:7px; border-radius:50%; background:var(--t3); transition:background .2s; }
 .apill.on .adot { background:var(--an); }
 .av { width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; flex-shrink:0; cursor:pointer; overflow:hidden; }
@@ -23,29 +29,48 @@
 .status-dot.online { background:var(--gn); }
 .status-dot.hidden { background:var(--t3); }
 .av-wrap { position:relative; display:inline-flex; cursor:pointer; }
-.content { display:flex; flex:1; overflow:hidden; }
+.content { display:flex; flex:1; overflow:hidden; min-width:0; }
 .panel { display:none; flex:1; flex-direction:column; overflow:hidden; }
 .panel.on { display:flex; }
 
+/* ─── MOBİL BAŞLIK (sadece mobilde görünür) ─── */
+#mobHeader { display:none; align-items:center; gap:10px; padding:10px 14px; background:var(--sf); border-bottom:1px solid var(--bd); flex-shrink:0; }
+.mob-back-btn { display:flex; align-items:center; gap:5px; background:transparent; border:none; color:var(--ac); font-size:14px; font-weight:600; cursor:pointer; padding:4px 8px 4px 0; font-family:'Instrument Sans',sans-serif; }
+#mobTitle { font-size:15px; font-weight:700; color:var(--tx); }
+
 /* ─── NOTIFICATION BELL ─── */
-.notif-btn { position:relative; width:32px; height:32px; border-radius:8px; border:1px solid var(--bd2); background:var(--sf2); color:var(--t2); cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:15px; transition:all .15s; }
-.notif-btn:hover { border-color:var(--ac); color:var(--ac); }
+.notif-btn { position:relative; width:32px; height:32px; border-radius:8px; border:none; background:var(--sf2); color:var(--t2); cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:15px; transition:all .15s; }
+.notif-btn:hover { background:var(--sf3); color:var(--ac); }
 .notif-badge { position:absolute; top:-4px; right:-4px; min-width:16px; height:16px; background:var(--dg); border-radius:8px; font-size:9px; font-weight:700; color:#fff; display:flex; align-items:center; justify-content:center; padding:0 3px; font-family:'Geist Mono',monospace; border:2px solid var(--bg); animation:badgePop .3s cubic-bezier(.34,1.56,.64,1); }
 @keyframes badgePop { from{transform:scale(0)} to{transform:scale(1)} }
-.notif-panel { position:fixed; top:56px; right:14px; width:100%; max-width:300px; background:var(--sf); border:1px solid var(--bd2); border-radius:14px; z-index:7000; display:none; animation:popIn .2s cubic-bezier(.34,1.56,.64,1) both; box-shadow:0 12px 40px rgba(0,0,0,.5); }
+.notif-panel { position:fixed; top:56px; right:14px; width:100%; max-width:300px; background:var(--sf); border-radius:14px; z-index:7000; display:none; animation:popIn .2s cubic-bezier(.34,1.56,.64,1) both; box-shadow:0 12px 40px rgba(0,0,0,.55),0 0 0 1px rgba(255,255,255,.04); }
 .notif-panel.op { display:block; }
-.notif-head { padding:12px 15px; border-bottom:1px solid var(--bd); display:flex; align-items:center; justify-content:space-between; }
+.notif-head { padding:12px 15px; display:flex; align-items:center; justify-content:space-between; background:var(--sf2); border-radius:14px 14px 0 0; }
 .notif-head h4 { font-size:13px; font-weight:700; }
 .notif-clr { font-size:11px; color:var(--ac); cursor:pointer; font-family:'Geist Mono',monospace; }
 .notif-clr:hover { text-decoration:underline; }
 .notif-list { max-height:300px; overflow-y:auto; }
 .notif-list::-webkit-scrollbar { width:3px; }
 .notif-list::-webkit-scrollbar-thumb { background:var(--bd2); }
-.notif-item { padding:10px 15px; border-bottom:1px solid var(--bd); display:flex; gap:9px; align-items:flex-start; cursor:pointer; transition:background .1s; }
-.notif-item:last-child { border-bottom:none; }
+.notif-item { padding:10px 15px; display:flex; gap:9px; align-items:flex-start; cursor:pointer; transition:background .1s; }
 .notif-item:hover { background:var(--sf2); }
 
 @media (max-width: 768px) {
   body { overflow-x: hidden; font-size: 13px; }
   .notif-panel { right: 10px; left: 10px; width: auto; max-width: 100%; }
+
+  /* ─── MOBİL WHATSAPP DÜZENİ ─── */
+  #app { flex-direction:column; }
+
+  /* Sidebar: mobilde tam ekran liste */
+  .tb { width:100%; height:100%; border-right:none; flex-shrink:0; }
+  .tabs { padding:8px; }
+  .tbtn { padding:15px 16px; font-size:15px; }
+  .tb-r { flex-wrap:nowrap; }
+
+  /* Sohbet alanı: sadece mob-chat-open olduğunda görünür */
+  .content { display:none; }
+  #app.mob-chat-open .tb { display:none; }
+  #app.mob-chat-open .content { display:flex; flex-direction:column; flex:1; }
+  #app.mob-chat-open #mobHeader { display:flex; }
 }
