@@ -103,6 +103,7 @@ function toggleLightDark() {
 
 function buildThemeGrid() {
   const grid = q('#themeGrid');
+  if (!grid) return;
   grid.innerHTML = '';
   THEMES.forEach(t => {
     const sw = document.createElement('div');

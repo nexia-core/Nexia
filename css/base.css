@@ -2,6 +2,10 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* ─── SCROLLBAR GİZLE ─── */
+* { scrollbar-width: none; }
+*::-webkit-scrollbar { display: none; }
+
 /* ═══ THEME VARIABLES ═══ */
 :root {
   --bg: #08080e;

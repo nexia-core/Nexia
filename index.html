@@ -13,10 +13,10 @@
   <meta name="apple-mobile-web-app-title" content="OkulNet"/>
 
   <!-- ── CSS ── -->
-  <link rel="stylesheet" href="css/base.css?v=6"/>
-  <link rel="stylesheet" href="css/layout.css?v=6"/>
-  <link rel="stylesheet" href="css/components.css?v=6"/>
-  <link rel="stylesheet" href="css/features.css?v=7"/>
+  <link rel="stylesheet" href="css/base.css?v=7"/>
+  <link rel="stylesheet" href="css/layout.css?v=7"/>
+  <link rel="stylesheet" href="css/components.css?v=7"/>
+  <link rel="stylesheet" href="css/features.css?v=20"/>
   <style>
     .jarvis-msg { margin-bottom: 12px; word-wrap: break-word; overflow-wrap: break-word; white-space: pre-wrap; word-break: break-word; }
     .jarvis-msg.user { color: #fff; opacity: 0.7; }
@@ -140,6 +140,32 @@
     .theme-option.active .theme-option-check { background:var(--ac); border-color:var(--ac); }
     .theme-option-check svg { display:none; }
     .theme-option.active .theme-option-check svg { display:block; }
+
+    /* ── YAZI TİPİ MODAL ── */
+    .font-modal-overlay { position:fixed; inset:0; z-index:9500; background:rgba(0,0,0,.6); backdrop-filter:blur(6px); display:none; align-items:center; justify-content:center; }
+    .font-modal-overlay.op { display:flex; }
+    .font-modal-box { background:var(--sf); border:1px solid var(--bd2); border-radius:18px; width:100%; max-width:400px; margin:0 16px; animation:popIn .25s cubic-bezier(.34,1.56,.64,1) both; overflow:hidden; box-shadow:0 24px 60px rgba(0,0,0,.6); }
+    .font-modal-head { display:flex; align-items:center; justify-content:space-between; padding:18px 20px 14px; border-bottom:1px solid var(--bd); }
+    .font-modal-title { font-size:15px; font-weight:700; color:var(--tx); }
+    .font-modal-close { width:28px; height:28px; border-radius:7px; border:1px solid var(--bd2); background:transparent; color:var(--t2); cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:14px; transition:all .15s; }
+    .font-modal-close:hover { background:var(--sf2); color:var(--tx); }
+    .font-modal-body { padding:16px 20px 20px; display:flex; flex-direction:column; gap:18px; }
+    .font-preview-area { background:var(--bg); border-radius:12px; padding:14px 16px; display:flex; justify-content:flex-end; }
+    .font-preview-bubble { background:var(--ac-d); border:1px solid rgba(249,115,22,.2); color:var(--tx); border-radius:16px 16px 4px 16px; padding:10px 14px; font-size:14px; max-width:80%; line-height:1.55; }
+    .font-section-lbl { font-size:11px; font-family:'Geist Mono',monospace; letter-spacing:1.2px; text-transform:uppercase; color:var(--t3); margin-bottom:8px; }
+    .font-size-btns { display:flex; gap:8px; }
+    .font-size-btn { flex:1; padding:10px 8px; border-radius:10px; border:2px solid var(--bd2); background:var(--sf2); color:var(--t2); font-size:13px; font-weight:500; cursor:pointer; transition:all .18s; font-family:'Instrument Sans',sans-serif; text-align:center; }
+    .font-size-btn:hover { background:var(--sf3); color:var(--tx); border-color:var(--bd); }
+    .font-size-btn.active { border-color:var(--ac); background:var(--ac-d); color:var(--ac); font-weight:700; }
+    .font-family-sel { width:100%; background:var(--sf2); border:1px solid var(--bd2); border-radius:10px; padding:12px 36px 12px 14px; color:var(--tx); font-size:14px; font-family:'Instrument Sans',sans-serif; outline:none; cursor:pointer; transition:border-color .2s; appearance:none; -webkit-appearance:none; }
+    .font-family-sel:focus { border-color:var(--ac); box-shadow:0 0 0 3px var(--ac-d); }
+    .font-sel-wrap { position:relative; }
+    .font-sel-arrow { position:absolute; right:12px; top:50%; transform:translateY(-50%); pointer-events:none; color:var(--t2); font-size:12px; }
+    .font-modal-footer { display:flex; justify-content:flex-end; gap:8px; padding-top:4px; border-top:1px solid var(--bd); padding-top:16px; }
+    .font-btn-cancel { padding:10px 20px; border-radius:10px; border:1px solid var(--bd2); background:transparent; color:var(--t2); font-size:13px; font-weight:500; cursor:pointer; transition:all .15s; font-family:'Instrument Sans',sans-serif; }
+    .font-btn-cancel:hover { background:var(--sf2); color:var(--tx); }
+    .font-btn-save { padding:10px 24px; border-radius:10px; border:none; background:var(--ac); color:#fff; font-size:13px; font-weight:600; cursor:pointer; transition:all .2s; font-family:'Instrument Sans',sans-serif; }
+    .font-btn-save:hover { opacity:.88; transform:translateY(-1px); box-shadow:0 6px 20px rgba(249,115,22,.3); }
   </style>
 </head>
 <body>
@@ -509,6 +535,41 @@
   </div>
 </div>
 
+<!-- YAZI TİPİ MODAL -->
+<div class="font-modal-overlay" id="fontModalOverlay" onclick="if(event.target===this)closeFontModal()">
+  <div class="font-modal-box">
+    <div class="font-modal-head">
+      <span class="font-modal-title">Yazı Ayarları</span>
+      <button class="font-modal-close" onclick="closeFontModal()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="font-modal-body">
+      <!-- Önizleme -->
+      <div>
+        <div class="font-section-lbl">Önizleme</div>
+        <div class="font-preview-area">
+          <div class="font-preview-bubble" id="fontPreviewBubble">Örnek mesaj görünümü bu şekildedir.</div>
+        </div>
+      </div>
+      <!-- Boyut -->
+      <div>
+        <div class="font-section-lbl">Boyut</div>
+        <div class="font-size-btns">
+          <button class="font-size-btn" id="fontSizeSmall" onclick="selectFontSize('small',this)">Küçük</button>
+          <button class="font-size-btn active" id="fontSizeMedium" onclick="selectFontSize('medium',this)">Orta</button>
+          <button class="font-size-btn" id="fontSizeLarge" onclick="selectFontSize('large',this)">Büyük</button>
+        </div>
+      </div>
+      <!-- Butonlar -->
+      <div class="font-modal-footer">
+        <button class="font-btn-cancel" onclick="closeFontModal()">İptal</button>
+        <button class="font-btn-save" onclick="saveFontSettings()">Kaydet</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- MESAJ GÖNDERENLERİ MODAL -->
 <div class="radio-modal-overlay" id="msgSendersModal" onclick="if(event.target===this)closeMsgSendersModal()">
   <div class="radio-modal-box">
@@ -599,11 +660,11 @@
         <div class="av avb" id="myAv">?</div>
         <div class="status-dot online" id="myStatusDot"></div>
       </div>
-      <span class="uname" id="myNm">—</span>
       <button class="settings-gear-btn" id="settingsBtn" onclick="sw('settings')" title="Ayarlar">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
       </button>
     </div>
+
   </div>
 
   <div class="content">
@@ -649,7 +710,19 @@
     <div class="panel" id="pd">
       <div class="dml">
         <div class="dmsb">
-          <div class="dmsb-h"><h3>Sohbetler</h3><button class="pbtn" title="Yeni DM" onclick="ondm(null)">+</button><button class="pbtn" title="Grup oluştur" onclick="openGrpModal()" style="font-size:13px;">👥</button></div>
+          <div class="dmsb-h">
+          <h3>Sohbetler</h3>
+          <div class="dm-actions">
+            <button class="dm-action-btn" onclick="openGrpModal()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              Grup Kur
+            </button>
+            <button class="dm-action-btn" onclick="ondm(null)">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+              Sohbet İsteği
+            </button>
+          </div>
+        </div>
           <div class="dmlst" id="dmList"></div>
         </div>
         <div class="dconv" id="dconv"><div class="empty"><div class="eico">💬</div><div>Sohbet seç</div></div></div>
@@ -728,6 +801,18 @@
       <div class="pp-modal-card" id="ppViewCard"></div>
     </div>
 
+    <!-- Yorumlar Alt Paneli -->
+    <div class="cmt-backdrop" id="cmtBackdrop" onclick="closeCommentsSheet()"></div>
+    <div class="cmt-sheet" id="cmtSheet">
+      <div class="cmt-sheet-handle"></div>
+      <div class="cmt-sheet-header">
+        <span>Yorumlar</span>
+        <button onclick="closeCommentsSheet()">✕</button>
+      </div>
+      <div class="cmt-sheet-list" id="cmtList"></div>
+      <div class="cmt-sheet-bar" id="cmtInputBar"></div>
+    </div>
+
     <!-- Öne Çıkan Ekleme Modalı -->
     <div class="pp-hl-modal" id="ppHlAddModal" onclick="if(event.target===this)closeHlModal()">
       <div class="pp-add-box">
@@ -781,13 +866,6 @@
 
       <!-- ── ANA AYARLAR GÖRÜNÜMÜ ── -->
       <div class="settings-page" id="settingsMainView">
-        <div class="settings-top-bar">
-          <button class="settings-back-btn" onclick="sw('pr')">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-            Geri
-          </button>
-          <span class="settings-page-title">Ayarlar</span>
-        </div>
 
         <div class="settings-menu">
           <div class="settings-section">Görünüm</div>
@@ -806,6 +884,15 @@
             <div class="si-body">
               <span class="si-label">Varsayılan Sohbet Teması</span>
               <span class="si-sub">Sohbet arka plan rengini ve desenini değiştir</span>
+            </div>
+            <span class="si-arrow">›</span>
+          </div>
+
+          <div class="settings-item" onclick="openFontModal()">
+            <div class="si-icon-wrap" style="font-family:'Geist Mono',monospace;font-size:13px;font-weight:700;color:var(--t2);">Aa</div>
+            <div class="si-body">
+              <span class="si-label">Yazı Tipi</span>
+              <span class="si-sub">Sohbet yazı boyutunu ve fontunu ayarla</span>
             </div>
             <span class="si-arrow">›</span>
           </div>
@@ -947,25 +1034,6 @@
             </label>
           </div>
 
-          <div class="privacy-section-lbl">Mesajlar</div>
-
-          <div class="privacy-item tappable" onclick="openMsgSendersModal()">
-            <div class="privacy-item-body">
-              <div class="privacy-item-title">Bana kimler mesaj gönderebilir?</div>
-            </div>
-            <span class="privacy-item-value" id="msgSendersValue">Herkes</span>
-            <span class="privacy-item-arrow">›</span>
-          </div>
-
-          <div class="privacy-divider"></div>
-
-          <div class="privacy-item tappable" onclick="openGroupAddModal()">
-            <div class="privacy-item-body">
-              <div class="privacy-item-title">Gruplara Ekleme</div>
-            </div>
-            <span class="privacy-item-value" id="groupAddValue">Sadece Kişilerim</span>
-            <span class="privacy-item-arrow">›</span>
-          </div>
 
         </div>
       </div><!-- /settingsPrivacyView -->
@@ -1217,17 +1285,17 @@
 
 <!-- ── CORE JS ── -->
 <script src="js/core/state.js?v=2"></script>
-<script src="js/core/utils.js?v=2"></script>
-<script src="js/core/auth.js?v=8"></script>
+<script src="js/core/utils.js?v=3"></script>
+<script src="js/core/auth.js?v=9"></script>
 
 <!-- ── FEATURES JS ── -->
 <script src="js/features/chat.js?v=3"></script>
-<script src="js/features/dm.js"></script>
+<script src="js/features/dm.js?v=2"></script>
 <script src="js/features/stories.js"></script>
 <script src="js/features/bot.js?v=3"></script>
 <script src="js/features/friends.js"></script>
 <script src="js/features/channels.js?v=2"></script>
-<script src="js/features/profile.js?v=5"></script>
+<script src="js/features/profile.js?v=16"></script>
 <script src="js/admin/jarvis.js?v=9"></script>
 
 <!-- ── ADMIN JS ── -->
@@ -1249,7 +1317,12 @@
   };
 })();
 function mobBack() {
-  document.getElementById('app').classList.remove('mob-chat-open');
+  const dml = document.querySelector('.dml');
+  if (dml && dml.classList.contains('dm-conv-open')) {
+    dml.classList.remove('dm-conv-open');
+  } else {
+    document.getElementById('app').classList.remove('mob-chat-open');
+  }
 }
 // ────────────────────────────────────────────────
 
@@ -1337,6 +1410,26 @@ function openChatBgModal() {
 
 function closeChatBgModal() {
   document.querySelector('#chatBgModalOverlay').classList.remove('op');
+}
+
+// ── YAZI TİPİ MODAL ──────────────────────────────────
+let _fontSizeActive = 'medium';
+const _fontSizeMap = { small:'12px', medium:'14px', large:'17px' };
+
+function openFontModal() {
+  document.querySelector('#fontModalOverlay').classList.add('op');
+}
+function closeFontModal() {
+  document.querySelector('#fontModalOverlay').classList.remove('op');
+}
+function selectFontSize(size, btn) {
+  _fontSizeActive = size;
+  document.querySelectorAll('.font-size-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelector('#fontPreviewBubble').style.fontSize = _fontSizeMap[size];
+}
+function saveFontSettings() {
+  closeFontModal();
 }
 
 function selectChatBg(el) {

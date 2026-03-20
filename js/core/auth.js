@@ -98,7 +98,7 @@ function completeLogin(isAd, name) {
 
   q('#lock').style.display = 'none';
   q('#app').style.display = 'flex';
-  q('#myNm').textContent = name;
+
   updateMyAv();
   updateMyStatusDot();
 

@@ -57,9 +57,11 @@ function rDL() {
     d.onclick = () => openC(c.id);
     const otR = c.isGroup ? null : (c.fromReal === me.name ? c.toReal : c.fromReal);
     const avClick = !c.isGroup && otR ? `onclick="event.stopPropagation();showProfile('${esc(otR)}',false)" style="overflow:hidden;cursor:pointer;flex-shrink:0;"` : `style="overflow:hidden;flex-shrink:0;"`;
+    const timeStr = last?.time ? ft(last.time) : '';
+    const badge = !c.isGroup && c.status === 'pending' && c.toReal === me.name ? '<div class="di-badge">!</div>' : '';
     d.innerHTML = `<div class="av ${avc}" ${avClick}>${inner}</div>
     <div class="di-i"><div class="din">${esc(ot)}</div><div class="dip">${esc(prev)}</div></div>
-    ${c.isGroup ? '<span class="grp-tag">GRUP</span>' : (c.status === 'pending' && c.toReal === me.name ? '<span class="ptag">İstek</span>' : '')}`;
+    <div class="di-right">${timeStr ? `<span class="di-time">${timeStr}</span>` : ''}${badge}</div>`;
     el.appendChild(d);
   });
 }
@@ -70,6 +72,7 @@ function rDL() {
 
 function openC(id) {
   const c = convs[id]; if (!c) return; activeDm = c; rDL();
+  if (window.innerWidth <= 640) q('.dml')?.classList.add('dm-conv-open');
   const el = q('#dconv');
 
   // Bekleyen istek — alıcı görünümü

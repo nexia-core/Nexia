@@ -110,10 +110,13 @@ function renderProfilePage(name) {
   html += '<div class="pp-info">';
   html += '<div class="pp-top-row">';
   html += '<div class="pp-name">' + esc(target) + '</div>';
-  if (isMe) {
-    html += '<button class="pp-edit-btn" onclick="openProfileSettings()">Profili Düzenle</button>';
-  }
   html += '</div>';
+  if (isMe) {
+    html += '<div class="pp-me-btns">';
+    html += '<button class="pp-edit-btn" onclick="openProfileSettings()">Profili Düzenle</button>';
+    html += '<button class="pp-share-btn" onclick="shareProfileCard()">Profili Paylaş</button>';
+    html += '</div>';
+  }
 
   // Başka kullanıcı profili — aksiyon butonları
   if (!isMe && me) {
@@ -132,7 +135,6 @@ function renderProfilePage(name) {
   html += '<div class="pp-stats">';
   html += '<div class="pp-stat"><div class="pp-stat-val">' + postCount + '</div><div class="pp-stat-lbl">Gönderi</div></div>';
   html += '<div class="pp-stat"><div class="pp-stat-val">' + (isMe ? frCount : '—') + '</div><div class="pp-stat-lbl">Arkadaş</div></div>';
-  html += '<div class="pp-stat"><div class="pp-stat-val">' + msgCount + '</div><div class="pp-stat-lbl">Mesaj</div></div>';
   html += '</div>';
   html += '</div>';
 
@@ -367,24 +369,119 @@ function viewPost(target, idx) {
     ? '<img src="' + p.photo + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%;"/>'
     : (target[0] ? target[0].toUpperCase() : '?');
   var liked = post.likes && post.likes.includes(me ? me.name : '');
+  var likeCount = post.likes ? post.likes.length : 0;
+  if (!post.comments) post.comments = [];
 
   var html = '';
-  html += '<img class="pp-modal-img" src="' + post.img + '" alt=""/>';
-  html += '<div class="pp-modal-body">';
-  html += '<div class="pp-modal-author">';
-  html += '<div class="av ' + avc + '" style="width:32px;height:32px;font-size:13px;cursor:pointer;" onclick="openUserProfile(\'' + esc(target) + '\')">' + avInner + '</div>';
-  html += '<div><div class="pp-modal-name">' + esc(target) + '</div><div class="pp-modal-time">' + ft(post.time) + '</div></div>';
+
+  // ── Üst yazar barı ──
+  html += '<div class="pp-detail-author">';
+  html += '<div class="av ' + avc + '" style="width:34px;height:34px;font-size:14px;cursor:pointer;flex-shrink:0;" onclick="openUserProfile(\'' + esc(target) + '\')">' + avInner + '</div>';
+  html += '<div class="pp-detail-author-info">';
+  html += '<div class="pp-detail-name">' + esc(target) + '</div>';
+  html += '<div class="pp-detail-time">' + ft(post.time) + '</div>';
+  html += '</div>';
+  html += '<button class="pp-detail-menu-btn" onclick="togglePostMenu(event,\'' + esc(target) + '\',' + idx + ')">•••</button>';
+  // Dropdown menü
+  html += '<div class="pp-post-menu" id="ppPostMenu">';
   if (isMe) {
-    html += '<button class="pp-modal-del" onclick="deletePost(' + idx + ')" title="Sil">🗑️</button>';
+    html += '<div class="pp-post-menu-item danger" onclick="postMenuAction(\'delete\',\'' + esc(target) + '\',' + idx + ')">🗑️ Gönderiyi Sil</div>';
+    html += '<div class="pp-post-menu-divider"></div>';
+  }
+  html += '<div class="pp-post-menu-item" onclick="postMenuAction(\'toggleComments\',\'' + esc(target) + '\',' + idx + ')">' + (post.commentsOff ? '💬 Yorumları Aç' : '🚫 Yorumları Kapat') + '</div>';
+  html += '<div class="pp-post-menu-item" onclick="postMenuAction(\'toggleLikes\',\'' + esc(target) + '\',' + idx + ')">' + (post.hideLikeCount ? '❤️ Beğeni Sayısını Göster' : '🙈 Beğeni Sayısını Gizle') + '</div>';
+  html += '<div class="pp-post-menu-item" onclick="postMenuAction(\'toggleShares\',\'' + esc(target) + '\',' + idx + ')">' + (post.hideShareCount ? '↗️ Paylaşım Sayısını Göster' : '🙈 Paylaşım Sayısını Gizle') + '</div>';
+  html += '</div>';
+  html += '</div>';
+
+  // ── Ana görsel ──
+  html += '<img class="pp-modal-img" src="' + post.img + '" alt=""/>';
+
+  // ── Kaydırılabilir detay alanı ──
+  html += '<div class="pp-detail-body">';
+
+  // Etkileşim barı
+  html += '<div class="pp-detail-actions">';
+  // Animasyonlu kalp bileşeni
+  html += '<div class="heart-container">';
+  html += '<input type="checkbox" class="checkbox"' + (liked ? ' checked' : '') + ' onchange="toggleLikeFromHeart(\'' + esc(target) + '\',' + idx + ',this)"/>';
+  html += '<div class="svg-container">';
+  html += '<svg viewBox="-5 1 33 29" class="svg-outline" xmlns="http://www.w3.org/2000/svg"><path d="M17.5 1.913C23.334 1.913 27.5 8.28 22.993 15.684C19.702 21.065 11.412 29.071 11.412 29.071C11.412 29.071 3.12 21.065 0.178 15.684C-4.334 8.28 -0.166 1.913 5.667 1.913C10.082 1.913 11.412 7.02 11.412 7.02C11.412 7.02 12.741 1.913 17.5 1.913Z"></path></svg>';
+  html += '<svg viewBox="-5 1 33 29" class="svg-filled" xmlns="http://www.w3.org/2000/svg"><path d="M17.5 1.913C23.334 1.913 27.5 8.28 22.993 15.684C19.702 21.065 11.412 29.071 11.412 29.071C11.412 29.071 3.12 21.065 0.178 15.684C-4.334 8.28 -0.166 1.913 5.667 1.913C10.082 1.913 11.412 7.02 11.412 7.02C11.412 7.02 12.741 1.913 17.5 1.913Z"></path></svg>';
+  html += '<svg fill="none" viewBox="0 0 24 24" class="svg-celebrate" xmlns="http://www.w3.org/2000/svg"><polygon points="12,1 15,9 23,9 17,14 19,22 12,17 5,22 7,14 1,9 9,9"></polygon><polygon points="12,1 15,9 23,9 17,14 19,22 12,17 5,22 7,14 1,9 9,9"></polygon><polygon points="12,1 15,9 23,9 17,14 19,22 12,17 5,22 7,14 1,9 9,9"></polygon><polygon points="12,1 15,9 23,9 17,14 19,22 12,17 5,22 7,14 1,9 9,9"></polygon><polygon points="12,1 15,9 23,9 17,14 19,22 12,17 5,22 7,14 1,9 9,9"></polygon><polygon points="12,1 15,9 23,9 17,14 19,22 12,17 5,22 7,14 1,9 9,9"></polygon></svg>';
+  html += '</div></div>';
+  if (!post.commentsOff) {
+    html += '<div class="pp-cmt-btn-wrap">';
+    html += '<button class="pp-cmt-icon-btn" onclick="openCommentsSheet(\'' + esc(target) + '\',' + idx + ')">';
+    html += '<svg stroke-linejoin="round" stroke-linecap="round" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none">';
+    html += '<path fill="none" d="M0 0h24v24H0z" stroke="none"></path>';
+    html += '<path d="M8 9h8"></path>';
+    html += '<path d="M8 13h6"></path>';
+    html += '<path d="M18 4a3 3 0 0 1 3 3v8a3 3 0 0 1 -3 3h-5l-5 3v-3h-2a3 3 0 0 1 -3 -3v-8a3 3 0 0 1 3 -3h12z"></path>';
+    html += '</svg>';
+    html += '</button>';
+    html += '<span class="pp-cmt-tooltip">Yorum</span>';
+    html += '</div>';
+  }
+  // Kaydet butonu
+  var saved = post.savedBy && post.savedBy.includes(me ? me.name : '');
+  html += '<div class="save-btn-container">';
+  html += '<input type="checkbox"' + (saved ? ' checked' : '') + ' onchange="toggleSave(\'' + esc(target) + '\',' + idx + ',this)"/>';
+  html += '<svg viewBox="0 0 24 24" class="save-regular" xmlns="http://www.w3.org/2000/svg"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>';
+  html += '<svg viewBox="0 0 24 24" class="save-solid" xmlns="http://www.w3.org/2000/svg"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>';
+  html += '</div>';
+  if (!post.hideShareCount) {
+    html += '<button class="pp-detail-act-btn" title="Paylaş">➤</button>';
   }
   html += '</div>';
-  if (post.caption) {
-    html += '<div class="pp-modal-caption">' + esc(post.caption) + '</div>';
+
+  // Beğenenler satırı + beğeni sayısı
+  if (!post.hideLikeCount) {
+    if (likeCount > 0) {
+      html += '<div class="pp-detail-likers-row">';
+      html += '<div class="pp-detail-likers-avs">';
+      var shown = Math.min(post.likes.length, 4);
+      for (var i = 0; i < shown; i++) {
+        var liker = post.likes[i];
+        var lp = profiles[liker] || {};
+        var lc = avColor(liker, false);
+        var liInner = lp.photo
+          ? '<img src="' + lp.photo + '" style="width:100%;height:100%;object-fit:cover;border-radius:50%;"/>'
+          : (liker[0] ? liker[0].toUpperCase() : '?');
+        html += '<div class="av ' + lc + ' pp-liker-av">' + liInner + '</div>';
+      }
+      html += '</div>';
+      html += '<span class="pp-detail-likers-lbl">Beğenenler</span>';
+      html += '</div>';
+    }
+    html += '<div class="pp-detail-like-count">' + likeCount + ' beğen</div>';
   }
-  html += '<div class="pp-modal-actions">';
-  html += '<button class="pp-modal-like" onclick="likePost(\'' + esc(target) + '\',' + idx + ')">' + (liked ? '❤️' : '🤍') + '</button>';
-  html += '<span class="pp-modal-likes">' + (post.likes ? post.likes.length : 0) + ' beğeni</span>';
-  html += '</div></div>';
+
+  // Açıklama
+  if (post.caption) {
+    html += '<div class="pp-detail-caption"><span class="pp-detail-caption-name">' + esc(target) + '</span> ' + esc(post.caption) + '</div>';
+  }
+
+  // Yorumlar kısa linki (tüm yorumlar sheet'te)
+  if (!post.commentsOff && post.comments.length > 0) {
+    html += '<div class="pp-detail-see-all" onclick="openCommentsSheet(\'' + esc(target) + '\',' + idx + ')" style="padding:0 14px 10px;">Tüm yorumları gör (' + post.comments.length + ')</div>';
+  }
+
+  html += '</div>'; // pp-detail-body
+
+  // ── Sabit yorum ekleme barı (yorumlar açıksa) ──
+  if (!post.commentsOff) {
+    var myAvc = me ? avColor(me.name, false) : 'avb';
+    var myAvInner = (me && profiles[me.name] && profiles[me.name].photo)
+      ? '<img src="' + profiles[me.name].photo + '" style="width:100%;height:100%;object-fit:cover;border-radius:6px;"/>'
+      : (me && me.name[0] ? me.name[0].toUpperCase() : 'A');
+    html += '<div class="pp-detail-comment-bar">';
+    html += '<div class="av ' + myAvc + '" style="width:30px;height:30px;font-size:12px;border-radius:6px;flex-shrink:0;">' + myAvInner + '</div>';
+    html += '<input class="pp-detail-comment-input" id="ppCommentInput_' + idx + '" placeholder="Yorum ekle..." onkeydown="if(event.key===\'Enter\')addComment(\'' + esc(target) + '\',' + idx + ')"/>';
+    html += '</div>';
+  } else {
+    html += '<div class="pp-comments-off-bar">💬 Yorumlar kapatıldı</div>';
+  }
 
   q('#ppViewCard').innerHTML = html;
   q('#ppViewModal').classList.add('op');
@@ -393,6 +490,100 @@ function viewPost(target, idx) {
 
 function closeViewModal() {
   q('#ppViewModal').classList.remove('op');
+  closePostMenu();
+}
+
+// ─── Post Menüsü ─────────────────────────────────
+function togglePostMenu(e, target, idx) {
+  e.stopPropagation();
+  var menu = q('#ppPostMenu');
+  if (!menu) return;
+  var isOpen = menu.classList.contains('open');
+  closePostMenu();
+  if (!isOpen) {
+    menu.classList.add('open');
+    setTimeout(function() {
+      document.addEventListener('click', closePostMenu, { once: true });
+    }, 10);
+  }
+}
+
+function closePostMenu() {
+  var menu = q('#ppPostMenu');
+  if (menu) menu.classList.remove('open');
+}
+
+function postMenuAction(action, target, idx) {
+  closePostMenu();
+  var posts = userPosts[target] || [];
+  var post = posts[idx];
+  if (!post) return;
+
+  if (action === 'delete') {
+    if (!me || target !== me.name) return;
+    posts.splice(idx, 1);
+    closeViewModal();
+    renderProfilePage(me.name);
+    toast('Gönderi silindi', 's');
+  } else if (action === 'toggleComments') {
+    post.commentsOff = !post.commentsOff;
+    toast(post.commentsOff ? 'Yorumlar kapatıldı' : 'Yorumlar açıldı', 's');
+    viewPost(target, idx);
+  } else if (action === 'toggleLikes') {
+    post.hideLikeCount = !post.hideLikeCount;
+    toast(post.hideLikeCount ? 'Beğeni sayısı gizlendi' : 'Beğeni sayısı gösteriliyor', 's');
+    viewPost(target, idx);
+  } else if (action === 'toggleShares') {
+    post.hideShareCount = !post.hideShareCount;
+    toast(post.hideShareCount ? 'Paylaşım gizlendi' : 'Paylaşım gösteriliyor', 's');
+    viewPost(target, idx);
+  }
+}
+
+function toggleSave(target, idx, cb) {
+  var posts = userPosts[target] || [];
+  var post = posts[idx];
+  if (!post || !me) { if (cb) cb.checked = !cb.checked; return; }
+  if (!post.savedBy) post.savedBy = [];
+  var li = post.savedBy.indexOf(me.name);
+  if (li >= 0) post.savedBy.splice(li, 1);
+  else post.savedBy.push(me.name);
+  // Her tıklamada animasyonu sıfırlayıp yeniden başlat
+  if (cb && cb.checked) {
+    var solid = cb.parentElement.querySelector('.save-solid');
+    if (solid) {
+      solid.style.animation = 'none';
+      void solid.offsetWidth; // reflow → animasyonu sıfırla
+      solid.style.animation = 'keyframes-save-fill 0.5s';
+    }
+  }
+  toast(post.savedBy.includes(me.name) ? '📌 Kaydedildi' : 'Kayıt kaldırıldı', 's');
+}
+
+function toggleLikeFromHeart(target, idx, cb) {
+  var posts = userPosts[target] || [];
+  var post = posts[idx];
+  if (!post || !me) { if (cb) cb.checked = !cb.checked; return; }
+  if (!post.likes) post.likes = [];
+  var li = post.likes.indexOf(me.name);
+  if (li >= 0) post.likes.splice(li, 1);
+  else post.likes.push(me.name);
+
+  // Beğenince animasyonu yeniden tetikle
+  if (cb && cb.checked) {
+    var svgContainer = cb.parentElement ? cb.parentElement.querySelector('.svg-container') : null;
+    if (svgContainer) {
+      var filled = svgContainer.querySelector('.svg-filled');
+      var celebrate = svgContainer.querySelector('.svg-celebrate');
+      if (filled) { filled.style.animation='none'; void filled.offsetWidth; filled.style.animation='keyframes-svg-filled 1s'; }
+      if (celebrate) { celebrate.style.animation='none'; void celebrate.offsetWidth; celebrate.style.animation='keyframes-svg-celebrate 0.5s forwards'; }
+    }
+  }
+
+  // Beğeni sayısını anında güncelle
+  var lcEl = document.querySelector('.pp-detail-like-count');
+  if (lcEl) lcEl.textContent = post.likes.length + ' beğen';
+  setTimeout(function() { renderProfilePage(target); }, 700);
 }
 
 function likePost(target, idx) {
@@ -407,6 +598,94 @@ function likePost(target, idx) {
 
   viewPost(target, idx);
   renderProfilePage(_ppTarget);
+}
+
+function addComment(target, idx) {
+  var input = q('#ppCommentInput_' + idx);
+  if (!input || !input.value.trim() || !me) return;
+  var posts = userPosts[target] || [];
+  var post = posts[idx];
+  if (!post) return;
+  if (!post.comments) post.comments = [];
+  post.comments.push({ author: me.name, text: input.value.trim(), time: new Date() });
+  viewPost(target, idx);
+  toast('Yorum eklendi', 's');
+}
+
+// ─── Yorumlar Alt Paneli ─────────────────────────
+var _cmtTarget = null, _cmtIdx = null;
+
+function openCommentsSheet(target, idx) {
+  _cmtTarget = target; _cmtIdx = idx;
+  var backdrop = q('#cmtBackdrop'), sheet = q('#cmtSheet');
+  if (!backdrop || !sheet) return;
+  renderCommentsSheet();
+  backdrop.classList.add('op');
+  setTimeout(function() { var s = q('#cmtSheet'); if (s) s.classList.add('op'); }, 10);
+}
+
+function closeCommentsSheet() {
+  var sheet = q('#cmtSheet'), backdrop = q('#cmtBackdrop');
+  if (sheet) sheet.classList.remove('op');
+  setTimeout(function() { var b = q('#cmtBackdrop'); if (b) b.classList.remove('op'); }, 350);
+}
+
+function renderCommentsSheet() {
+  if (!_cmtTarget) return;
+  var posts = userPosts[_cmtTarget] || [];
+  var post = posts[_cmtIdx];
+  if (!post) return;
+  if (!post.comments) post.comments = [];
+
+  var listEl = q('#cmtList'), inputEl = q('#cmtInputBar');
+  if (!listEl || !inputEl) return;
+
+  var listHtml = '';
+  if (post.comments.length === 0) {
+    listHtml = '<div class="cmt-empty">Henüz yorum yok. İlk yorumu sen yap!</div>';
+  } else {
+    for (var i = 0; i < post.comments.length; i++) {
+      var c = post.comments[i];
+      var cp = profiles[c.author] || {};
+      var cc = avColor(c.author, false);
+      var cInner = cp.photo
+        ? '<img src="' + cp.photo + '" style="width:100%;height:100%;object-fit:cover;border-radius:8px;"/>'
+        : (c.author && c.author[0] ? c.author[0].toUpperCase() : '?');
+      listHtml += '<div class="cmt-item">';
+      listHtml += '<div class="av ' + cc + ' cmt-av">' + cInner + '</div>';
+      listHtml += '<div class="cmt-body">';
+      listHtml += '<div class="cmt-meta"><span class="cmt-name">' + esc(c.author) + '</span><span class="cmt-time">' + ft(c.time) + '</span></div>';
+      listHtml += '<div class="cmt-text">' + esc(c.text) + '</div>';
+      listHtml += '</div>';
+      listHtml += '<button class="cmt-heart">🤍</button>';
+      listHtml += '</div>';
+    }
+  }
+  listEl.innerHTML = listHtml;
+  setTimeout(function() { var l = q('#cmtList'); if (l) l.scrollTop = l.scrollHeight; }, 50);
+
+  var myAvc = me ? avColor(me.name, false) : 'avb';
+  var myAvInner = (me && profiles[me.name] && profiles[me.name].photo)
+    ? '<img src="' + profiles[me.name].photo + '" style="width:100%;height:100%;object-fit:cover;border-radius:8px;"/>'
+    : (me && me.name[0] ? me.name[0].toUpperCase() : 'A');
+  inputEl.innerHTML =
+    '<div class="av ' + myAvc + '" style="width:32px;height:32px;font-size:13px;border-radius:8px;flex-shrink:0;">' + myAvInner + '</div>' +
+    '<input class="cmt-sheet-inp" id="cmtSheetInp" placeholder="Yorum ekle..." onkeydown="if(event.key===\'Enter\')submitSheetComment()"/>' +
+    '<button class="cmt-sheet-send" onclick="submitSheetComment()">↑</button>';
+}
+
+function submitSheetComment() {
+  if (!_cmtTarget) return;
+  var input = q('#cmtSheetInp');
+  if (!input || !input.value.trim() || !me) return;
+  var posts = userPosts[_cmtTarget] || [];
+  var post = posts[_cmtIdx];
+  if (!post) return;
+  if (!post.comments) post.comments = [];
+  post.comments.push({ author: me.name, text: input.value.trim(), time: new Date() });
+  input.value = '';
+  renderCommentsSheet();
+  viewPost(_cmtTarget, _cmtIdx);
 }
 
 function deletePost(idx) {
