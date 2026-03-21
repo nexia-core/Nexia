@@ -1,6 +1,6 @@
 // ══════════════════════════════════════════════════
 // FIREBASE v9 MODÜLER SDK — NEXIA1CHAT
-// v3 — Global Chat + Profil + Online + DM + Kodlar
+// v5 — Global Chat + Profil + Online + DM + Kodlar + Storage
 // ══════════════════════════════════════════════════
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
@@ -11,6 +11,7 @@ import {
   doc, setDoc, getDoc, deleteDoc, getDocs,
   where, updateDoc
 } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+// imgbb kullanılıyor — Firebase Storage bu bölgede ücretsiz değil
 
 const firebaseConfig = {
   apiKey: "AIzaSyBbpEsRs8hTG6pB7VLaOB9w8imrGqhRdGc",
@@ -24,6 +25,28 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db  = getFirestore(app);
+
+// ══════════════════════════════════════════════════
+// 0 — MEDYA YÜKLEME (imgbb — ücretsiz)
+// ══════════════════════════════════════════════════
+
+window.fbUploadMedia = async function(file, folder) {
+  try {
+    const IMGBB_KEY = '03d78945b13e076ca6030b45a0033a4b';
+    const form = new FormData();
+    form.append('image', file);
+    const res  = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_KEY}`, {
+      method: 'POST', body: form
+    });
+    const json = await res.json();
+    if (json.success) return json.data.url;
+    console.error('imgbb yükleme hatası:', json);
+    return null;
+  } catch(e) {
+    console.error('Medya yükleme hatası:', e);
+    return null;
+  }
+};
 
 // ══════════════════════════════════════════════════
 // 1 — GLOBAL SOHBET (mevcut, değişmedi)
@@ -43,9 +66,12 @@ window.sendToFirestore = async function(msg) {
       isAnon:    msg.isAnon  || false,
       isAdmin:   msg.isAdmin || false,
       timestamp: serverTimestamp(),
-      replyTo:   msg.replyTo || null,
-      type:      msg.type    || null,
-      localId:   msg.id
+      replyTo:   msg.replyTo  || null,
+      type:      msg.type     || null,
+      localId:   msg.id,
+      mediaUrl:  msg.mediaUrl  || null,
+      mediaType: msg.mediaType || null,
+      mediaName: msg.mediaName || null
     });
   } catch(e) { console.error('Firebase mesaj gönderme hatası:', e); }
 };
@@ -72,7 +98,11 @@ window.startFirebaseChat = function() {
         isMe:      typeof me !== 'undefined' && me && data.realName === me.name,
         isAdmin:   data.isAdmin || false,
         time:      data.timestamp ? data.timestamp.toDate() : new Date(),
-        recalled:false, edited:false, reactions:{}, replyTo: data.replyTo || null
+        recalled:false, edited:false, reactions:{}, replyTo: data.replyTo || null,
+        mediaUrl:  data.mediaUrl  || null,
+        mediaType: data.mediaType || null,
+        mediaName: data.mediaName || null,
+        mediaData: data.mediaUrl  || null  // render uyumluluğu
       };
       if (typeof gm !== 'undefined') gm.push(msg);
       if (typeof rG   === 'function') rG();
@@ -170,7 +200,9 @@ window.fbSendDmMsg = async function(convId, msg) {
       edited:   false,
       reactions:{},
       replyTo:  msg.replyTo  || null,
-      hasMedia: !!msg.mediaData,
+      mediaUrl:  msg.mediaUrl  || null,
+      mediaType: msg.mediaType || null,
+      mediaName: msg.mediaName || null,
       time:     serverTimestamp()
     });
   } catch(e) { console.error('DM gönderme hatası:', e); }
@@ -196,10 +228,14 @@ window.fbListenConvMsgs = function(convId) {
         isAnon:   data.isAnon   || false,
         isMe,
         time:     data.time?.toDate() || new Date(),
-        recalled: data.recalled || false,
-        edited:   data.edited   || false,
-        reactions:data.reactions|| {},
-        replyTo:  data.replyTo  || null
+        recalled:  data.recalled  || false,
+        edited:    data.edited    || false,
+        reactions: data.reactions || {},
+        replyTo:   data.replyTo   || null,
+        mediaUrl:  data.mediaUrl  || null,
+        mediaType: data.mediaType || null,
+        mediaName: data.mediaName || null,
+        mediaData: data.mediaUrl  || null  // render uyumluluğu için
       });
       c.msgs.sort((a, b) => new Date(a.time) - new Date(b.time));
       if (typeof rDL === 'function') rDL();
@@ -242,7 +278,40 @@ window.fbListenMyConvs = function(myName) {
 };
 
 // ══════════════════════════════════════════════════
-// 5 — KULLANICI KODLARI (ADMIN)
+// 5 — ŞİKAYET SENKRONİZASYONU
+// ══════════════════════════════════════════════════
+
+window.fbSaveReport = async function(report) {
+  if (!report?.id) return;
+  try {
+    await setDoc(doc(db, 'reports', report.id), {
+      ...report,
+      time: serverTimestamp()
+    });
+  } catch(e) { console.error('Şikayet kayıt hatası:', e); }
+};
+
+window.fbListenReports = function() {
+  const q = query(collection(db, 'reports'), orderBy('time', 'desc'), limitToLast(50));
+  onSnapshot(q, snap => {
+    snap.docChanges().forEach(change => {
+      if (change.type === 'removed') return;
+      const data = change.doc.data();
+      const exists = reports.find(r => r.id === data.id);
+      if (!exists) {
+        reports.unshift({
+          ...data,
+          time: data.time?.toDate() || new Date()
+        });
+      }
+    });
+    if (typeof rReportsList === 'function') rReportsList();
+    if (typeof rIbx === 'function' && typeof me !== 'undefined' && me?.isAdmin) rIbx();
+  });
+};
+
+// ══════════════════════════════════════════════════
+// 6 — KULLANICI KODLARI (ADMIN)
 // ══════════════════════════════════════════════════
 
 window.fbSaveSingleCode = async function(code, info) {

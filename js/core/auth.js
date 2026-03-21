@@ -121,6 +121,9 @@ function completeLogin(isAd, name) {
   if (typeof fbListenCodes      === 'function') fbListenCodes();
   if (typeof fbListenProfiles   === 'function') fbListenProfiles();
   if (typeof fbListenOnline     === 'function') fbListenOnline();
+  if (isAd) {
+    if (typeof fbListenReports  === 'function') fbListenReports();
+  }
   if (!isAd) {
     if (typeof fbSetOnline      === 'function') fbSetOnline(name);
     if (typeof fbListenMyConvs  === 'function') fbListenMyConvs(name);
@@ -464,6 +467,7 @@ function submitReport() {
     reason, note, time: new Date(), reviewed: false,
   };
   reports.unshift(report);
+  if (typeof fbSaveReport === 'function') fbSaveReport(report);
 
   inbox.unshift({ id: 'rp_ib_' + Date.now(), type: 'report', from: me.name,
     text: '🚩 Şikayet: "' + report.msgAuthor + '" kullanıcısı — ' + reason + (note ? ' | ' + note : '') + '\nMesaj: "' + report.msgText.substring(0, 80) + '"',

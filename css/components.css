@@ -505,7 +505,8 @@
 .ctx-item.danger { color:var(--dg); }
 .ctx-item.danger:hover { background:var(--dg-d); }
 .mx.recalled { color:var(--t3); font-style:italic; font-size:13px; }
-.msg-img { max-width:260px; max-height:200px; border-radius:var(--r2); margin-top:5px; cursor:pointer; object-fit:cover; transition:opacity .15s; display:block; }
+.msg-img { max-width:260px; max-height:200px; border-radius:var(--r2); margin-top:5px; cursor:pointer; object-fit:cover; transition:opacity .15s; display:block; width:100%; }
+@media (max-width:640px) { .msg-img { max-width:100%; width:100%; } }
 .msg-img:hover { opacity:.88; }
 .msg-video { max-width:280px; border-radius:var(--r2); margin-top:5px; display:block; }
 .dm-input-row { display:flex; gap:8px; align-items:flex-end; background:color-mix(in srgb,var(--sf) 85%,transparent); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); border-radius:20px; padding:5px 6px 5px 14px; border:1px solid rgba(255,255,255,.07); box-shadow:0 8px 28px rgba(0,0,0,.35),0 2px 8px rgba(0,0,0,.18); transition:box-shadow .25s; }

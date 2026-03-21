@@ -431,12 +431,31 @@ function onMediaFile(e) {
   const ma = c.isGroup ? false : (c.fromReal === me.name ? c.fromAnon : c.toAnon), dn = ma ? me.anonId : me.name;
   if (file.size > 50 * 1024 * 1024) { toast("Dosya 50MB'dan büyük", 'e'); return; }
   const isVideo = file.type.startsWith('video/');
+  const mt = isVideo ? 'video' : 'image';
+  const msgId = Date.now();
+
+  // Önce local göster (hızlı UX)
   const reader = new FileReader();
-  reader.onload = ev => {
-    const url = ev.target.result, mt = isVideo ? 'video' : 'image';
-    c.msgs.push({ id: Date.now(), from: dn, fromReal: me.name, text: '', isAnon: ma, isMe: true, time: new Date(), recalled: false, edited: false, reactions: {}, replyTo: null, mediaType: mt, mediaData: url, mediaName: file.name });
+  reader.onload = async ev => {
+    const localUrl = ev.target.result;
+    const newMsg = { id: msgId, from: dn, fromReal: me.name, text: '', isAnon: ma, isMe: true, time: new Date(), recalled: false, edited: false, reactions: {}, replyTo: null, mediaType: mt, mediaData: localUrl, mediaName: file.name };
+    c.msgs.push(newMsg);
     mld.push({ who: dn, real: me.name, isAnon: ma, text: `[${isVideo ? 'Video' : 'Fotoğraf'}]`, time: new Date(), isDm: true });
-    rDM(c); toast(isVideo ? 'Video gönderildi 🎥' : 'Fotoğraf paylaşıldı 📸', 's');
+    rDM(c); toast('Yükleniyor... 📤', 's');
+
+    // Firebase Storage'a yükle
+    if (typeof fbUploadMedia === 'function') {
+      const uploadUrl = await fbUploadMedia(file, 'dm/' + id);
+      if (uploadUrl) {
+        newMsg.mediaUrl = uploadUrl;
+        newMsg.mediaData = uploadUrl;
+        // Firebase'e mesajı gönder
+        if (typeof fbSendDmMsg === 'function') fbSendDmMsg(id, { ...newMsg, mediaUrl: uploadUrl });
+        toast(isVideo ? 'Video gönderildi 🎥' : 'Fotoğraf paylaşıldı 📸', 's');
+      } else {
+        toast('Yükleme başarısız', 'e');
+      }
+    }
   };
   reader.readAsDataURL(file);
 }

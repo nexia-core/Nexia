@@ -85,13 +85,28 @@ function onGMediaFile(e) {
   const file = e.target.files[0]; if (!file) return;
   if (file.size > 50 * 1024 * 1024) { toast("Dosya 50MB'dan büyük", 'e'); return; }
   const isVideo = file.type.startsWith('video/');
+  const mt = isVideo ? 'video' : 'image';
+
   const reader = new FileReader();
-  reader.onload = ev => {
-    const url = ev.target.result, mt = isVideo ? 'video' : 'image';
-    const m = { id: Date.now(), name: isAnon ? me.anonId : me.name, realName: me.name, text: '', isAnon, isMe: true, time: new Date(), recalled: false, edited: false, reactions: {}, replyTo: null, mediaType: mt, mediaData: url, mediaName: file.name };
+  reader.onload = async ev => {
+    const localUrl = ev.target.result;
+    const m = { id: Date.now(), name: isAnon ? me.anonId : me.name, realName: me.name, text: '', isAnon, isMe: true, time: new Date(), recalled: false, edited: false, reactions: {}, replyTo: null, mediaType: mt, mediaData: localUrl, mediaName: file.name };
     gm.push(m);
     mld.push({ who: m.name, real: me.name, isAnon, text: `[${isVideo ? 'Video' : 'Fotoğraf'}]`, time: new Date() });
-    rG(); sbot('gMsgs'); toast(isVideo ? 'Video gönderildi 🎥' : 'Fotoğraf paylaşıldı 📸', 's');
+    rG(); sbot('gMsgs'); toast('Yükleniyor... 📤', 's');
+
+    // Firebase Storage'a yükle ve Firestore'a gönder
+    if (typeof fbUploadMedia === 'function') {
+      const uploadUrl = await fbUploadMedia(file, 'global');
+      if (uploadUrl) {
+        m.mediaUrl = uploadUrl;
+        m.mediaData = uploadUrl;
+        if (typeof sendToFirestore === 'function') sendToFirestore({ ...m, mediaUrl: uploadUrl });
+        toast(isVideo ? 'Video gönderildi 🎥' : 'Fotoğraf paylaşıldı 📸', 's');
+      } else {
+        toast('Yükleme başarısız', 'e');
+      }
+    }
   };
   reader.readAsDataURL(file);
 }
@@ -109,80 +124,103 @@ function jumpToNewMsgs() {
   const b = q('#newMsgBadge'); if (b) b.style.display = 'none';
 }
 
-function rG() {
-  const el = q('#gMsgs'); if (!el) return;
-  // Kullanıcı alta yakın mı?
-  const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
-  const newCount = gm.filter(m => m.type !== 'sys' && m.type !== 'ann').length;
-  const addedCount = Math.max(0, newCount - _lastGmCount);
-  _lastGmCount = newCount;
-  el.innerHTML = '';
-  gm.forEach(m => {
-    if (m.type === 'sys') { el.appendChild(mkS(m.text)); return; }
-    if (m.type === 'ann') {
-      const d = document.createElement('div'); d.className = 'ann';
-      d.innerHTML = `<div class="ann-lbl">📢 DUYURU</div><div>${esc(m.text)}</div>`;
-      el.appendChild(d); return;
-    }
-    if (m.type === 'poll') { el.appendChild(buildPollEl(m)); return; }
+// ── Mesaj elementi oluştur (hem rG hem incremental için) ──────────────
+function _buildMsgEl(m) {
+  if (m.type === 'sys') return mkS(m.text);
+  if (m.type === 'ann') {
+    const d = document.createElement('div'); d.className = 'ann';
+    d.innerHTML = `<div class="ann-lbl">📢 DUYURU</div><div>${esc(m.text)}</div>`; return d;
+  }
+  if (m.type === 'poll') return buildPollEl(m);
+  if (typeof _isKickedUser === 'function' && _isKickedUser(m.realName || m.name)) return null;
 
-    // Sadece admin tarafından sistemden atılan kullanıcıların mesajları gizlenir
-    if (typeof _isKickedUser === 'function' && _isKickedUser(m.realName || m.name)) return;
+  const isMe = m.realName === me.name;
+  const nc   = m.isAnon ? 'an' : (m.isAdmin ? 'adm' : (isMe ? 'me' : ''));
+  const avc  = avColor(m.name, m.isAnon);
+  const init = m.isAnon ? '?' : getInner(m.name, false);
+  let rev = '';
+  if (me.isAdmin && m.isAnon) {
+    const r = aReg[m.name] || m.realName || '?';
+    rev = `<span class="rpill" onclick="ri(this,'${esc(r)}')">👁</span>`;
+  }
+  let replyHTML = '';
+  if (m.replyTo && !m.recalled)
+    replyHTML = `<div class="reply-quote ${m.replyTo.isAnon ? 'an-quote' : ''}" onclick="scrollToMsg(${m.replyTo.id})"><div class="reply-quote-name ${m.replyTo.isAnon ? 'an' : ''}">${esc(m.replyTo.name)}</div><div class="reply-quote-text">${esc(m.replyTo.text)}</div></div>`;
 
-    const isMe = m.realName === me.name;
-    const nc = m.isAnon ? 'an' : (m.isAdmin ? 'adm' : (isMe ? 'me' : ''));
-    const avc = avColor(m.name, m.isAnon);
-    const init = m.isAnon ? '?' : getInner(m.name, false);
-    let rev = '';
-    if (me.isAdmin && m.isAnon) {
-      const r = aReg[m.name] || m.realName || '?';
-      rev = `<span class="rpill" onclick="ri(this,'${esc(r)}')">👁</span>`;
-    }
-
-    let replyHTML = '';
-    if (m.replyTo && !m.recalled) {
-      replyHTML = `<div class="reply-quote ${m.replyTo.isAnon ? 'an-quote' : ''}" onclick="scrollToMsg(${m.replyTo.id})"><div class="reply-quote-name ${m.replyTo.isAnon ? 'an' : ''}">${esc(m.replyTo.name)}</div><div class="reply-quote-text">${esc(m.replyTo.text)}</div></div>`;
-    }
-
-    let textContent = '';
-    if (m.recalled) {
-      if (me.isAdmin) {
-        let adminMedia = '';
-        if (m.mediaType === 'image' && m.mediaData) adminMedia = `<img class="msg-img" src="${m.mediaData}" alt="" onclick="openLightbox(this.src)" style="opacity:.65;filter:grayscale(.3)"/>`;
-        else if (m.mediaType === 'video' && m.mediaData) adminMedia = `<video class="msg-video" src="${m.mediaData}" controls style="opacity:.65"></video>`;
-        textContent = `<div class="mx recalled">🚫 Silindi${m.text ? ` — <span style="color:var(--wn);font-style:normal;">${t2h(m.text)}</span>` : ''}${m.mediaName ? ` <span style="color:var(--t3);font-size:11px;">[${esc(m.mediaName)}]</span>` : ''}</div>${adminMedia}`;
-      } else {
-        textContent = `<div class="mx recalled">🚫 Bu mesaj geri alındı.</div>`;
-      }
-    } else if (m.editing && isMe) {
-      textContent = `<div class="edit-wrap"><textarea class="edit-inp" id="edit-${m.id}">${esc(m.text)}</textarea><div class="edit-btns"><button class="edit-ok" onclick="saveEdit(${m.id},'global',null)">Kaydet</button><button class="edit-cancel" onclick="cancelEdit(${m.id},'global',null)">İptal</button></div></div>`;
-    } else {
-      let mediaHTML = '';
-      if (m.mediaType === 'image' && m.mediaData) mediaHTML = `<img class="msg-img" src="${m.mediaData}" alt="" onclick="openLightbox(this.src)"/>`;
-      else if (m.mediaType === 'video' && m.mediaData) mediaHTML = `<video class="msg-video" src="${m.mediaData}" controls></video>`;
-      textContent = `${replyHTML}${m.text ? `<div class="mx ${m.isAnon ? 'an' : ''}" id="mtxt-${m.id}">${t2h(m.text)}</div>` : ''}${mediaHTML}${m.edited ? '<span class="edited-tag">(düzenlendi)</span>' : ''}${m.translatedText ? `<div class="translated-text">🇹🇷 ${esc(m.translatedText)}</div>` : ''}`;
-    }
-
-    const reactHTML = (!m.recalled && !m.editing) ? buildReactions(m, 'global', null) : '';
-    const d = document.createElement('div'); d.className = 'msg ' + (isMe ? 'msg-out' : 'msg-in'); d.dataset.msgId = m.id; d.id = 'msg-' + m.id;
-    d.innerHTML = `<div class="msg-av ${avc}" onclick="showProfile('${esc(m.name)}',${m.isAnon})">${init}</div>
+  let textContent = '';
+  if (m.recalled) {
+    if (me.isAdmin) {
+      let adminMedia = '';
+      if (m.mediaType === 'image' && m.mediaData) adminMedia = `<img class="msg-img" src="${m.mediaData}" alt="" onclick="openLightbox(this.src)" style="opacity:.65;filter:grayscale(.3)"/>`;
+      else if (m.mediaType === 'video' && m.mediaData) adminMedia = `<video class="msg-video" src="${m.mediaData}" controls style="opacity:.65"></video>`;
+      textContent = `<div class="mx recalled">🚫 Silindi${m.text ? ` — <span style="color:var(--wn);font-style:normal;">${t2h(m.text)}</span>` : ''}${m.mediaName ? ` <span style="color:var(--t3);font-size:11px;">[${esc(m.mediaName)}]</span>` : ''}</div>${adminMedia}`;
+    } else { textContent = `<div class="mx recalled">🚫 Bu mesaj geri alındı.</div>`; }
+  } else if (m.editing && isMe) {
+    textContent = `<div class="edit-wrap"><textarea class="edit-inp" id="edit-${m.id}">${esc(m.text)}</textarea><div class="edit-btns"><button class="edit-ok" onclick="saveEdit(${m.id},'global',null)">Kaydet</button><button class="edit-cancel" onclick="cancelEdit(${m.id},'global',null)">İptal</button></div></div>`;
+  } else {
+    let mediaHTML = '';
+    if (m.mediaType === 'image' && m.mediaData) mediaHTML = `<img class="msg-img" src="${m.mediaData}" alt="" onclick="openLightbox(this.src)"/>`;
+    else if (m.mediaType === 'video' && m.mediaData) mediaHTML = `<video class="msg-video" src="${m.mediaData}" controls></video>`;
+    textContent = `${replyHTML}${m.text ? `<div class="mx ${m.isAnon ? 'an' : ''}" id="mtxt-${m.id}">${t2h(m.text)}</div>` : ''}${mediaHTML}${m.edited ? '<span class="edited-tag">(düzenlendi)</span>' : ''}${m.translatedText ? `<div class="translated-text">🇹🇷 ${esc(m.translatedText)}</div>` : ''}`;
+  }
+  const reactHTML = (!m.recalled && !m.editing) ? buildReactions(m, 'global', null) : '';
+  const d = document.createElement('div'); d.className = 'msg ' + (isMe ? 'msg-out' : 'msg-in'); d.dataset.msgId = m.id; d.id = 'msg-' + m.id;
+  d.innerHTML = `<div class="msg-av ${avc}" onclick="showProfile('${esc(m.name)}',${m.isAnon})">${init}</div>
     <div class="mb"><div class="mh"><span class="mn ${nc}" onclick="showProfile('${esc(m.name)}',${m.isAnon})">${esc(m.name)}</span>${rev}<span class="mt">${ft(m.time)}</span></div>${textContent}${reactHTML}</div>
     ${!m.recalled && !m.editing ? `<div class="msg-actions"><button class="mac" title="Tepki ver" onclick="showEmojiPicker(this.closest('.msg-actions'),${m.id},'global',null)">😊</button><button class="mac" title="Yanıtla" onclick="setGReply(gm.find(x=>x.id===${m.id}))">↩</button>${isMe || me.isAdmin ? `<button class="mac" title="Daha fazla" onclick="showCtx(event,${m.id},null,'global')">⋯</button>` : ''}${me.isAdmin && isMuted(m.realName) ? `<button class="mac" style="color:var(--gn)" title="Sesi aç" onclick="unmuteUser('${esc(m.realName)}')">🔇</button>` : ''}</div>` : ''}`;
-    if (!m.recalled && !m.editing) d.addEventListener('contextmenu', e => {
-      e.preventDefault();
-      e.stopPropagation();
-      showCtx(e, m.id, null, 'global');
-    });
-    el.appendChild(d);
+  if (!m.recalled && !m.editing) d.addEventListener('contextmenu', e => { e.preventDefault(); e.stopPropagation(); showCtx(e, m.id, null, 'global'); });
+  return d;
+}
+
+// ── rG — RAF debounce + incremental render ─────────────────────────────
+let _rGPending = false;
+let _rGForce   = false;
+
+function rG(force) {
+  if (force) _rGForce = true;
+  if (_rGPending) return;
+  _rGPending = true;
+  requestAnimationFrame(() => {
+    _rGPending = false;
+    const doFull = _rGForce; _rGForce = false;
+    _rGImpl(doFull);
   });
-  if (atBottom || addedCount === 0) {
-    sbot('gMsgs');
-    _newMsgCount = 0;
+}
+
+function _rGImpl(force) {
+  const el = q('#gMsgs'); if (!el) return;
+  const atBottom   = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+  const prevCount  = _lastGmCount;
+  const newCount   = gm.filter(m => m.type !== 'sys' && m.type !== 'ann').length;
+  const addedCount = Math.max(0, newCount - prevCount);
+  _lastGmCount = newCount;
+
+  // Full rebuild gerekiyor mu? (düzenleme, geri alma, ilk yükleme, force)
+  const needsFull = force || el.childNodes.length === 0 ||
+    gm.some(m => m.recalled || m.editing);
+
+  if (needsFull) {
+    el.innerHTML = '';
+    gm.forEach(m => { const el2 = _buildMsgEl(m); if (el2) el.appendChild(el2); });
+  } else {
+    // Sadece yeni mesajları ekle (incremental)
+    const rendered = new Set(
+      [...el.querySelectorAll('.msg[id]')].map(e => e.id.replace('msg-', ''))
+    );
+    let added = false;
+    gm.forEach(m => {
+      if (m.type || rendered.has(String(m.id))) return;
+      const el2 = _buildMsgEl(m); if (el2) { el.appendChild(el2); added = true; }
+    });
+    if (!added && addedCount === 0) return; // Hiçbir şey değişmedi
+  }
+
+  if (atBottom || prevCount === 0) {
+    sbot('gMsgs'); _newMsgCount = 0;
     const b = q('#newMsgBadge'); if (b) b.style.display = 'none';
   } else if (addedCount > 0) {
     _newMsgCount += addedCount;
-    const b = q('#newMsgBadge');
-    const cnt = q('#newMsgCount');
+    const b = q('#newMsgBadge'), cnt = q('#newMsgCount');
     if (b && cnt) { cnt.textContent = _newMsgCount; b.style.display = 'flex'; }
   }
 }

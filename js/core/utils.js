@@ -55,10 +55,21 @@ function om(id) { const el = q('#' + id); if (el) el.classList.add('op'); }
 /** Modal kapat */
 function cm(id) { const el = q('#' + id); if (el) el.classList.remove('op'); }
 
-/** Textarea yüksekliğini içeriğe göre ayarla */
+/** Textarea yüksekliğini içeriğe göre ayarla (RAF ile - layout reflow engeli) */
 function autoResize(el) {
-  el.style.height = '42px';
-  el.style.height = Math.min(el.scrollHeight, 110) + 'px';
+  requestAnimationFrame(() => {
+    el.style.height = '42px';
+    el.style.height = Math.min(el.scrollHeight, 110) + 'px';
+  });
+}
+
+/** Fonksiyon debounce - çok sık çağrıları geciktirir */
+function debounce(fn, ms) {
+  let t;
+  return function(...args) {
+    clearTimeout(t);
+    t = setTimeout(() => fn.apply(this, args), ms);
+  };
 }
 
 /** Kullanıcı adına göre avatar renk sınıfı döndür */
