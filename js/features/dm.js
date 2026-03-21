@@ -10,9 +10,12 @@ function startDm(targetName, forceAnon, note = '') {
   });
   if (ex) { openC(ex); sw('d'); toast('Zaten bir sohbetiniz var', 'w'); return; }
   const id = 'c' + Date.now(), fromDisp = forceAnon ? me.anonId : me.name;
-  convs[id] = { id, from: fromDisp, fromReal: me.name, to: targetName, toReal: targetReal, status: 'pending', msgs: [], fromAnon: forceAnon, toAnon: false, note, isGroup: false };
-  addNotif('💬', 'Yeni Sohbet İsteği', (forceAnon ? 'Anonim' : me.name) + ' sana istek gönderdi', () => { sw('d'); openC(id); });
-  rDL(); sw('d'); toast((forceAnon ? 'Anonim olarak ' : '') + targetReal + ' kişisine istek gönderildi', 's');
+  const adminBypass = me.isAdmin && !forceAnon;
+  convs[id] = { id, from: fromDisp, fromReal: me.name, to: targetName, toReal: targetReal, status: adminBypass ? 'accepted' : 'pending', msgs: [], fromAnon: forceAnon, toAnon: false, note, isGroup: false };
+  if (typeof fbSaveConv === 'function') fbSaveConv(convs[id]);
+  if (!adminBypass) addNotif('💬', 'Yeni Sohbet İsteği', (forceAnon ? 'Anonim' : me.name) + ' sana istek gönderdi', () => { sw('d'); openC(id); });
+  rDL(); sw('d'); openC(id);
+  toast(adminBypass ? targetReal + ' ile sohbet açıldı' : (forceAnon ? 'Anonim olarak ' : '') + targetReal + ' kişisine istek gönderildi', 's');
 }
 
 function ondm(preTarget) {
@@ -42,14 +45,66 @@ function pickDmUser(name, overlayEl) { if (overlayEl) overlayEl.remove(); openDm
 // DM LİSTESİ
 // ══════════════════════════════════════════════════
 
+function filterDmSearch(val) {
+  const v = val.toLowerCase().trim();
+  document.querySelectorAll('#dmList .di').forEach(d => {
+    const name = d.querySelector('.din')?.textContent?.toLowerCase() || '';
+    d.style.display = (!v || name.includes(v)) ? '' : 'none';
+  });
+}
+
+function renderIncomingPanel() {
+  const panel = q('#dmIncomingPanel'); if (!panel) return;
+  const badge = q('#dmReqBadge');
+  const pending = Object.values(convs).filter(c => !c.isGroup && c.status === 'pending' && c.toReal === me.name);
+  if (badge) { badge.textContent = pending.length; badge.style.display = pending.length ? 'inline-flex' : 'none'; }
+  if (!panel.style || panel.style.display === 'none') return;
+  if (!pending.length) {
+    panel.innerHTML = '<div style="padding:12px;color:var(--t3);font-size:12px;text-align:center;">Bekleyen istek yok.</div>';
+    return;
+  }
+  panel.innerHTML = pending.map(c => `
+    <div class="dm-req-item" onclick="openC('${c.id}');closeIncomingPanel()">
+      <div class="av avg" style="width:34px;height:34px;font-size:13px;flex-shrink:0;">${c.from[0]?.toUpperCase() || '?'}</div>
+      <div class="dm-req-info">
+        <div class="dm-req-name">${esc(c.from)}</div>
+        <div class="dm-req-sub">${c.fromAnon ? 'Anonim istek' : 'Sohbet isteği'}</div>
+      </div>
+      <div class="dm-req-btns">
+        <button onclick="event.stopPropagation();acc('${c.id}');renderIncomingPanel();rDL()" class="ra rok" style="padding:4px 10px;font-size:11px;">✓</button>
+        <button onclick="event.stopPropagation();rej('${c.id}');renderIncomingPanel();rDL()" class="ra rno" style="padding:4px 10px;font-size:11px;">✕</button>
+      </div>
+    </div>`).join('');
+}
+
+function toggleIncomingPanel() {
+  const panel = q('#dmIncomingPanel'); if (!panel) return;
+  const isOpen = panel.style.display !== 'none';
+  panel.style.display = isOpen ? 'none' : '';
+  if (!isOpen) renderIncomingPanel();
+}
+
+function closeIncomingPanel() {
+  const panel = q('#dmIncomingPanel'); if (panel) panel.style.display = 'none';
+}
+
 function rDL() {
-  const el = q('#dmList'); el.innerHTML = '';
+  const el = q('#dmList'); if (!el) return; el.innerHTML = '';
   const mc = Object.values(convs).filter(c => c.isGroup ? c.members.includes(me.name) : (c.fromReal === me.name || c.toReal === me.name || me.isAdmin));
+  // Update incoming badge
+  const pending = mc.filter(c => !c.isGroup && c.status === 'pending' && c.toReal === me.name);
+  const badge = q('#dmReqBadge');
+  if (badge) { badge.textContent = pending.length; badge.style.display = pending.length ? 'inline-flex' : 'none'; }
   if (!mc.length) { el.innerHTML = '<div style="padding:12px;color:var(--t3);font-size:12px;">Henüz sohbet yok.</div>'; return; }
   mc.forEach(c => {
+    // Gelen istekler panelinde gösteriliyor, listede tekrar gösterme
+    if (!c.isGroup && c.status === 'pending' && c.toReal === me.name) return;
     const ot = c.isGroup ? c.name : (c.fromReal === me.name ? c.to : c.from);
     const last = c.msgs.filter(m => !m.isSys).slice(-1)[0];
-    const prev = last ? last.text.substring(0, 26) + (last.text.length > 26 ? '…' : '') : (c.status === 'pending' ? 'Bekleyen istek' : 'Henüz mesaj yok');
+    const hasDraft = !c.isGroup && _dmDrafts[c.id];
+    const prev = hasDraft
+      ? '📝 ' + _dmDrafts[c.id].substring(0, 24) + (_dmDrafts[c.id].length > 24 ? '…' : '')
+      : (last ? last.text.substring(0, 26) + (last.text.length > 26 ? '…' : '') : (c.status === 'pending' ? 'Bekleyen istek' : 'Henüz mesaj yok'));
     const p = c.isGroup ? null : (profiles[c.fromReal === me.name ? c.toReal : c.fromReal] || {});
     const avc = avColor(ot, false);
     const inner = c.isGroup ? '👥' : (p && p.photo ? `<img src="${p.photo}" style="width:100%;height:100%;object-fit:cover;"/>` : ot[0]?.toUpperCase() || '?');
@@ -58,12 +113,16 @@ function rDL() {
     const otR = c.isGroup ? null : (c.fromReal === me.name ? c.toReal : c.fromReal);
     const avClick = !c.isGroup && otR ? `onclick="event.stopPropagation();showProfile('${esc(otR)}',false)" style="overflow:hidden;cursor:pointer;flex-shrink:0;"` : `style="overflow:hidden;flex-shrink:0;"`;
     const timeStr = last?.time ? ft(last.time) : '';
-    const badge = !c.isGroup && c.status === 'pending' && c.toReal === me.name ? '<div class="di-badge">!</div>' : '';
+    const reqBadge = !c.isGroup && c.status === 'pending' && c.toReal === me.name ? '<div class="di-badge">!</div>' : '';
+    const muteIcon = !c.isGroup && isDmMuted(c.id) ? '<span class="di-mute-icon">🔕</span>' : '';
     d.innerHTML = `<div class="av ${avc}" ${avClick}>${inner}</div>
-    <div class="di-i"><div class="din">${esc(ot)}</div><div class="dip">${esc(prev)}</div></div>
-    <div class="di-right">${timeStr ? `<span class="di-time">${timeStr}</span>` : ''}${badge}</div>`;
+    <div class="di-i"><div class="din">${esc(ot)}${muteIcon}</div><div class="dip ${hasDraft ? 'di-draft' : ''}">${esc(prev)}</div></div>
+    <div class="di-right">${timeStr ? `<span class="di-time">${timeStr}</span>` : ''}${reqBadge}</div>`;
     el.appendChild(d);
   });
+  // Re-apply search filter if active
+  const si = q('#dmSearchInp');
+  if (si && si.value) filterDmSearch(si.value);
 }
 
 // ══════════════════════════════════════════════════
@@ -96,9 +155,11 @@ function openC(id) {
 }
 
 function acc(id) {
-  convs[id].status = 'active'; rDL(); rAC(convs[id]);
+  const c = convs[id]; if (!c) return;
+  c.status = 'active'; rDL(); rAC(c);
+  if (typeof fbSaveConv === 'function') fbSaveConv(c);
   toast('Sohbet başladı!', 's');
-  addNotif('✅', 'Sohbet Kabul Edildi', convs[id].toReal + ' isteği kabul etti', () => { sw('d'); openC(id); });
+  addNotif('✅', 'Sohbet Kabul Edildi', c.toReal + ' isteği kabul etti', () => { sw('d'); openC(id); });
 }
 
 function rej(id) {
@@ -120,10 +181,15 @@ function rAC(c) {
   const inner = c.isGroup ? '👥' : (p && p.photo ? `<img src="${p.photo}" style="width:100%;height:100%;object-fit:cover;"/>` : ot[0]?.toUpperCase());
   const memberInfo = c.isGroup ? `<div class="dcs">${c.members.join(', ')}</div>` : '';
   const profClick = !c.isGroup && otReal ? `onclick="showProfile('${esc(otReal)}',false)" style="overflow:hidden;cursor:pointer;"` : `style="overflow:hidden;"`;
+  const muteIcon = !c.isGroup && isDmMuted(c.id) ? '🔕' : '🔔';
+  const pinnedBar = c.pinnedMsg ? `<div class="dm-pinned-bar" onclick="scrollToDMsg('${c.id}',${c.pinnedMsg.id})"><span class="dm-pinned-icon">📌</span><div class="dm-pinned-body"><div class="dm-pinned-from">${esc(c.pinnedMsg.from)}</div><div class="dm-pinned-text">${esc(c.pinnedMsg.text)}</div></div><button class="dm-pinned-close" onclick="event.stopPropagation();unpinDmMsg('${c.id}')">✕</button></div>` : '';
   el.innerHTML = `
     <div class="dch"><div class="av ${avc}" ${profClick}>${inner}</div>
-    <div><div class="dcn"${!c.isGroup && otReal ? ` onclick="showProfile('${esc(otReal)}',false)" style="cursor:pointer;"` : ''}>${esc(ot)}</div>${memberInfo}${!c.isGroup ? `<div class="dcs">Aktif sohbet</div>` : ''}</div>
+    <div style="flex:1;min-width:0;"><div class="dcn"${!c.isGroup && otReal ? ` onclick="showProfile('${esc(otReal)}',false)" style="cursor:pointer;"` : ''}>${esc(ot)}</div>${memberInfo}${!c.isGroup ? `<div class="dcs" id="dcs-${c.id}">Aktif sohbet</div>` : ''}</div>
+    ${!c.isGroup ? `<button class="dch-action-btn" onclick="openDmMediaGallery('${c.id}')" title="Medya Galerisi"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></button>` : ''}
+    ${!c.isGroup ? `<button class="dch-action-btn" id="dmMuteBtn-${c.id}" onclick="openDmMuteMenu('${c.id}')" title="Sessiz Al" style="font-size:15px;">${muteIcon}</button>` : ''}
     ${!c.isGroup ? `<div class="dmat ${ma ? 'on' : ''}" onclick="togDa('${c.id}')"><div class="adot" style="${ma ? 'background:var(--an)' : ''}"></div><span>${ma ? 'Anonim: Açık' : 'Anonim: Kapalı'}</span></div>` : ''}</div>
+    ${pinnedBar}
     <div class="msgs" id="dmm-${c.id}"></div>
     <div class="reply-bar" id="dReplyBar-${c.id}">
       <div style="width:3px;height:100%;background:var(--ac);border-radius:2px;flex-shrink:0;"></div>
@@ -133,12 +199,17 @@ function rAC(c) {
     <div class="cw">
       <div class="dm-input-row">
         <button class="media-btn" onclick="openMediaPicker('${c.id}')" title="Fotoğraf/Video">📎</button>
-        <textarea class="ci ${ma ? 'am' : ''}" id="dmi-${c.id}" placeholder="${ma ? 'Anonim olarak...' : (esc(ot) + ' kişisine yaz...')}" onkeydown="dk(event,'${c.id}')" oninput="autoResize(this)" style="flex:1;"></textarea>
+        <textarea class="ci ${ma ? 'am' : ''}" id="dmi-${c.id}" placeholder="${ma ? 'Anonim olarak...' : (esc(ot) + ' kişisine yaz...')}" onkeydown="dk(event,'${c.id}')" oninput="autoResize(this);onDmTyping('${c.id}');saveDmDraft('${c.id}',this.value)" style="flex:1;"></textarea>
         <button class="sb ${ma ? 'a' : 'n'}" onclick="sD('${c.id}')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>
       </div>
       <div class="hint ${ma ? 'am' : ''}">${ma ? me.anonId + ' olarak görünürsün' : 'Enter → gönder · Shift+Enter → yeni satır'}</div>
     </div>`;
   rDM(c);
+  // Taslak varsa geri yükle
+  if (_dmDrafts[c.id]) {
+    const draftInp = document.getElementById('dmi-' + c.id);
+    if (draftInp) { draftInp.value = _dmDrafts[c.id]; autoResize(draftInp); }
+  }
 }
 
 // ══════════════════════════════════════════════════
@@ -166,15 +237,18 @@ function rDM(c) {
     let textContent = '';
     if (m.recalled) textContent = `<div class="mx recalled">🚫 Bu mesaj geri alındı.</div>`;
     else if (m.editing && isMe) textContent = `<div class="edit-wrap"><textarea class="edit-inp" id="edit-${m.id}">${esc(m.text)}</textarea><div class="edit-btns"><button class="edit-ok" onclick="saveEdit(${m.id},'dm','${c.id}')">Kaydet</button><button class="edit-cancel" onclick="cancelEdit(${m.id},'dm','${c.id}')">İptal</button></div></div>`;
-    else textContent = `${replyHTML}${m.text ? `<div class="mx ${m.isAnon ? 'an' : ''}">${t2h(m.text)}</div>` : ''}${mediaHTML}${m.edited ? '<span class="edited-tag">(düzenlendi)</span>' : ''}${m.text && !m.mediaType ? `<button class="translate-btn" onclick="translateMsg(${m.id},'dm','${c.id}')">🌐 Çevir</button>` : ''}${m.translatedText ? `<div class="translated-text">🇹🇷 ${esc(m.translatedText)}</div>` : ''}`;
+    else textContent = `${replyHTML}${m.text ? `<div class="mx ${m.isAnon ? 'an' : ''}">${t2h(m.text)}</div>` : ''}${mediaHTML}${m.edited ? '<span class="edited-tag">(düzenlendi)</span>' : ''}${m.translatedText ? `<div class="translated-text">🇹🇷 ${esc(m.translatedText)}</div>` : ''}`;
     const reactHTML = (!m.recalled && !m.editing) ? buildReactions(m, 'dm', c.id) : '';
-    const isLastMine = isMe && !m.recalled && c.msgs.filter(x => x.fromReal === me.name && !x.recalled).slice(-1)[0]?.id === m.id;
-    const seenHTML = isLastMine && c.status === 'active' ? '<div class="seen-tag"> Görüldü</div>' : '';
+    let seenHTML = '';
+    if (isMe && !m.recalled && !c.isGroup) {
+      if (c.status === 'active') seenHTML = '<span class="msg-tick read" title="Okundu">✓✓</span>';
+      else seenHTML = '<span class="msg-tick" title="Gönderildi">✓</span>';
+    }
     const d = document.createElement('div'); d.className = 'msg'; d.dataset.msgId = m.id; d.id = 'dmsg-' + c.id + '-' + m.id;
     d.innerHTML = `<div class="msg-av ${avc}" onclick="showProfile('${esc(m.from)}',${m.isAnon})">${inner}</div>
     <div class="mb"><div class="mh"><span class="mn ${nc}" onclick="showProfile('${esc(m.from)}',${m.isAnon})">${esc(m.from)}</span>${rev}<span class="mt">${ft(m.time)}</span></div>${textContent}${reactHTML}${seenHTML}</div>
     ${!m.recalled && !m.editing ? `<div class="msg-actions"><button class="mac" onclick="showEmojiPicker(this.closest('.msg-actions'),${m.id},'dm','${c.id}')">😊</button><button class="mac" onclick="setDReply(convs['${c.id}'],convs['${c.id}'].msgs.find(x=>x.id===${m.id}))">↩</button>${isMe || me.isAdmin ? `<button class="mac" onclick="showCtx(event,${m.id},'${c.id}','dm')">⋯</button>` : ''}</div>` : ''}`;
-    if ((isMe || me.isAdmin) && !m.recalled && !m.editing) d.addEventListener('contextmenu', e => { e.preventDefault(); e.stopPropagation(); showCtx(e, m.id, c.id, 'dm'); });
+    if ((isMe || me.isAdmin) && !m.recalled && !m.editing) d.addEventListener('click', e => { if (e.target.closest('button, a, img, video, .rxn, .msg-av, .mh, .emoji-picker, .reply-quote')) return; e.stopPropagation(); showCtx(e, m.id, c.id, 'dm'); });
     el.appendChild(d);
   });
   sbot('dmm-' + c.id);
@@ -208,12 +282,122 @@ function clearDReply(cid) { delete dmReplies[cid]; const bar = document.getEleme
 // DM GÖNDER
 // ══════════════════════════════════════════════════
 
-function togDa(id) { const c = convs[id]; if (c.fromReal === me.name) c.fromAnon = !c.fromAnon; else c.toAnon = !c.toAnon; rAC(c); }
+function togDa(id) { const c = convs[id]; if (!c) return; if (c.fromReal === me.name) c.fromAnon = !c.fromAnon; else c.toAnon = !c.toAnon; rAC(c); }
 function dk(e, id) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sD(id); } }
+
+// ── YAZIYYOR... GÖSTERGESİ ─────────────────────────
+// Global durum: { convId: { who: userName, until: timestamp } }
+const _dmTyping = {};
+
+function onDmTyping(id) {
+  // Sadece global durumu güncelle — UI'ı kendin için gösterme
+  _dmTyping[id] = { who: me.name, until: Date.now() + 2500 };
+}
+
+// 500ms'de bir aktif konuşmanın başlığını güncelle
+setInterval(function() {
+  if (!activeDm) return;
+  const convId = activeDm.id;
+  const el = document.getElementById('dcs-' + convId); if (!el) return;
+  const t = _dmTyping[convId];
+  if (t && t.who !== me.name && t.until > Date.now()) {
+    // Karşı taraf yazıyor
+    el.innerHTML = '<span class="typing-dots"><span></span><span></span><span></span></span> ' + esc(t.who) + ' yazıyor...';
+  } else {
+    // Yazıyor göstergesi varsa kaldır
+    if (el.querySelector && el.querySelector('.typing-dots')) el.textContent = 'Aktif sohbet';
+  }
+}, 500);
+
+// ── MESAJ TASLAĞИ ──────────────────────────────────
+const _dmDrafts = {};
+function saveDmDraft(id, val) {
+  if (val.trim()) _dmDrafts[id] = val;
+  else delete _dmDrafts[id];
+}
+
+// ── DM SESSİZ AL ──────────────────────────────────
+function isDmMuted(convId) {
+  const c = convs[convId]; if (!c || !c.mutedUntil) return false;
+  return c.mutedUntil === Infinity || c.mutedUntil > Date.now();
+}
+function muteDmConv(convId, ms) {
+  const c = convs[convId]; if (!c) return;
+  c.mutedUntil = ms === Infinity ? Infinity : Date.now() + ms;
+  const lbl = ms === Infinity ? 'süresiz' : (ms === 3600000 ? '1 saat' : '8 saat');
+  toast('Sohbet ' + lbl + ' için sessize alındı 🔕', 's');
+  const mm = document.getElementById('dmMuteDropdown'); if (mm) mm.remove();
+  rDL(); if (activeDm?.id === convId) rAC(c);
+}
+function unmuteDmConv(convId) {
+  const c = convs[convId]; if (!c) return;
+  c.mutedUntil = null;
+  toast('Sesi açıldı 🔔', 's');
+  const mm = document.getElementById('dmMuteDropdown'); if (mm) mm.remove();
+  rDL(); if (activeDm?.id === convId) rAC(c);
+}
+function openDmMuteMenu(convId) {
+  const existing = document.getElementById('dmMuteDropdown');
+  if (existing) { existing.remove(); return; }
+  const muted = isDmMuted(convId);
+  const menu = document.createElement('div');
+  menu.id = 'dmMuteDropdown'; menu.className = 'dm-mute-menu';
+  menu.innerHTML = muted
+    ? `<div class="dm-mute-item" onclick="unmuteDmConv('${convId}')">🔔 Sesi Aç</div>`
+    : `<div class="dm-mute-item" onclick="muteDmConv('${convId}',3600000)">🔕 1 Saat Sessiz</div>
+       <div class="dm-mute-item" onclick="muteDmConv('${convId}',28800000)">🔕 8 Saat Sessiz</div>
+       <div class="dm-mute-item" onclick="muteDmConv('${convId}',Infinity)">🔕 Süresiz Sessiz</div>`;
+  const btn = document.getElementById('dmMuteBtn-' + convId);
+  if (btn) {
+    const r = btn.getBoundingClientRect();
+    menu.style.position = 'fixed';
+    menu.style.top = (r.bottom + 4) + 'px';
+    menu.style.right = (window.innerWidth - r.right) + 'px';
+  }
+  document.body.appendChild(menu);
+  setTimeout(() => document.addEventListener('click', function _rm() {
+    const m = document.getElementById('dmMuteDropdown'); if (m) m.remove();
+    document.removeEventListener('click', _rm);
+  }), 10);
+}
+
+// ── MESAJ SABİTLEME (DM) ──────────────────────────
+function pinDmMsg(convId, msgId) {
+  const c = convs[convId]; if (!c) return;
+  const m = c.msgs.find(x => x.id === msgId); if (!m) return;
+  c.pinnedMsg = { id: m.id, from: m.from || m.fromReal, text: m.text || (m.mediaType === 'image' ? '📷 Fotoğraf' : '🎥 Video') };
+  rAC(c); toast('Mesaj sabitlendi 📌', 's');
+}
+function unpinDmMsg(convId) {
+  const c = convs[convId]; if (!c) return;
+  c.pinnedMsg = null; rAC(c); toast('Sabitleme kaldırıldı', 'w');
+}
+
+// ── MEDYA GALERİSİ ─────────────────────────────────
+function openDmMediaGallery(convId) {
+  const c = convs[convId]; if (!c) return;
+  const media = c.msgs.filter(m => m.mediaData && !m.recalled);
+  const grid = document.getElementById('dmMediaGrid'); if (!grid) return;
+  grid.innerHTML = '';
+  if (!media.length) {
+    grid.innerHTML = '<div class="dm-media-empty">📭 Henüz medya paylaşılmadı</div>';
+  } else {
+    media.forEach(m => {
+      const item = document.createElement('div'); item.className = 'dm-media-item';
+      if (m.mediaType === 'image') {
+        item.innerHTML = `<img src="${m.mediaData}" alt="" onclick="openLightbox(this.src)"/>`;
+      } else {
+        item.innerHTML = `<video src="${m.mediaData}" onclick="this.paused?this.play():this.pause()"></video>`;
+      }
+      grid.appendChild(item);
+    });
+  }
+  om('dmMediaModal');
+}
 
 function sD(id) {
   if (isMuted(me.name)) { toast('Susturuldunuz.', 'e'); return; }
-  const c = convs[id], inp = document.getElementById('dmi-' + id); if (!inp) return;
+  const c = convs[id], inp = document.getElementById('dmi-' + id); if (!c || !inp) return;
   const txt = inp.value.trim(); if (!txt) return;
   // Karşılıklı engelleme kontrolü
   if (!c.isGroup) {
@@ -224,8 +408,11 @@ function sD(id) {
   }
   const ma = c.isGroup ? false : (c.fromReal === me.name ? c.fromAnon : c.toAnon), dn = ma ? me.anonId : me.name;
   const replyTo = dmReplies[id] ? { ...dmReplies[id] } : null;
-  c.msgs.push({ id: Date.now(), from: dn, fromReal: me.name, text: txt, isAnon: ma, isMe: true, time: new Date(), recalled: false, edited: false, reactions: {}, replyTo });
+  const newMsg = { id: Date.now(), from: dn, fromReal: me.name, text: txt, isAnon: ma, isMe: true, time: new Date(), recalled: false, edited: false, reactions: {}, replyTo };
+  c.msgs.push(newMsg);
   mld.push({ who: dn, real: me.name, isAnon: ma, text: txt, time: new Date(), isDm: true });
+  if (typeof fbSendDmMsg === 'function') fbSendDmMsg(id, newMsg);
+  delete _dmDrafts[id];
   clearDReply(id); inp.value = ''; inp.style.height = '42px'; rDM(c);
 }
 
@@ -261,7 +448,7 @@ function onMediaFile(e) {
 function wk(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sw2adm(); } }
 
 function sw2adm() {
-  const inp = q('#wInp'), txt = inp.value.trim(); if (!txt) return;
+  const inp = q('#wInp'); if (!inp) return; const txt = inp.value.trim(); if (!txt) return;
   const sendAnon = q('#wAnonCheck').checked, dispName = sendAnon ? me.anonId : me.name;
   inbox.push({ id: 'm' + Date.now(), from: dispName, fromReal: me.name, fromAnonId: sendAnon ? me.anonId : null, isAnon: sendAnon, text: txt, time: new Date(), read: false, reply: '' });
   if (sendAnon) aReg[me.anonId] = me.name;
@@ -269,7 +456,7 @@ function sw2adm() {
 }
 
 function rMyW() {
-  const el = q('#myWmsgs'); el.innerHTML = '';
+  const el = q('#myWmsgs'); if (!el) return; el.innerHTML = '';
   const mine = inbox.filter(m => m.fromReal === me.name);
   if (!mine.length) { el.innerHTML = '<div style="color:var(--t3);font-size:13px;padding:8px 0;">Henüz mesaj atmadın.</div>'; return; }
   mine.forEach(m => {

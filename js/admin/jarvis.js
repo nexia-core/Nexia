@@ -4,8 +4,8 @@
 // ══════════════════════════════════════════════════
 
 // ─── API Ayarları ────────────────────────────────────────────────
-var JARVIS_API_KEY = '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';
-var JARVIS_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
+var JARVIS_API_KEY = ''; // Worker içinde gizli
+var JARVIS_API_URL = 'https://muddy-sun-4b70.karabuluttalha154.workers.dev';
 var JARVIS_MODEL = 'llama-3.3-70b-versatile';
 
 var JARVIS_INSTRUCTION = 'Sen OkulNet\'in kurucusu ve yöneticisi olan Talha\'ya hizmet eden üst düzey sistem asistanı JARVIS\'sin. ' +
@@ -23,8 +23,11 @@ var JARVIS_COMMANDS = [
   {
     id: 'ban',
     patterns: [
-      /(?:banla|engelle|yasakla|ban at|blokla|ban uygula)\w*/i,
-      /(?:ban|engel|yasak)\s+(?:at|ver|koy|uygula)\w*/i
+      /(?:banla|engelle|yasakla|ban\s*at|blokla|ban\s*uygula)\w*/i,
+      /(?:ban|engel|yasak)\s+(?:at|ver|koy|uygula)\w*/i,
+      /\bban\b/i,
+      /(?:hesab[ıi]n[ıi]?\s*(?:kapat|sil|askıya)|sisteme\s*giremesin|erişimi\s*(?:kapat|kaldır|engelle)|hesab[ıi]\s*kapat)\w*/i,
+      /(?:ceza\s*ver|cezalandır)\w*/i
     ],
     extract: extractUserName,
     execute: executeJarvisBan,
@@ -33,7 +36,8 @@ var JARVIS_COMMANDS = [
   {
     id: 'unban',
     patterns: [
-      /(?:engel(?:ini|i|ını)?\s*kaldır|unban|ban(?:ını|ı|ini)?\s*kaldır|engel(?:ini|i|ını)?\s*aç|yasağ(?:ını|ı|ini)?\s*kaldır)\w*/i
+      /(?:engel(?:ini|i|ını)?\s*kaldır|unban|ban(?:ını|ı|ini)?\s*kaldır|engel(?:ini|i|ını)?\s*aç|yasağ(?:ını|ı|ini)?\s*kaldır)\w*/i,
+      /(?:tekrar\s*(?:girebilsin|erişebilsin|sisteme\s*girebilsin))\w*/i
     ],
     extract: extractUserName,
     execute: executeJarvisUnban,
@@ -43,7 +47,8 @@ var JARVIS_COMMANDS = [
     id: 'mute',
     patterns: [
       /(?:sustur|mute(?:la|le)?|sesini\s*(?:kıs|kapat)|sustu?r)\w*/i,
-      /(?:sus|mute)\s+(?:at|ver|yap|uygula)\w*/i
+      /(?:sus|mute)\s+(?:at|ver|yap|uygula)\w*/i,
+      /(?:uyar[ıi]|yazmasın|mesaj\s*(?:atamasın|gönderemesin|yapamasın))\w*/i
     ],
     extract: extractUserName,
     execute: executeJarvisMute,
@@ -52,7 +57,8 @@ var JARVIS_COMMANDS = [
   {
     id: 'unmute',
     patterns: [
-      /(?:susturma(?:yı|sını|sini|yı)?\s*kaldır|unmute|sesini\s*aç|konuşabilsin|susturulmasını\s*kaldır)\w*/i
+      /(?:susturma(?:yı|sını|sini|yı)?\s*kaldır|unmute|sesini\s*aç|konuşabilsin|susturulmasını\s*kaldır)\w*/i,
+      /(?:tekrar\s*(?:yazabilsin|mesaj\s*atabilsin|konuşabilsin))\w*/i
     ],
     extract: extractUserName,
     execute: executeJarvisUnmute,
@@ -61,7 +67,8 @@ var JARVIS_COMMANDS = [
   {
     id: 'kick',
     patterns: [
-      /(?:kickle|at|kov|mesajlarını\s*sil|temizle)\w*/i
+      /(?:kickle|kov|mesajlar[ıi]n[ıi]\s*sil|mesajlar[ıi]\s*temizle)\w*/i,
+      /(?:at\s+(?:sistemi?|dışarı)|dışarı\s*at|sistemden\s*at|çıkar)\w*/i
     ],
     extract: extractUserName,
     execute: executeJarvisKick,
@@ -251,8 +258,7 @@ async function askJarvis() {
     var response = await fetch(JARVIS_API_URL, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + JARVIS_API_KEY
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
         model: JARVIS_MODEL,

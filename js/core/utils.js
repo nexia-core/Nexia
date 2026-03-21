@@ -43,17 +43,17 @@ function mkS(t) {
 
 /** Toast bildirimi göster: tp = 's' (success) | 'e' (error) | 'w' (warning) */
 function toast(m, tp = 's') {
-  const t = q('#toast');
+  const t = q('#toast'); if (!t) return;
   t.textContent = m;
   t.className = 'toast sh ' + tp;
   setTimeout(() => t.className = 'toast', 3000);
 }
 
 /** Modal aç */
-function om(id) { q('#' + id).classList.add('op'); }
+function om(id) { const el = q('#' + id); if (el) el.classList.add('op'); }
 
 /** Modal kapat */
-function cm(id) { q('#' + id).classList.remove('op'); }
+function cm(id) { const el = q('#' + id); if (el) el.classList.remove('op'); }
 
 /** Textarea yüksekliğini içeriğe göre ayarla */
 function autoResize(el) {
@@ -131,6 +131,7 @@ function addNotif(icon, title, sub, action) {
 function renderNotifBadge() {
   const unread = notifications.filter(n => !n.read).length;
   const badge = q('#notifBadge');
+  if (!badge) return;
   if (unread > 0) {
     badge.textContent = unread > 9 ? '9+' : unread;
     badge.style.display = 'flex';
@@ -146,7 +147,7 @@ function toggleNotifPanel() {
 }
 
 function renderNotifList() {
-  const el = q('#notifList');
+  const el = q('#notifList'); if (!el) return;
   el.innerHTML = '';
   if (!notifications.length) {
     el.innerHTML = '<div class="notif-empty">Henüz bildirim yok.</div>';

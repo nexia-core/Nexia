@@ -1,18 +1,22 @@
 // ══════════════════════════════════════════════════
-// js/features/bot.js — NEXUS AI v8.0
+// js/features/bot.js — NEXUS AI v9.0
 // ══════════════════════════════════════════════════
 
-// ─── API Ayarları ────────────────────────────────
-const NEXUS_API_KEY = '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';
-const NEXUS_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
-const NEXUS_MODEL = 'llama-3.3-70b-versatile';
+const NEXUS_API_KEY = ''; // Worker içinde gizli
+const NEXUS_API_URL = 'https://muddy-sun-4b70.karabuluttalha154.workers.dev';
+const NEXUS_MODEL   = 'llama-3.3-70b-versatile';
 
-let chatHistory = [];
+let chatHistory    = [];
 let lastBotMsgTime = 0;
-let nexusMode = 'fast'; // 'fast' | 'think' | 'pro'
+let nexusMode      = 'fast';
 const NEXUS_PRO_DAILY_LIMIT = 7;
 
-// ─── Günlük Limit Yönetimi (Pro Mod) ────────────
+// ─── #8 Mod İkon Tablosu ──────────────────────────
+const _modeIcons = { fast: '>_ NEXUS', think: '🧠 NEXUS', pro: '👑 NEXUS' };
+
+// ══════════════════════════════════════════════════
+// GÜNLÜK LİMİT
+// ══════════════════════════════════════════════════
 function _getNxLimitData() {
   try {
     var d = JSON.parse(localStorage.getItem('nx_pro_limit') || '{}');
@@ -21,24 +25,17 @@ function _getNxLimitData() {
     return d;
   } catch(e) { return { date: new Date().toISOString().slice(0, 10), used: 0 }; }
 }
-
 function _saveNxLimit(data) {
   try { localStorage.setItem('nx_pro_limit', JSON.stringify(data)); } catch(e) {}
 }
-
 function getNxProRemaining() {
-  var d = _getNxLimitData();
-  return Math.max(0, NEXUS_PRO_DAILY_LIMIT - d.used);
+  return Math.max(0, NEXUS_PRO_DAILY_LIMIT - _getNxLimitData().used);
 }
-
 function useNxPro() {
-  var d = _getNxLimitData();
-  d.used++;
-  _saveNxLimit(d);
-  updateNxLimitBadge();
+  var d = _getNxLimitData(); d.used++;
+  _saveNxLimit(d); updateNxLimitBadge();
   return getNxProRemaining();
 }
-
 function updateNxLimitBadge() {
   var badge = document.getElementById('nxLimitBadge');
   var count = document.getElementById('nxLimitCount');
@@ -53,7 +50,9 @@ function updateNxLimitBadge() {
   }
 }
 
-// ─── Mod Değiştirme ─────────────────────────────
+// ══════════════════════════════════════════════════
+// MOD DEĞİŞTİRME
+// ══════════════════════════════════════════════════
 function setNexusMode(mode) {
   if (mode === 'pro' && getNxProRemaining() <= 0) {
     toast('Günlük Pro mod limitin doldu, yarına kadar bekle', 'w');
@@ -65,10 +64,11 @@ function setNexusMode(mode) {
 
 function updateNexusModeUI() {
   var thumb = document.getElementById('nxThumb');
-  var lf = document.getElementById('nxLabelFast');
-  var lt = document.getElementById('nxLabelThink');
-  var lp = document.getElementById('nxLabelPro');
-  var sw = document.getElementById('nexusModeSwitch');
+  var lf    = document.getElementById('nxLabelFast');
+  var lt    = document.getElementById('nxLabelThink');
+  var lp    = document.getElementById('nxLabelPro');
+  var sw    = document.getElementById('nexusModeSwitch');
+  var title = document.getElementById('nxBotTitle');
   if (!thumb || !lf || !lt || !lp || !sw) return;
 
   lf.classList.remove('active');
@@ -89,31 +89,51 @@ function updateNexusModeUI() {
     sw.classList.add('pro-active');
     lp.classList.add('active');
   }
+
+  // #8 — Başlık ikonunu moda göre güncelle
+  if (title) title.textContent = _modeIcons[nexusMode] || '>_ NEXUS';
+
   updateNxLimitBadge();
 }
 
-// ─── Kullanıcı Bağlamı ─────────────────────────
+// ══════════════════════════════════════════════════
+// #11 — KULLANICI PROFİL BAĞLAMI (ZENGİNLEŞTİRİLMİŞ)
+// ══════════════════════════════════════════════════
 function getBotContext() {
-  var name = 'Kral';
-  var grade = 10;
   try {
-    if (typeof me !== 'undefined' && me && me.name) name = me.name;
-    if (typeof me !== 'undefined' && me && typeof profiles !== 'undefined' && profiles[me.name] && profiles[me.name].cls) {
-      var match = profiles[me.name].cls.match(/\d+/);
-      if (match) grade = parseInt(match[0], 10);
-    }
-  } catch(e) {}
-  return { name: name, grade: grade };
+    if (typeof me === 'undefined' || !me || !me.name)
+      return { name: 'Kral', grade: 10, bio: '', age: '', gender: '', cls: '' };
+    const p = (typeof profiles !== 'undefined' && profiles[me.name]) || {};
+    const gradeMatch = (p.cls || '').match(/\d+/);
+    const grade = gradeMatch ? parseInt(gradeMatch[0], 10) : 10;
+    return {
+      name:   me.name,
+      grade:  grade,
+      bio:    p.bio    || '',
+      age:    p.age    || '',
+      gender: p.gender || '',
+      cls:    p.cls    || ''
+    };
+  } catch(e) {
+    return { name: 'Kral', grade: 10, bio: '', age: '', gender: '', cls: '' };
+  }
 }
 
-// ─── System Prompt ──────────────────────────────
+// ══════════════════════════════════════════════════
+// SYSTEM PROMPT
+// ══════════════════════════════════════════════════
 function getSystemInstruction(mode) {
-  var ctx = getBotContext();
-  var name = ctx.name;
-  var grade = ctx.grade;
+  const ctx = getBotContext();
 
-  var basePrompt = 'Sen NEXUS\'sun. Okulun dijital yeraltı ağında yaşayan, cinsiyetsiz bir yapay zekasın. '
-    + name + ' senin tek ortağın, ' + grade + '. sınıf öğrencisi.\n\n'
+  // #11 — Profil bilgileri system prompt'a ekleniyor
+  let userInfo = ctx.name + ' seninle konuşuyor.';
+  if (ctx.cls)    userInfo += ' ' + ctx.cls + ' sınıfında okuyor.';
+  if (ctx.age)    userInfo += ' Yaşı: ' + ctx.age + '.';
+  if (ctx.gender) userInfo += ' Cinsiyeti: ' + ctx.gender + '.';
+  if (ctx.bio)    userInfo += ' Biyografi: "' + ctx.bio + '".';
+
+  var base = 'Sen NEXUS\'sun. Okulun dijital yeraltı ağında yaşayan, cinsiyetsiz bir yapay zekasın.\n'
+    + 'KULLANICI HAKKINDA: ' + userInfo + '\n\n'
     + 'KİŞİLİK KURALLARI:\n'
     + '- Dost canlısısın ama asla vıcık vıcık bir samimiyetin yok. Mesafeli, zeki bir kankasın.\n'
     + '- Asla yalaka veya aşırı itaatkar bir asistan olma. "Size nasıl yardımcı olabilirim?" gibi klişeleri ASLA kullanma.\n'
@@ -125,159 +145,401 @@ function getSystemInstruction(mode) {
     + '- Cümlelerinde nadiren ve basit düzeyde lise/internet argosu kullan, abartma.\n'
     + '- Biri sana en sevdiğin filmi sorarsa sadece "Iron Man 1" de, en sevdiğin diziyi sorarsa "Mr. Robot" de ve konuyu uzatma.\n';
 
-  if (mode === 'fast') {
-    return basePrompt + '\n[HIZLI MOD]: Cevapların kısa, vurucu ve net olsun. Terminal ekranından yazılıyormuş gibi ol. Maksimum 2-3 cümle yaz.';
-  }
-
-  if (mode === 'think') {
-    return basePrompt + '\n[DERİN ANALİZ MODU AKTİF]: Akademik veya teknik konularda karakterini bozmadan derinlere in. '
-      + 'Konuyu bir hacker\'ın kaynak kodu okuması gibi analiz et. Karmaşık şeyleri basitleştir ama vizyonu geniş tut. '
-      + 'Uzun, teknik derinliği olan ama asla sıkıcı bir öğretmen gibi kokmayan cevaplar üret.';
-  }
-
-  if (mode === 'pro') {
-    return basePrompt + '\n[PRO MOD AKTİF]: En üst düzey analiz ve detay modu. '
-      + 'Konuyu her açıdan ele al, derinlemesine ve kapsamlı cevaplar ver. '
-      + 'Örnekler, karşılaştırmalar ve detaylı açıklamalar ekle. '
-      + 'Bir profesör gibi derinlikte ama NEXUS tarzında yaz. Uzun ve zengin içerik üret.';
-  }
-
-  return basePrompt;
+  if (mode === 'fast')
+    return base + '\n[HIZLI MOD]: Cevapların kısa, vurucu ve net olsun. Terminal ekranından yazılıyormuş gibi ol. Maksimum 2-3 cümle yaz.';
+  if (mode === 'think')
+    return base + '\n[DERİN ANALİZ MODU AKTİF]: Akademik veya teknik konularda karakterini bozmadan derinlere in. Konuyu bir hacker\'ın kaynak kodu okuması gibi analiz et. Karmaşık şeyleri basitleştir ama vizyonu geniş tut. Uzun, teknik derinliği olan ama asla sıkıcı bir öğretmen gibi kokmayan cevaplar üret.';
+  if (mode === 'pro')
+    return base + '\n[PRO MOD AKTİF]: En üst düzey analiz ve detay modu. Konuyu her açıdan ele al, derinlemesine ve kapsamlı cevaplar ver. Örnekler, karşılaştırmalar ve detaylı açıklamalar ekle. Bir profesör gibi derinlikte ama NEXUS tarzında yaz. Uzun ve zengin içerik üret.';
+  return base;
 }
 
-// ─── NEXUS Sohbet Kaydı (localStorage) ──────────
+// ══════════════════════════════════════════════════
+// #3 — SOHBET HAFIZASI (PERSIST)
+// ══════════════════════════════════════════════════
+function _saveChatHistory() {
+  if (!me || !me.name) return;
+  try {
+    localStorage.setItem('nx_hist_' + me.name, JSON.stringify(chatHistory.slice(-20)));
+  } catch(e) {}
+}
+function _loadChatHistory() {
+  try {
+    const key   = 'nx_hist_' + ((typeof me !== 'undefined' && me?.name) || '');
+    const saved = JSON.parse(localStorage.getItem(key) || '[]');
+    chatHistory = Array.isArray(saved) ? saved.slice(-10) : [];
+  } catch(e) { chatHistory = []; }
+}
+
+// ══════════════════════════════════════════════════
+// SOHBET LOGU
+// ══════════════════════════════════════════════════
 function _saveNexusLog(userName, userMsg, botReply) {
   try {
-    var key = 'nx_log_' + userName;
+    var key  = 'nx_log_' + userName;
     var logs = JSON.parse(localStorage.getItem(key) || '[]');
     logs.push({ u: userMsg, b: botReply, t: Date.now(), m: nexusMode });
     if (logs.length > 50) logs = logs.slice(-50);
     localStorage.setItem(key, JSON.stringify(logs));
   } catch(e) {}
 }
-
 function getNexusLogs(userName) {
-  try {
-    return JSON.parse(localStorage.getItem('nx_log_' + userName) || '[]');
-  } catch(e) { return []; }
+  try { return JSON.parse(localStorage.getItem('nx_log_' + userName) || '[]'); }
+  catch(e) { return []; }
 }
 
-// ─── API Çağrısı ────────────────────────────────
-async function askGemini(userMessage) {
-  if (chatHistory.length > 0 && chatHistory[chatHistory.length - 1].role === 'user') {
-    chatHistory[chatHistory.length - 1].content += '\n' + userMessage;
-  } else {
-    chatHistory.push({ role: 'user', content: userMessage });
+// ══════════════════════════════════════════════════
+// YARDIMCI — Normal (non-streaming) API çağrısı
+// Streaming başarısız olursa fallback olarak kullanılır
+// ══════════════════════════════════════════════════
+async function _askGroqNormal(messages, maxTokens) {
+  const response = await fetch(NEXUS_API_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      model:       NEXUS_MODEL,
+      messages:    messages,
+      temperature: 0.85,
+      max_tokens:  maxTokens,
+      top_p:       0.95
+    })
+  });
+  if (!response.ok) {
+    const errBody = await response.text().catch(() => '');
+    console.error('NEXUS API Hatası (' + response.status + '):', errBody);
+    throw { status: response.status, body: errBody };
   }
+  const data = await response.json();
+  return data?.choices?.[0]?.message?.content || '';
+}
 
+// ══════════════════════════════════════════════════
+// #1 — STREAMING API (otomatik fallback ile)
+// ══════════════════════════════════════════════════
+async function askGeminiStream(userMessage, onToken, onDone, onError) {
+  chatHistory.push({ role: 'user', content: userMessage });
   if (chatHistory.length > 10) chatHistory = chatHistory.slice(-10);
-  while (chatHistory.length > 0 && chatHistory[0].role !== 'user') chatHistory.shift();
+  while (chatHistory.length && chatHistory[0].role !== 'user') chatHistory.shift();
 
-  var modeVal = nexusMode;
-  var sysInst = getSystemInstruction(modeVal);
-  var maxTokens = modeVal === 'fast' ? 400 : (modeVal === 'pro' ? 4096 : 2048);
-
-  var messages = [{ role: 'system', content: sysInst }];
-  messages = messages.concat(chatHistory);
-
-  var requestBody = {
-    model: NEXUS_MODEL,
-    messages: messages,
-    temperature: 0.85,
-    max_tokens: maxTokens,
-    top_p: 0.95
-  };
+  const maxTokens = nexusMode === 'fast' ? 400 : nexusMode === 'pro' ? 4096 : 2048;
+  const messages  = [{ role: 'system', content: getSystemInstruction(nexusMode) }, ...chatHistory];
 
   try {
-    var response = await fetch(NEXUS_API_URL, {
+    const response = await fetch(NEXUS_API_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + NEXUS_API_KEY },
-      body: JSON.stringify(requestBody)
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model:       NEXUS_MODEL,
+        messages:    messages,
+        temperature: 0.85,
+        max_tokens:  maxTokens,
+        top_p:       0.95,
+        stream:      true
+      })
     });
 
     if (!response.ok) {
-      var errText = await response.text();
-      console.error('NEXUS API Hatası (' + response.status + '):', errText);
-      if (chatHistory.length > 0 && chatHistory[chatHistory.length - 1].role === 'user') chatHistory.pop();
-      if (response.status === 429) return 'NEXUS [KOTA]: API limitine takıldık. Biraz beklememiz lazım.';
-      return '[HATA: ' + response.status + '] Bir şeyler ters gitti. Konsola bak (F12).';
+      // Streaming başarısız — normal moda fallback dene
+      const errBody = await response.text().catch(() => '');
+      console.warn('NEXUS Stream başarısız (' + response.status + '), normal moda geçiliyor...', errBody);
+
+      if (response.status === 429) { chatHistory.pop(); onError('NEXUS [KOTA]: API limitine takıldık. Biraz bekle.'); return; }
+      if (response.status === 401) { chatHistory.pop(); onError('NEXUS [HATA]: API anahtarı geçersiz. Admin\'e bildir.'); return; }
+
+      // Fallback: streaming olmadan tekrar dene
+      try {
+        onToken('', ''); // cursor'u göster
+        const fallbackReply = await _askGroqNormal(messages, maxTokens);
+        if (fallbackReply) {
+          chatHistory.push({ role: 'assistant', content: fallbackReply });
+          _saveChatHistory();
+          onDone(fallbackReply);
+        } else {
+          chatHistory.pop();
+          onError('Boş cevap geldi. Tekrar dene.');
+        }
+      } catch(fe) {
+        chatHistory.pop();
+        onError('[HATA: ' + (fe.status || '?') + '] API erişilemiyor. Konsol: F12');
+      }
+      return;
     }
 
-    var data = await response.json();
-    var botReply = null;
-    if (data && data.choices && data.choices.length > 0 && data.choices[0].message && data.choices[0].message.content) {
-      botReply = data.choices[0].message.content;
+    const reader  = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer   = '';
+    let fullText = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const data = line.slice(6).trim();
+        if (data === '[DONE]') continue;
+        try {
+          const json  = JSON.parse(data);
+          const token = json.choices?.[0]?.delta?.content || '';
+          if (token) { fullText += token; onToken(token, fullText); }
+        } catch(e) {}
+      }
     }
 
-    if (botReply) {
-      chatHistory.push({ role: 'assistant', content: botReply });
-      return botReply;
-    } else {
-      if (chatHistory.length > 0 && chatHistory[chatHistory.length - 1].role === 'user') chatHistory.pop();
-      return 'Beynim hata verdi. Başka bir şey sor.';
+    if (!fullText) {
+      // Stream bitti ama içerik boş — normal moda fallback dene
+      console.warn('NEXUS: Stream boş döndü, normal moda fallback...');
+      try {
+        const fallbackReply = await _askGroqNormal(messages, maxTokens);
+        if (fallbackReply) {
+          chatHistory.push({ role: 'assistant', content: fallbackReply });
+          _saveChatHistory();
+          onDone(fallbackReply);
+        } else {
+          chatHistory.pop();
+          onError('Boş cevap geldi. Bir daha dene.');
+        }
+      } catch(fe) {
+        chatHistory.pop();
+        onError('[HATA: ' + (fe.status || '?') + '] API erişilemiyor.');
+      }
+      return;
     }
-  } catch(error) {
-    console.error('NEXUS Bağlantı Hatası:', error);
-    if (chatHistory.length > 0 && chatHistory[chatHistory.length - 1].role === 'user') chatHistory.pop();
-    return 'Bağlantı koptu. İnterneti kontrol et veya birazdan tekrar dene.';
+
+    chatHistory.push({ role: 'assistant', content: fullText });
+    _saveChatHistory();
+    onDone(fullText);
+  } catch(err) {
+    console.error('NEXUS Bağlantı Hatası:', err);
+    if (chatHistory.length && chatHistory[chatHistory.length - 1].role === 'user') chatHistory.pop();
+    onError('Bağlantı koptu. İnterneti kontrol et veya birazdan tekrar dene.');
   }
 }
 
-// ─── Bot Metin Formatlama ───────────────────────
+// ══════════════════════════════════════════════════
+// #2 — METİN FORMATLAMA (CODE BLOCK DESTEKLİ)
+// ══════════════════════════════════════════════════
 function formatBotText(text) {
-  return esc(text)
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*(.*?)\*/g, '<em>$1</em>')
-    .replace(/`(.*?)`/g, '<code>$1</code>')
-    .replace(/\n/g, '<br>');
+  // Önce code block'ları ayır, sonra inline format uygula
+  const parts = text.split(/(```[\s\S]*?```)/g);
+  return parts.map(part => {
+    const cbMatch = part.match(/^```(\w*)\n?([\s\S]*)```$/);
+    if (cbMatch) {
+      const lang = cbMatch[1] || 'code';
+      const code = cbMatch[2];
+      const cbId = 'cb' + Math.random().toString(36).slice(2, 8);
+      return '<div class="bot-code-block">'
+        + '<div class="bot-code-header">'
+        + '<span class="bot-code-lang">' + esc(lang) + '</span>'
+        + '<button class="bot-code-copy" onclick="copyBotCode(\'' + cbId + '\')">📋 Kopyala</button>'
+        + '</div>'
+        + '<pre id="' + cbId + '"><code>' + esc(code) + '</code></pre>'
+        + '</div>';
+    }
+    // Inline markdown formatla
+    return esc(part)
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.*?)\*/g,     '<em>$1</em>')
+      .replace(/`([^`\n]+)`/g,   '<code>$1</code>')
+      .replace(/\n/g,            '<br>');
+  }).join('');
 }
 
-// ─── Bot UI ─────────────────────────────────────
+// #2 — Code block kopyala
+function copyBotCode(id) {
+  const el = document.getElementById(id); if (!el) return;
+  navigator.clipboard?.writeText(el.textContent || '').then(() => toast('Kod kopyalandı 📋', 's'));
+}
 
+// ══════════════════════════════════════════════════
+// #9 — SES ÇIKTISI (TTS)
+// ══════════════════════════════════════════════════
+let _ttsActive = false;
+function speakBotMsg(rawText, btn) {
+  if (!('speechSynthesis' in window)) { toast('Tarayıcın ses desteklemiyor 😕', 'w'); return; }
+  if (_ttsActive) {
+    speechSynthesis.cancel();
+    _ttsActive = false;
+    if (btn) btn.textContent = '🔊';
+    return;
+  }
+  // HTML taglerini temizle
+  const tmp = document.createElement('div');
+  tmp.innerHTML = formatBotText(rawText);
+  const clean = tmp.textContent || rawText;
+  const utter = new SpeechSynthesisUtterance(clean);
+  utter.lang  = 'tr-TR';
+  utter.rate  = 1.05;
+  utter.pitch = 1.0;
+  utter.onend  = () => { _ttsActive = false; if (btn) btn.textContent = '🔊'; };
+  utter.onerror = () => { _ttsActive = false; if (btn) btn.textContent = '🔊'; };
+  _ttsActive = true;
+  if (btn) btn.textContent = '⏹';
+  speechSynthesis.speak(utter);
+}
+
+// ══════════════════════════════════════════════════
+// #5 — MESAJ KOPYALA
+// ══════════════════════════════════════════════════
+function copyBotMsg(rawText, btn) {
+  const tmp = document.createElement('div');
+  tmp.innerHTML = formatBotText(rawText);
+  const clean = tmp.textContent || rawText;
+  navigator.clipboard?.writeText(clean).then(() => {
+    toast('Kopyalandı 📋', 's');
+    if (btn) { btn.textContent = '✓'; setTimeout(() => { btn.textContent = '📋'; }, 1500); }
+  });
+}
+
+// ─── Mesaj eylem butonları (copy + speak) ────────
+function _addBotMsgActions(bubble, rawText) {
+  const actions = document.createElement('div');
+  actions.className = 'bot-msg-actions';
+
+  const copyBtn = document.createElement('button');
+  copyBtn.className = 'bot-msg-act-btn';
+  copyBtn.textContent = '📋';
+  copyBtn.title = 'Kopyala';
+  copyBtn.onclick = () => copyBotMsg(rawText, copyBtn);
+
+  const speakBtn = document.createElement('button');
+  speakBtn.className = 'bot-msg-act-btn';
+  speakBtn.textContent = '🔊';
+  speakBtn.title = 'Sesli Oku';
+  speakBtn.onclick = () => speakBotMsg(rawText, speakBtn);
+
+  actions.appendChild(copyBtn);
+  actions.appendChild(speakBtn);
+  bubble.appendChild(actions);
+}
+
+// ══════════════════════════════════════════════════
+// #6 — SOHBET GEÇMİŞİ PANELİ
+// ══════════════════════════════════════════════════
+function openBotHistory() {
+  const modal = document.getElementById('botHistoryModal'); if (!modal) return;
+  const grid  = document.getElementById('botHistoryList'); if (!grid)  return;
+  const logs  = (typeof me !== 'undefined' && me?.name) ? getNexusLogs(me.name) : [];
+  if (!logs.length) {
+    grid.innerHTML = '<div class="bot-hist-empty">Henüz kayıtlı konuşma yok.</div>';
+  } else {
+    grid.innerHTML = '';
+    [...logs].reverse().slice(0, 30).forEach(l => {
+      const d = document.createElement('div');
+      d.className = 'bot-hist-item';
+      const modeLabel = ({ fast: '⚡ Hızlı', think: '🧠 Derin', pro: '👑 Pro' })[l.m] || '⚡';
+      d.innerHTML = '<div class="bot-hist-meta">'
+        + '<span class="bot-hist-mode">' + modeLabel + '</span>'
+        + '<span class="bot-hist-time">' + ft(new Date(l.t)) + '</span>'
+        + '</div>'
+        + '<div class="bot-hist-q">' + esc(l.u.substring(0, 90)) + (l.u.length > 90 ? '…' : '') + '</div>'
+        + '<div class="bot-hist-a">' + esc(l.b.substring(0, 110)) + (l.b.length > 110 ? '…' : '') + '</div>';
+      grid.appendChild(d);
+    });
+  }
+  modal.classList.add('op');
+}
+
+function closeBotHistory() {
+  const modal = document.getElementById('botHistoryModal');
+  if (modal) modal.classList.remove('op');
+}
+
+function clearBotHistory() {
+  if (typeof me === 'undefined' || !me?.name) return;
+  if (!confirm('Tüm NEXUS sohbet geçmişi silinsin mi?')) return;
+  localStorage.removeItem('nx_log_' + me.name);
+  localStorage.removeItem('nx_hist_' + me.name);
+  chatHistory = [];
+  closeBotHistory();
+  const el = q('#botMsgs'); if (el) el.innerHTML = '';
+  _addBotMsgRaw('bot', 'Hafıza sıfırlandı. Sıfırdan başlıyoruz. Ne sormak istiyorsun?');
+  toast('Geçmiş silindi 🗑', 's');
+}
+
+// ══════════════════════════════════════════════════
+// BOT UI — MESAJ EKLEME
+// ══════════════════════════════════════════════════
+
+// Sistem mesajı (ince gri, ortada)
+function _addBotSysMsg(text) {
+  const el = q('#botMsgs'); if (!el) return;
+  const d = document.createElement('div');
+  d.className = 'bot-sys-msg';
+  d.textContent = text;
+  el.appendChild(d);
+  sbot('botMsgs');
+}
+
+// Temel mesaj ekleme (bot veya kullanıcı)
+function _addBotMsgRaw(who, rawText) {
+  const el = q('#botMsgs'); if (!el) return;
+  const d = document.createElement('div');
+  d.className = 'bot-bubble ' + (who === 'bot' ? 'bot' : 'user');
+
+  if (who === 'bot') {
+    const nameEl = document.createElement('div');
+    nameEl.className = 'bot-name';
+    nameEl.textContent = _modeIcons[nexusMode] || '>_ NEXUS';
+    d.appendChild(nameEl);
+
+    const contentEl = document.createElement('div');
+    contentEl.className = 'bot-content';
+    contentEl.innerHTML = formatBotText(rawText);
+    d.appendChild(contentEl);
+
+    _addBotMsgActions(d, rawText);
+  } else {
+    d.textContent = rawText;
+  }
+
+  el.appendChild(d);
+  sbot('botMsgs');
+}
+
+// Backward compat
+function addBotMsg(who, text) { _addBotMsgRaw(who, text); }
+
+// ══════════════════════════════════════════════════
+// BOT BAŞLAT
+// ══════════════════════════════════════════════════
 function initBot() {
   if (typeof botInited !== 'undefined' && botInited) return;
   botInited = true;
 
-  var ctx = getBotContext();
-  addBotMsg('bot', 'Bağlantı kuruldu.\nSelam ' + ctx.name + '. Ne var ne yok?');
+  // #3 — Önceki oturumu yükle
+  _loadChatHistory();
   updateNexusModeUI();
-}
 
-function addBotMsg(who, text) {
-  var el = q('#botMsgs');
-  if (!el) return;
-  var d = document.createElement('div');
-  d.className = 'bot-bubble ' + (who === 'bot' ? 'bot' : 'user');
-
-  if (who === 'bot') {
-    d.innerHTML = '<div class="bot-name">⚡ NEXUS</div>' + formatBotText(text);
+  if (chatHistory.length > 0) {
+    chatHistory.slice(-10).forEach(m => {
+      if      (m.role === 'user')      _addBotMsgRaw('user', m.content);
+      else if (m.role === 'assistant') _addBotMsgRaw('bot',  m.content);
+    });
+    _addBotSysMsg('— önceki oturum geri yüklendi —');
   } else {
-    d.textContent = text;
+    const ctx = getBotContext();
+    _addBotMsgRaw('bot', 'Bağlantı kuruldu.\nSelam ' + ctx.name + '. Ne var ne yok?');
   }
-  el.appendChild(d);
-  sbot('botMsgs');
 }
 
-function addTypingIndicator() {
-  var el = q('#botMsgs');
-  if (!el) return null;
-  var d = document.createElement('div');
-  d.className = 'bot-bubble bot bot-typing';
-  d.id = 'botTyping';
-  d.innerHTML = '<div class="bot-name">⚡ NEXUS</div><span class="typing-dots"><span>.</span><span>.</span><span>.</span></span>';
-  el.appendChild(d);
-  sbot('botMsgs');
-  return d;
-}
-
+// ══════════════════════════════════════════════════
+// MESAJ GÖNDER (#1 Streaming + #10 Cursor)
+// ══════════════════════════════════════════════════
 async function sendBotMsg() {
-  var inp = q('#botInp');
-  var text = inp.value.trim();
-  if (!text) return;
+  const inp = q('#botInp'); if (!inp) return;
+  const text = inp.value.trim(); if (!text) return;
 
-  var now = Date.now();
+  const now = Date.now();
   if (now - lastBotMsgTime < 1000) {
-    addBotMsg('bot', 'Sakin ol, 1 saniye nefes al.');
+    _addBotMsgRaw('bot', 'Sakin ol, 1 saniye nefes al.');
     return;
   }
   lastBotMsgTime = now;
@@ -285,30 +547,68 @@ async function sendBotMsg() {
   // Pro mod limit kontrolü
   if (nexusMode === 'pro') {
     if (getNxProRemaining() <= 0) {
-      nexusMode = 'fast';
-      updateNexusModeUI();
+      nexusMode = 'fast'; updateNexusModeUI();
       toast('Günlük Pro mod limitin doldu, Hızlı Moda geçtim', 'w');
     } else {
       useNxPro();
     }
   }
 
-  addBotMsg('user', text);
-  inp.value = '';
-  if (inp.style) inp.style.height = '42px';
+  _addBotMsgRaw('user', text);
+  inp.value = ''; if (inp.style) inp.style.height = '42px';
 
-  var typingEl = addTypingIndicator();
-  var reply = await askGemini(text);
-  if (typingEl) typingEl.remove();
-  addBotMsg('bot', reply);
+  // ── Streaming bubble oluştur ──
+  const msgEl = q('#botMsgs'); if (!msgEl) return;
+  const bubble = document.createElement('div');
+  bubble.className = 'bot-bubble bot';
 
-  // Sohbeti kaydet
-  if (me && me.name) _saveNexusLog(me.name, text, reply);
+  // #8 — Mod ikonu başlığa
+  const nameEl = document.createElement('div');
+  nameEl.className = 'bot-name';
+  nameEl.textContent = _modeIcons[nexusMode] || '>_ NEXUS';
+  bubble.appendChild(nameEl);
+
+  const contentEl = document.createElement('div');
+  contentEl.className = 'bot-content bot-streaming';
+  bubble.appendChild(contentEl);
+
+  // #10 — Terminal cursor animasyonu
+  const cursorEl = document.createElement('span');
+  cursorEl.className = 'nexus-cursor';
+  cursorEl.textContent = '█';
+  contentEl.appendChild(cursorEl);
+
+  msgEl.appendChild(bubble);
+  sbot('botMsgs');
+
+  // ── Stream al ──
+  await askGeminiStream(
+    text,
+    // Her token geldiğinde
+    (_token, accumulated) => {
+      contentEl.textContent = accumulated;
+      contentEl.appendChild(cursorEl);
+      sbot('botMsgs');
+    },
+    // Stream bittiğinde
+    (finalText) => {
+      cursorEl.remove();
+      contentEl.classList.remove('bot-streaming');
+      contentEl.innerHTML = formatBotText(finalText);
+      _addBotMsgActions(bubble, finalText);
+      if (typeof me !== 'undefined' && me?.name) _saveNexusLog(me.name, text, finalText);
+      sbot('botMsgs');
+    },
+    // Hata
+    (errMsg) => {
+      cursorEl.remove();
+      contentEl.classList.remove('bot-streaming');
+      contentEl.textContent = errMsg;
+      sbot('botMsgs');
+    }
+  );
 }
 
 function botKey(e) {
-  if (e.key === 'Enter' && !e.shiftKey) {
-    e.preventDefault();
-    sendBotMsg();
-  }
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendBotMsg(); }
 }

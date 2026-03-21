@@ -32,6 +32,10 @@ function openProfileCard(name) {
   if (p.cls) infoRow.innerHTML += `<div class="procard-chip">🏫 ${esc(p.cls)}</div>`;
   if (p.actStatus === 'hidden') infoRow.innerHTML += `<div class="procard-chip">⚫ Gizli</div>`;
   else infoRow.innerHTML += `<div class="procard-chip" style="color:var(--gn)">🟢 Aktif</div>`;
+  if (p.link) {
+    const dl = p.link.replace(/^https?:\/\/(www\.)?/,'').substring(0,32);
+    infoRow.innerHTML += `<a class="procard-chip pp-link" href="${esc(p.link)}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;">🔗 ${esc(dl)}</a>`;
+  }
 
   om('procardOverlay');
   q('#procardOverlay').onclick = e => { if (e.target === q('#procardOverlay')) cm('procardOverlay'); };
@@ -130,6 +134,10 @@ function renderProfilePage(name) {
   }
   html += '<div class="pp-tag">' + tagParts.join(' · ') + '</div>';
   html += '<div class="pp-bio">' + (p.bio ? esc(p.bio) : '<span style="opacity:.4">Henüz biyografi eklenmemiş</span>') + '</div>';
+  if (p.link) {
+    var displayLink = p.link.replace(/^https?:\/\/(www\.)?/, '').substring(0, 38);
+    html += '<div class="pp-link-row"><a class="pp-link" href="' + esc(p.link) + '" target="_blank" rel="noopener noreferrer">🔗 ' + esc(displayLink) + '</a></div>';
+  }
 
   // Stats
   html += '<div class="pp-stats">';

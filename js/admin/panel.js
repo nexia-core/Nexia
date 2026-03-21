@@ -6,6 +6,26 @@
 function rA() { rIbx(); rUT(); rSpy(); rAL(); rOG(); rML(); rStats(); checkBirthdays(); }
 
 // ──────────────────────────────────────────────────
+// BÖLÜM NAVİGASYONU
+// ──────────────────────────────────────────────────
+function openAdminSection(sec) {
+  document.querySelectorAll('.admin-nav-card').forEach(c => c.style.display = 'none');
+  document.querySelectorAll('.admin-sub-view').forEach(v => v.style.display = 'none');
+  document.querySelector('.jarvis-card') && (document.querySelector('.jarvis-card').style.display = 'none');
+  const el = document.getElementById('adminSec-' + sec);
+  if (el) { el.style.display = 'flex'; el.style.flexDirection = 'column'; el.style.gap = '16px'; }
+  document.querySelector('.adml').scrollTop = 0;
+}
+
+function backToAdminMain() {
+  document.querySelectorAll('.admin-sub-view').forEach(v => v.style.display = 'none');
+  document.querySelectorAll('.admin-nav-card').forEach(c => c.style.display = 'flex');
+  const jc = document.querySelector('.jarvis-card');
+  if (jc) jc.style.display = '';
+  document.querySelector('.adml').scrollTop = 0;
+}
+
+// ──────────────────────────────────────────────────
 // DUYURU YAYINLA
 // ──────────────────────────────────────────────────
 
@@ -23,9 +43,9 @@ function sann() {
 // GELEN KUTUSU
 // ──────────────────────────────────────────────────
 function rIbx() {
-  const el = q('#ibx'); el.innerHTML = '';
+  const el = q('#ibx'); if (!el) return; el.innerHTML = '';
   const unr = inbox.filter(m => !m.read).length;
-  q('#ibCnt').textContent = inbox.length + ' mesaj' + (unr ? ' · ' + unr + ' okunmadı' : '');
+  const ibCnt = q('#ibCnt'); if (ibCnt) ibCnt.textContent = inbox.length + ' mesaj' + (unr ? ' · ' + unr + ' okunmadı' : '');
   if (!inbox.length) { el.innerHTML = '<div style="color:var(--t3);font-size:13px;">Henüz mesaj yok.</div>'; return; }
   [...inbox].reverse().forEach(m => {
     m.read = true;
@@ -53,7 +73,7 @@ function repI(mid) {
 // KULLANICI TABLOSU
 // ──────────────────────────────────────────────────
 function rUT() {
-  const tb = q('#utbody'); tb.innerHTML = '';
+  const tb = q('#utbody'); if (!tb) return; tb.innerHTML = '';
   Object.entries(codes).forEach(([code, info]) => {
     const tr = document.createElement('tr');
     let status = '';
@@ -71,14 +91,17 @@ function rUT() {
   });
 }
 
-function bn(code) { codes[code].banned = true; toast(codes[code].name + ' engellendi', 'e'); rUT(); }
-function ub(code) { codes[code].banned = false; toast('Engel kaldırıldı', 's'); rUT(); }
+function bn(code) { codes[code].banned = true; if (typeof fbSaveSingleCode === 'function') fbSaveSingleCode(code, codes[code]); toast(codes[code].name + ' engellendi', 'e'); rUT(); }
+function ub(code) { codes[code].banned = false; if (typeof fbSaveSingleCode === 'function') fbSaveSingleCode(code, codes[code]); toast('Engel kaldırıldı', 's'); rUT(); }
 function oPw(code) { pwT = code; q('#pwDesc').textContent = codes[code].name + ' için yeni kod belirle.'; q('#pwNew').value = ''; om('mdlPw'); }
 function doPw() {
   const nc = q('#pwNew').value.trim().toUpperCase();
   if (!nc || nc.length < 3) { toast('En az 3 karakter', 'w'); return; }
   if (codes[nc]) { toast('Bu kod zaten var', 'w'); return; }
-  codes[nc] = { ...codes[pwT] }; delete codes[pwT]; pwT = null;
+  codes[nc] = { ...codes[pwT] };
+  if (typeof fbSaveSingleCode === 'function') fbSaveSingleCode(nc, codes[nc]);
+  if (typeof fbDeleteCode     === 'function') fbDeleteCode(pwT);
+  delete codes[pwT]; pwT = null;
   cm('mdlPw'); rUT(); toast('Kod değiştirildi: ' + nc, 's');
 }
 
@@ -89,6 +112,7 @@ function addC() {
   const name = prompt('Bu koda atanacak öğrenci adı:', '');
   if (!name || !name.trim()) { toast('İsim gerekli', 'w'); return; }
   codes[code] = { name: name.trim(), banned: false, firstLogin: true, muted: false };
+  if (typeof fbSaveSingleCode === 'function') fbSaveSingleCode(code, codes[code]);
   inp.value = ''; rUT(); toast('Kod eklendi: ' + code, 's');
 }
 
@@ -96,7 +120,7 @@ function addC() {
 // SPY (Sohbet İzleme)
 // ──────────────────────────────────────────────────
 function rSpy() {
-  const el = q('#spyP'); el.innerHTML = '';
+  const el = q('#spyP'); if (!el) return; el.innerHTML = '';
   const all = Object.values(convs);
   if (!all.length) { el.innerHTML = '<div style="color:var(--t3);font-size:13px;">Henüz sohbet yok.</div>'; return; }
   all.forEach(c => {
@@ -132,7 +156,7 @@ function togSpy(h, id) {
 // ANONİM LİSTE
 // ──────────────────────────────────────────────────
 function rAL() {
-  const el = q('#anoL'); el.innerHTML = '';
+  const el = q('#anoL'); if (!el) return; el.innerHTML = '';
   const e = Object.entries(aReg);
   if (!e.length) { el.innerHTML = '<div style="color:var(--t3);font-size:13px;">Henüz anonim mesaj yok.</div>'; return; }
   e.forEach(([aid, real]) => {
@@ -147,7 +171,7 @@ function rAL() {
 // ONLİNE KULLANICILAR
 // ──────────────────────────────────────────────────
 function rOG() {
-  const el = q('#og'); el.innerHTML = '';
+  const el = q('#og'); if (!el) return; el.innerHTML = '';
   Object.keys(onl).forEach(n => {
     const d = document.createElement('div'); d.className = 'op2';
     d.innerHTML = `<div class="odot"></div>${esc(n)}`;
@@ -160,7 +184,7 @@ function rOG() {
 // MESAJ LOGU
 // ──────────────────────────────────────────────────
 function rML() {
-  const el = q('#mlog'); el.innerHTML = '';
+  const el = q('#mlog'); if (!el) return; el.innerHTML = '';
   [...mld].reverse().slice(0, 40).forEach(m => {
     const f = BAD.some(k => m.text.toLowerCase().includes(k));
     const d = document.createElement('div'); d.className = 'mli';
@@ -176,12 +200,13 @@ function openUserDetail(name) {
   const p = profiles[name] || {};
   const avc = avColor(name, false);
   const inner = p.photo ? `<img src="${p.photo}" alt=""/>` : name[0]?.toUpperCase() || '?';
-  q('#aupHav').className = 'aup-hav ' + avc; q('#aupHav').innerHTML = inner; q('#aupHTitle').textContent = name;
+  const _aupHav = q('#aupHav'); if (_aupHav) { _aupHav.className = 'aup-hav ' + avc; _aupHav.innerHTML = inner; }
+  const _aupHTitle = q('#aupHTitle'); if (_aupHTitle) _aupHTitle.textContent = name;
   const cEntry = Object.entries(codes).find(([, v]) => v.name === name);
   const code = cEntry ? cEntry[0] : '—', banned = cEntry ? cEntry[1].banned : false, muted = cEntry ? cEntry[1].muted : false;
   q('#aupHSub').textContent = banned ? '⛔ Engelli' : muted ? '🔇 Susturulmuş' : 'Aktif kullanıcı';
 
-  const body = q('#aupBody'); body.innerHTML = '';
+  const body = q('#aupBody'); if (!body) return; body.innerHTML = '';
 
   // Temel bilgiler
   const s1 = document.createElement('div'); s1.innerHTML = `<div class="aup-sec-label">Temel Bilgiler</div>`;

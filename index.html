@@ -15,8 +15,8 @@
   <!-- ── CSS ── -->
   <link rel="stylesheet" href="css/base.css?v=7"/>
   <link rel="stylesheet" href="css/layout.css?v=7"/>
-  <link rel="stylesheet" href="css/components.css?v=7"/>
-  <link rel="stylesheet" href="css/features.css?v=20"/>
+  <link rel="stylesheet" href="css/components.css?v=12"/>
+  <link rel="stylesheet" href="css/features.css?v=31"/>
   <style>
     .jarvis-msg { margin-bottom: 12px; word-wrap: break-word; overflow-wrap: break-word; white-space: pre-wrap; word-break: break-word; }
     .jarvis-msg.user { color: #fff; opacity: 0.7; }
@@ -161,7 +161,7 @@
     .font-family-sel:focus { border-color:var(--ac); box-shadow:0 0 0 3px var(--ac-d); }
     .font-sel-wrap { position:relative; }
     .font-sel-arrow { position:absolute; right:12px; top:50%; transform:translateY(-50%); pointer-events:none; color:var(--t2); font-size:12px; }
-    .font-modal-footer { display:flex; justify-content:flex-end; gap:8px; padding-top:4px; border-top:1px solid var(--bd); padding-top:16px; }
+    .font-modal-footer { display:flex; justify-content:flex-end; gap:8px; border-top:1px solid var(--bd); padding-top:16px; }
     .font-btn-cancel { padding:10px 20px; border-radius:10px; border:1px solid var(--bd2); background:transparent; color:var(--t2); font-size:13px; font-weight:500; cursor:pointer; transition:all .15s; font-family:'Instrument Sans',sans-serif; }
     .font-btn-cancel:hover { background:var(--sf2); color:var(--tx); }
     .font-btn-save { padding:10px 24px; border-radius:10px; border:none; background:var(--ac); color:#fff; font-size:13px; font-weight:600; cursor:pointer; transition:all .2s; font-family:'Instrument Sans',sans-serif; }
@@ -285,6 +285,10 @@
       <textarea class="sett-ta" id="pBio" placeholder="Kendin hakkında birkaç cümle yaz..." maxlength="300"></textarea>
     </div>
     <div class="sett-row">
+      <div class="sett-lbl">Link</div>
+      <input class="sett-inp" id="pLink" placeholder="https://instagram.com/..." maxlength="200"/>
+    </div>
+    <div class="sett-row">
       <div class="sett-lbl">Doğum Günü</div>
       <input class="sett-inp" id="pBday" type="date" placeholder="gg/aa/yyyy"/>
     </div>
@@ -320,8 +324,8 @@
     <div class="activity-sel-row">
       <div><div class="vis-label">Aktiflik durumu</div></div>
       <div class="act-opts">
-        <button class="act-opt sel-online" id="actOnlineBtn" onclick="setActStatus('online')"><div class="act-dot online"></div>Aktif</button>
-        <button class="act-opt" id="actHiddenBtn" onclick="setActStatus('hidden')"><div class="act-dot hidden"></div>Gizli</button>
+        <button class="act-opt sel-online" id="actOnlineBtn" onclick="setActStatus('online')"><div class="act-dot online"></div>Göster</button>
+        <button class="act-opt" id="actHiddenBtn" onclick="setActStatus('hidden')"><div class="act-dot hidden"></div>Gizle</button>
       </div>
     </div>
     <div style="margin-bottom:10px;font-size:11px;color:var(--t2);font-family:'Geist Mono',monospace;">— Görünürlük —</div>
@@ -336,6 +340,69 @@
     <div class="psett-btns">
       <button class="psb-ok" onclick="saveProfile()">Kaydet</button>
 <button class="psb-cancel" onclick="cm('psett')">İptal</button>
+    </div>
+  </div>
+</div>
+
+<!-- CHANNEL CREATE MODAL -->
+<div class="modal" id="chCreateModal">
+  <div class="mbox" style="max-width:360px;">
+    <h3>🏠 Yeni Oda Oluştur</h3>
+    <div class="sett-row" style="margin-bottom:10px;">
+      <div class="sett-lbl">Oda Adı</div>
+      <input class="sett-inp" id="chCreateName" placeholder="Örn: 10-B Sınıfı..." maxlength="40" oninput="this.value=this.value" onkeydown="if(event.key==='Enter')saveNewChannel()"/>
+    </div>
+    <div class="sett-row" style="margin-bottom:16px;position:relative;">
+      <div class="sett-lbl">Emoji</div>
+      <div id="chCreateEmojiBtn" onclick="openChEmojiPicker('chCreateEmoji','chCreateEmojiBtn')"
+        style="width:54px;height:44px;background:var(--sf2);border:1px solid var(--bd2);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:24px;cursor:pointer;transition:border-color .15s;"
+        title="Emoji seç">💬</div>
+      <input type="hidden" id="chCreateEmoji" value="💬"/>
+      <div id="chCreateEmojiPicker" class="ch-emoji-picker" style="display:none;"></div>
+    </div>
+    <div class="mb-btns">
+      <button class="mb-cancel" onclick="cm('chCreateModal')">İptal</button>
+      <button class="mb-ok" onclick="saveNewChannel()">Oluştur</button>
+    </div>
+  </div>
+</div>
+
+<!-- CHANNEL EDIT MODAL -->
+<div class="modal" id="chEditModal">
+  <div class="mbox" style="max-width:380px;">
+    <h3>✏️ Odayı Düzenle</h3>
+    <!-- Profil fotoğrafı / emoji -->
+    <div style="display:flex;flex-direction:column;align-items:center;gap:8px;margin-bottom:16px;">
+      <div id="chEditAvPreview" onclick="q('#chEditPhotoInp').click()"
+        style="width:72px;height:72px;border-radius:50%;background:var(--ac-d);display:flex;align-items:center;justify-content:center;font-size:28px;cursor:pointer;position:relative;overflow:hidden;border:2px dashed var(--ac);">
+        💬
+        <div style="position:absolute;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;font-size:18px;opacity:0;transition:opacity .2s;" class="photo-overlay">📷</div>
+      </div>
+      <input type="file" id="chEditPhotoInp" accept="image/*" style="display:none" onchange="onChEditPhoto(event)">
+      <span style="font-size:11px;color:var(--t3);">Fotoğraf veya emoji ekle</span>
+    </div>
+    <div class="sett-row" style="margin-bottom:10px;">
+      <div class="sett-lbl">Oda Adı</div>
+      <input class="sett-inp" id="chEditName" placeholder="Oda adı..." maxlength="40"/>
+    </div>
+    <div class="sett-row" style="margin-bottom:10px;">
+      <div class="sett-lbl">Açıklama</div>
+      <input class="sett-inp" id="chEditDesc" placeholder="Kısa açıklama..." maxlength="100"/>
+    </div>
+    <div class="sett-row" style="margin-bottom:16px;position:relative;">
+      <div class="sett-lbl">Emoji</div>
+      <div id="chEditEmojiBtn" onclick="openChEmojiPicker('chEditEmoji','chEditEmojiBtn')"
+        style="width:54px;height:44px;background:var(--sf2);border:1px solid var(--bd2);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:24px;cursor:pointer;transition:border-color .15s;"
+        title="Emoji seç">💬</div>
+      <input type="hidden" id="chEditEmoji" value="💬"/>
+      <div id="chEditEmojiPicker" class="ch-emoji-picker" style="display:none;"></div>
+    </div>
+    <div class="mb-btns" style="flex-direction:column;gap:8px;">
+      <div style="display:flex;gap:8px;">
+        <button class="mb-cancel" onclick="cm('chEditModal')" style="flex:1;">İptal</button>
+        <button class="mb-ok" onclick="saveChannelEdit()" style="flex:1;">Kaydet</button>
+      </div>
+      <button onclick="deleteChannel()" style="width:100%;padding:10px;border-radius:10px;border:none;background:rgba(239,68,68,.15);color:#ef4444;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">🗑 Odayı Sil</button>
     </div>
   </div>
 </div>
@@ -531,7 +598,7 @@
       <div class="chatbg-swatch" data-bg="slate" onclick="selectChatBg(this)" style="background:linear-gradient(160deg,#101018 0%,#1a1a28 100%);background-image:repeating-linear-gradient(45deg,rgba(255,255,255,.02) 0,rgba(255,255,255,.02) 1px,transparent 0,transparent 50%);background-size:20px 20px;"></div>
       <div class="chatbg-swatch" data-bg="mono" onclick="selectChatBg(this)" style="background:linear-gradient(160deg,#080808 0%,#181818 100%);"></div>
     </div>
-    <button class="chatbg-restore" onclick="resetChatBg()">↺ Varsayılanı Geri Yükle</button>
+    <button class="chatbg-restore" onclick="saveChatBg()">Kaydet</button>
   </div>
 </div>
 
@@ -655,7 +722,7 @@
       <button class="tbtn"    id="ta"      onclick="sw('a')"  style="display:none">🛡 Admin</button>
     </div>
     <div class="tb-r">
-      <div class="apill" id="apill" onclick="togA()"><div class="adot" id="adot"></div><span id="albl">Anonim: Kapalı</span></div>
+<div class="apill" id="apill" onclick="togA()"><div class="adot" id="adot"></div><span id="albl">Anonim: Kapalı</span></div>
       <div class="av-wrap" id="myAvWrap" onclick="openMyProfile()" title="Profil Ayarları">
         <div class="av avb" id="myAv">?</div>
         <div class="status-dot online" id="myStatusDot"></div>
@@ -681,6 +748,9 @@
     <!-- GLOBAL PANEL -->
     <div class="panel on" id="pg">
       <div class="stories-bar" id="storiesBar"></div>
+      <div class="stories-toggle" id="storiesToggle" onclick="toggleStoriesBar()" title="Durumları gizle/göster">
+        <svg id="storiesToggleArrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+      </div>
       <div class="pinned-bar" id="pinnedBar" style="display:none" onclick="scrollToPinned()">
         <span class="pinned-icon">📌</span>
         <span class="pinned-label">SABİTLENDİ</span>
@@ -688,6 +758,10 @@
         <span class="pinned-close" id="pinnedClose" onclick="event.stopPropagation();unpinMsg()" style="display:none">✕</span>
       </div>
       <div class="msgs" id="gMsgs"></div>
+      <div id="newMsgBadge" onclick="jumpToNewMsgs()" style="display:none;">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        <span id="newMsgCount">0</span> yeni mesaj
+      </div>
       <div class="reply-bar" id="gReplyBar">
         <div style="width:3px;height:100%;background:var(--ac);border-radius:2px;flex-shrink:0;"></div>
         <div class="reply-bar-inner">
@@ -721,8 +795,16 @@
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
               Sohbet İsteği
             </button>
+            <button class="dm-action-btn" onclick="toggleIncomingPanel()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
+              Gelen İstekler<span class="dm-req-badge" id="dmReqBadge" style="display:none">0</span>
+            </button>
           </div>
         </div>
+        <div class="dm-search-wrap">
+          <input class="dm-search-inp" id="dmSearchInp" placeholder="Sohbet ara..." oninput="filterDmSearch(this.value)"/>
+        </div>
+        <div class="dm-incoming-panel" id="dmIncomingPanel" style="display:none"></div>
           <div class="dmlst" id="dmList"></div>
         </div>
         <div class="dconv" id="dconv"><div class="empty"><div class="eico">💬</div><div>Sohbet seç</div></div></div>
@@ -732,7 +814,18 @@
     <!-- ODALAR PANEL -->
     <div class="panel" id="pch">
       <div class="channels-sidebar" id="channelsSidebar">
-        <div class="channels-head">🏠 Odalar <button class="pbtn" style="font-size:11px;" onclick="if(me&&me.isAdmin)createChannelPrompt()">+</button></div>
+        <div class="channels-head">
+          <span>Gruplar</span>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <button class="ch-head-btn" onclick="createChannelPrompt()" title="Yeni Grup" style="display:none" id="chCreateBtn">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="ch-search-wrap">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="position:absolute;left:22px;top:50%;transform:translateY(-50%);color:var(--t3);pointer-events:none;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input class="ch-search-inp" id="chSearchInp" placeholder="Grup ara..." oninput="filterChSearch(this.value)"/>
+        </div>
         <div class="channel-list" id="channelList"></div>
       </div>
       <div class="channel-msgs-wrap" id="channelMsgsWrap">
@@ -753,7 +846,8 @@
     <div class="panel" id="pbot">
       <div class="bot-panel">
         <div class="bot-header">
-          <span class="bot-header-title">⚡ NEXUS</span>
+          <!-- #8 — id="nxBotTitle" ile mod ikonu JS'den güncelleniyor -->
+          <span class="bot-header-title" id="nxBotTitle">>_ NEXUS</span>
           <div class="nexus-mode-switch" id="nexusModeSwitch">
             <div class="nexus-mode-track">
               <span class="nexus-mode-label fast active" id="nxLabelFast" onclick="setNexusMode('fast')">⚡ Hızlı</span>
@@ -765,6 +859,8 @@
           <div class="nexus-limit-badge" id="nxLimitBadge" style="display:none;">
             <span id="nxLimitCount">7</span>/7
           </div>
+          <!-- #6 — Geçmiş butonu -->
+          <button class="bot-hdr-btn" onclick="openBotHistory()" title="Geçmiş">📋</button>
         </div>
         <div class="bot-msgs" id="botMsgs"></div>
         <div class="cw">
@@ -773,6 +869,20 @@
             <button class="sb n" onclick="sendBotMsg()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- #6 — NEXUS GEÇMİŞ MODALİ -->
+    <div class="modal" id="botHistoryModal" onclick="if(event.target===this)closeBotHistory()">
+      <div class="modal-box" style="max-width:480px;max-height:80vh;display:flex;flex-direction:column;">
+        <div class="modal-hdr">
+          <span style="font-family:'Geist Mono',monospace;font-size:14px;">📋 NEXUS Geçmişi</span>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <button class="bot-hist-clear-btn" onclick="clearBotHistory()">🗑 Temizle</button>
+            <button class="modal-cls" onclick="closeBotHistory()">✕</button>
+          </div>
+        </div>
+        <div id="botHistoryList" style="overflow-y:auto;flex:1;padding:10px 14px;display:flex;flex-direction:column;gap:8px;"></div>
       </div>
     </div>
 
@@ -799,6 +909,17 @@
     <div class="pp-modal" id="ppViewModal">
       <button class="pp-modal-close" onclick="closeViewModal()">✕</button>
       <div class="pp-modal-card" id="ppViewCard"></div>
+    </div>
+
+    <!-- DM MEDYA GALERİSİ MODAL -->
+    <div class="modal" id="dmMediaModal" onclick="if(event.target===this)cm('dmMediaModal')">
+      <div class="mbox" style="max-width:500px;width:92%;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+          <h3 style="margin:0;font-size:15px;">📷 Medya Galerisi</h3>
+          <button onclick="cm('dmMediaModal')" style="background:none;border:none;color:var(--t2);cursor:pointer;font-size:22px;line-height:1;">&times;</button>
+        </div>
+        <div class="dm-media-grid" id="dmMediaGrid"></div>
+      </div>
     </div>
 
     <!-- Yorumlar Alt Paneli -->
@@ -882,7 +1003,7 @@
           <div class="settings-item" onclick="openChatBgModal()">
             <div class="si-icon-wrap">🖼️</div>
             <div class="si-body">
-              <span class="si-label">Varsayılan Sohbet Teması</span>
+              <span class="si-label">Sohbet Teması</span>
               <span class="si-sub">Sohbet arka plan rengini ve desenini değiştir</span>
             </div>
             <span class="si-arrow">›</span>
@@ -909,7 +1030,7 @@
             <span class="si-arrow">›</span>
           </div>
 
-          <div class="settings-item" onclick="toast('Beğeniler yakında eklenecek', 'w')">
+          <div class="settings-item" onclick="openLikedView()">
             <div class="si-icon-wrap">❤️</div>
             <div class="si-body">
               <span class="si-label">Beğendiklerim</span>
@@ -918,7 +1039,7 @@
             <span class="si-arrow">›</span>
           </div>
 
-          <div class="settings-item" onclick="toast('Kaydedilenler yakında eklenecek', 'w')">
+          <div class="settings-item" onclick="openSavedView()">
             <div class="si-icon-wrap">🔖</div>
             <div class="si-body">
               <span class="si-label">Kaydedilenler</span>
@@ -944,18 +1065,6 @@
             <div class="si-body">
               <span class="si-label">Giriş Geçmişi</span>
               <span class="si-sub">Cihazlar ve oturum bilgileri</span>
-            </div>
-            <span class="si-arrow">›</span>
-          </div>
-
-          <div class="settings-divider"></div>
-          <div class="settings-section">Sosyal</div>
-
-          <div class="settings-item" onclick="toast('Yakın Arkadaşlar yakında eklenecek', 'w')">
-            <div class="si-icon-wrap">👥</div>
-            <div class="si-body">
-              <span class="si-label">Yakın Arkadaşlar</span>
-              <span class="si-sub">Özel paylaşım listeni düzenle</span>
             </div>
             <span class="si-arrow">›</span>
           </div>
@@ -1113,6 +1222,30 @@
         </div><!-- /help-content -->
       </div><!-- /settingsHelpView -->
 
+      <!-- ── BEĞENDİKLERİM ALT SAYFASI ── -->
+      <div class="settings-page" id="settingsLikedView" style="display:none">
+        <div class="settings-top-bar">
+          <button class="settings-back-btn" onclick="showSettingsMainFromLiked()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Geri
+          </button>
+          <span class="settings-page-title">Beğendiklerim</span>
+        </div>
+        <div id="settingsLikedContent"></div>
+      </div>
+
+      <!-- ── KAYDEDİLENLER ALT SAYFASI ── -->
+      <div class="settings-page" id="settingsSavedView" style="display:none">
+        <div class="settings-top-bar">
+          <button class="settings-back-btn" onclick="showSettingsMainFromSaved()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Geri
+          </button>
+          <span class="settings-page-title">Kaydedilenler</span>
+        </div>
+        <div id="settingsSavedContent"></div>
+      </div>
+
     </div><!-- /psettings -->
 
     <!-- YÖNETİME YAZ PANEL -->
@@ -1147,7 +1280,7 @@
           <div class="ach" style="background: var(--ac); color: #fff;">
             <h3 style="display:flex; align-items:center; gap:8px;">🤖 JARVIS Terminal <span style="font-size:10px; font-weight:normal; opacity:0.8;">v6.0 (Full Access)</span></h3>
           </div>
-          <div class="acb" style="padding:0; background:#000; font-family:'Geist Mono', monospace; height:380px; display:flex; flex-direction:column;">
+          <div class="acb" style="padding:0; background:#000; font-family:'Geist Mono', monospace; height:240px; display:flex; flex-direction:column;">
             <div id="jarvisDisplay" style="flex:1; padding:15px; overflow-y:auto; color:var(--ac); font-size:13px; line-height:1.6; border-bottom:1px solid #222;">
               <div class="jarvis-msg bot">Sistem aktif efendim. Ban, engel kaldırma, susturma, kick, duyuru ve daha fazlası hazır.</div>
             </div>
@@ -1161,117 +1294,149 @@
           </div>
         </div>
 
-        <!-- ═══ GENEL BAKIŞ ═══ -->
-        <div class="admin-section-header" style="font-size:11px;font-family:'Geist Mono',monospace;letter-spacing:1.5px;text-transform:uppercase;color:var(--t3);padding:4px 2px;margin-top:4px;">GENEL BAKIS</div>
-
-        <div class="acard">
-          <div class="ach"><h3>📊 Genel Istatistikler</h3></div>
-          <div class="acb" id="statsPanel"></div>
+        <!-- NAV KARTLARI -->
+        <div class="admin-nav-card" onclick="openAdminSection('genel')">
+          <span class="admin-nav-icon">📊</span>
+          <div class="admin-nav-info"><div class="admin-nav-label">Genel Bakış</div><div class="admin-nav-sub">İstatistikler, aktif kullanıcılar, oturumlar</div></div>
+          <span class="admin-nav-arr">›</span>
+        </div>
+        <div class="admin-nav-card" onclick="openAdminSection('kullanici')">
+          <span class="admin-nav-icon">👥</span>
+          <div class="admin-nav-info"><div class="admin-nav-label">Kullanıcı Yönetimi</div><div class="admin-nav-sub">Engel, sustur, kod değiştir, anonim kayıt</div></div>
+          <span class="admin-nav-arr">›</span>
+        </div>
+        <div class="admin-nav-card" onclick="openAdminSection('icerik')">
+          <span class="admin-nav-icon">📝</span>
+          <div class="admin-nav-info"><div class="admin-nav-label">İçerik Yönetimi</div><div class="admin-nav-sub">Duyuru, anket, kullanıcı mesajları</div></div>
+          <span class="admin-nav-arr">›</span>
+        </div>
+        <div class="admin-nav-card" onclick="openAdminSection('izleme')">
+          <span class="admin-nav-icon">🔍</span>
+          <div class="admin-nav-info"><div class="admin-nav-label">İzleme & Loglar</div><div class="admin-nav-sub">Yazışmalar, mesaj akışı, giriş monitörü</div></div>
+          <span class="admin-nav-arr">›</span>
+        </div>
+        <div class="admin-nav-card" onclick="openAdminSection('guvenlik')">
+          <span class="admin-nav-icon">🛡️</span>
+          <div class="admin-nav-info"><div class="admin-nav-label">Güvenlik</div><div class="admin-nav-sub">Şüpheli mesajlar, şikayetler, olaylar</div></div>
+          <span class="admin-nav-arr">›</span>
         </div>
 
-        <div class="acard" id="bdayCard" style="display:none">
-          <div class="ach"><h3>🎂 Dogum Günü Bildirimleri</h3></div>
-          <div class="acb" id="bdayList"></div>
-        </div>
-
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;" class="admin-dual-grid">
-          <div class="acard" style="margin:0;">
-            <div class="ach"><h3>🟢 Aktif Kullanicilar</h3></div>
-            <div class="acb"><div class="og" id="og"></div></div>
+        <!-- ── GENEL BAKIŞ ── -->
+        <div id="adminSec-genel" class="admin-sub-view" style="display:none;">
+          <div class="admin-sub-header">
+            <span class="admin-sub-title">📊 Genel Bakış</span>
           </div>
-          <div class="acard" style="margin:0;">
-            <div class="ach"><h3>⏱ Aktif Oturumlar</h3></div>
-            <div class="acb" id="activeSessionsList"></div>
+          <div class="acard">
+            <div class="ach"><h3>📊 Genel İstatistikler</h3></div>
+            <div class="acb" id="statsPanel"></div>
           </div>
-        </div>
-
-        <!-- ═══ KULLANICI YÖNETİMİ ═══ -->
-        <div class="admin-section-header" style="font-size:11px;font-family:'Geist Mono',monospace;letter-spacing:1.5px;text-transform:uppercase;color:var(--t3);padding:4px 2px;margin-top:8px;">KULLANICI YÖNETIMI</div>
-
-        <div class="acard">
-          <div class="ach"><h3>👥 Kullanici Yönetimi</h3><span class="ach-s">Isme tikla → Detay</span></div>
-          <div class="acb">
-            <div class="tbl-wrap"><table class="tbl"><thead><tr><th>Isim</th><th>Kod</th><th>Durum</th><th>Islemler</th></tr></thead><tbody id="utbody"></tbody></table></div>
-            <div class="ar"><input type="text" id="ncInp" placeholder="Yeni kod" style="text-transform:uppercase"/><button class="arb" onclick="addC()">+ Ekle</button></div>
+          <div class="acard" id="bdayCard" style="display:none">
+            <div class="ach"><h3>🎂 Doğum Günü Bildirimleri</h3></div>
+            <div class="acb" id="bdayList"></div>
           </div>
-        </div>
-
-        <div class="acard">
-          <div class="ach"><h3>👁 Anonim Kimlik Kaydi</h3><span class="ach-s">Sadece sen</span></div>
-          <div class="acb"><div class="alog" id="anoL"></div></div>
-        </div>
-
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;" class="admin-dual-grid">
-          <div class="acard" style="margin:0;">
-            <div class="ach"><h3>❄️ Dondurulmus Hesaplar</h3></div>
-            <div class="acb" id="frozenAccountsList"></div>
-          </div>
-          <div class="acard" style="margin:0;">
-            <div class="ach"><h3>🔒 Kilitleme Istekleri</h3></div>
-            <div class="acb" id="freezeRequestsList"></div>
-          </div>
-        </div>
-
-        <!-- ═══ İÇERİK YÖNETİMİ ═══ -->
-        <div class="admin-section-header" style="font-size:11px;font-family:'Geist Mono',monospace;letter-spacing:1.5px;text-transform:uppercase;color:var(--t3);padding:4px 2px;margin-top:8px;">ICERIK YÖNETIMI</div>
-
-        <div class="acard">
-          <div class="ach"><h3>📢 Duyuru Yap</h3></div>
-          <div class="acb"><div class="act"><textarea id="annTxt" placeholder="Kisa duyuru..."></textarea><button class="abtn" onclick="sann()">Yayinla →</button></div></div>
-        </div>
-
-        <div class="acard">
-          <div class="ach"><h3>📊 Anket Olustur</h3></div>
-          <div class="acb">
-            <div class="sett-row"><input class="sett-inp" id="pollQ" placeholder="Anket sorusu..." style="border-color:var(--bd2);border-radius:var(--r2);padding:9px 12px;background:var(--sf2);color:var(--tx);outline:none;width:100%;"/></div>
-            <div class="poll-create-opts" id="pollOpts">
-              <div class="poll-create-opt"><input placeholder="Secenek A"/><button class="poll-rm-opt" onclick="rmPollOpt(this)">−</button></div>
-              <div class="poll-create-opt"><input placeholder="Secenek B"/><button class="poll-rm-opt" onclick="rmPollOpt(this)">−</button></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;" class="admin-dual-grid">
+            <div class="acard" style="margin:0;">
+              <div class="ach"><h3>🟢 Aktif Kullanıcılar</h3></div>
+              <div class="acb"><div class="og" id="og"></div></div>
             </div>
-            <div class="poll-add-opt" onclick="addPollOpt()">+ Secenek ekle</div>
-            <button class="abtn" onclick="publishPoll()">Anketi Yayinla →</button>
+            <div class="acard" style="margin:0;">
+              <div class="ach"><h3>⏱ Aktif Oturumlar</h3></div>
+              <div class="acb" id="activeSessionsList"></div>
+            </div>
           </div>
         </div>
 
-        <div class="acard">
-          <div class="ach"><h3>✉️ Kullanici Mesajlari</h3><span class="ach-s" id="ibCnt">0 mesaj</span></div>
-          <div class="acb"><div class="ib" id="ibx"></div></div>
+        <!-- ── KULLANICI YÖNETİMİ ── -->
+        <div id="adminSec-kullanici" class="admin-sub-view" style="display:none;">
+          <div class="admin-sub-header">
+            <span class="admin-sub-title">👥 Kullanıcı Yönetimi</span>
+          </div>
+          <div class="acard">
+            <div class="ach"><h3>👥 Kullanıcı Listesi</h3><span class="ach-s">İsme tıkla → Detay</span></div>
+            <div class="acb">
+              <div class="tbl-wrap"><table class="tbl"><thead><tr><th>İsim</th><th>Kod</th><th>Durum</th><th>İşlemler</th></tr></thead><tbody id="utbody"></tbody></table></div>
+              <div class="ar"><input type="text" id="ncInp" placeholder="Yeni kod" style="text-transform:uppercase"/><button class="arb" onclick="addC()">+ Ekle</button></div>
+            </div>
+          </div>
+          <div class="acard">
+            <div class="ach"><h3>👁 Anonim Kimlik Kaydı</h3><span class="ach-s">Sadece sen</span></div>
+            <div class="acb"><div class="alog" id="anoL"></div></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;" class="admin-dual-grid">
+            <div class="acard" style="margin:0;">
+              <div class="ach"><h3>❄️ Dondurulmuş Hesaplar</h3></div>
+              <div class="acb" id="frozenAccountsList"></div>
+            </div>
+            <div class="acard" style="margin:0;">
+              <div class="ach"><h3>🔒 Kilitleme İstekleri</h3></div>
+              <div class="acb" id="freezeRequestsList"></div>
+            </div>
+          </div>
         </div>
 
-        <!-- ═══ İZLEME & LOGLAR ═══ -->
-        <div class="admin-section-header" style="font-size:11px;font-family:'Geist Mono',monospace;letter-spacing:1.5px;text-transform:uppercase;color:var(--t3);padding:4px 2px;margin-top:8px;">IZLEME & LOGLAR</div>
-
-        <div class="acard">
-          <div class="ach"><h3>🔍 Tüm Yazismalar</h3><span class="ach-s">Tikla → Ac</span></div>
-          <div class="acb" id="spyP"></div>
+        <!-- ── İÇERİK YÖNETİMİ ── -->
+        <div id="adminSec-icerik" class="admin-sub-view" style="display:none;">
+          <div class="admin-sub-header">
+            <span class="admin-sub-title">📝 İçerik Yönetimi</span>
+          </div>
+          <div class="acard">
+            <div class="ach"><h3>📢 Duyuru Yap</h3></div>
+            <div class="acb"><div class="act"><textarea id="annTxt" placeholder="Kısa duyuru..."></textarea><button class="abtn" onclick="sann()">Yayımla →</button></div></div>
+          </div>
+          <div class="acard">
+            <div class="ach"><h3>📊 Anket Oluştur</h3></div>
+            <div class="acb">
+              <div class="sett-row"><input class="sett-inp" id="pollQ" placeholder="Anket sorusu..." style="border-color:var(--bd2);border-radius:var(--r2);padding:9px 12px;background:var(--sf2);color:var(--tx);outline:none;width:100%;"/></div>
+              <div class="poll-create-opts" id="pollOpts">
+                <div class="poll-create-opt"><input placeholder="Seçenek A"/><button class="poll-rm-opt" onclick="rmPollOpt(this)">−</button></div>
+                <div class="poll-create-opt"><input placeholder="Seçenek B"/><button class="poll-rm-opt" onclick="rmPollOpt(this)">−</button></div>
+              </div>
+              <div class="poll-add-opt" onclick="addPollOpt()">+ Seçenek ekle</div>
+              <button class="abtn" onclick="publishPoll()">Anketi Yayımla →</button>
+            </div>
+          </div>
+          <div class="acard">
+            <div class="ach"><h3>✉️ Kullanıcı Mesajları</h3><span class="ach-s" id="ibCnt">0 mesaj</span></div>
+            <div class="acb"><div class="ib" id="ibx"></div></div>
+          </div>
         </div>
 
-        <div class="acard">
-          <div class="ach"><h3>📋 Global Mesaj Akisi</h3></div>
-          <div class="acb"><div class="mlog" id="mlog"></div></div>
+        <!-- ── İZLEME & LOGLAR ── -->
+        <div id="adminSec-izleme" class="admin-sub-view" style="display:none;">
+          <div class="admin-sub-header">
+            <span class="admin-sub-title">🔍 İzleme & Loglar</span>
+          </div>
+          <div class="acard">
+            <div class="ach"><h3>🔍 Tüm Yazışmalar</h3><span class="ach-s">Tıkla → Aç</span></div>
+            <div class="acb" id="spyP"></div>
+          </div>
+          <div class="acard">
+            <div class="ach"><h3>📋 Global Mesaj Akışı</h3></div>
+            <div class="acb"><div class="mlog" id="mlog"></div></div>
+          </div>
+          <div class="acard">
+            <div class="ach"><h3>🔐 Giriş Monitörü</h3><span class="ach-s">Son 30 giriş</span></div>
+            <div class="acb" id="loginHistoryList"></div>
+          </div>
         </div>
 
-        <div class="acard">
-          <div class="ach"><h3>🔐 Giris Monitörü</h3><span class="ach-s">Son 30 giris</span></div>
-          <div class="acb" id="loginHistoryList"></div>
-        </div>
-
-        <!-- ═══ GÜVENLİK ═══ -->
-        <div class="admin-section-header" style="font-size:11px;font-family:'Geist Mono',monospace;letter-spacing:1.5px;text-transform:uppercase;color:var(--t3);padding:4px 2px;margin-top:8px;">GÜVENLIK</div>
-
-        <div class="acard">
-          <div class="ach"><h3>⚠️ Süpheli Mesajlar</h3></div>
-          <div class="acb" id="suspiciousMsgList"></div>
-        </div>
-
-        <div class="acard">
-          <div class="ach"><h3>🚩 Sikayetler</h3><span class="ach-s" id="reportsCnt"></span></div>
-          <div class="acb" id="reportsList"></div>
-        </div>
-
-        <div class="acard">
-          <div class="ach"><h3>🛡️ Güvenlik Olaylari</h3><span class="ach-s">Son 20 olay</span></div>
-          <div class="acb" id="securityFeedList"></div>
+        <!-- ── GÜVENLİK ── -->
+        <div id="adminSec-guvenlik" class="admin-sub-view" style="display:none;">
+          <div class="admin-sub-header">
+            <span class="admin-sub-title">🛡️ Güvenlik</span>
+          </div>
+          <div class="acard">
+            <div class="ach"><h3>⚠️ Şüpheli Mesajlar</h3></div>
+            <div class="acb" id="suspiciousMsgList"></div>
+          </div>
+          <div class="acard">
+            <div class="ach"><h3>🚩 Şikayetler</h3><span class="ach-s" id="reportsCnt"></span></div>
+            <div class="acb" id="reportsList"></div>
+          </div>
+          <div class="acard">
+            <div class="ach"><h3>🛡️ Güvenlik Olayları</h3><span class="ach-s">Son 20 olay</span></div>
+            <div class="acb" id="securityFeedList"></div>
+          </div>
         </div>
 
       </div>
@@ -1281,25 +1446,25 @@
 </div>
 
 <!-- ── FIREBASE MODULE ── -->
-<script type="module" src="js/core/firebase.js?v=2"></script>
+<script type="module" src="js/core/firebase.js?v=3"></script>
 
 <!-- ── CORE JS ── -->
 <script src="js/core/state.js?v=2"></script>
-<script src="js/core/utils.js?v=3"></script>
-<script src="js/core/auth.js?v=9"></script>
+<script src="js/core/utils.js?v=5"></script>
+<script src="js/core/auth.js?v=15"></script>
 
 <!-- ── FEATURES JS ── -->
-<script src="js/features/chat.js?v=3"></script>
-<script src="js/features/dm.js?v=2"></script>
-<script src="js/features/stories.js"></script>
-<script src="js/features/bot.js?v=3"></script>
-<script src="js/features/friends.js"></script>
-<script src="js/features/channels.js?v=2"></script>
-<script src="js/features/profile.js?v=16"></script>
-<script src="js/admin/jarvis.js?v=9"></script>
+<script src="js/features/chat.js?v=13"></script>
+<script src="js/features/dm.js?v=12"></script>
+<script src="js/features/stories.js?v=2"></script>
+<script src="js/features/bot.js?v=13"></script>
+<script src="js/features/friends.js?v=2"></script>
+<script src="js/features/channels.js?v=9"></script>
+<script src="js/features/profile.js?v=19"></script>
+<script src="js/admin/jarvis.js?v=11"></script>
 
 <!-- ── ADMIN JS ── -->
-<script src="js/admin/panel.js"></script>
+<script src="js/admin/panel.js?v=4"></script>
 <script src="js/admin/monitor.js"></script>
 <script src="js/admin/stats.js"></script>
 <script>
@@ -1318,8 +1483,14 @@
 })();
 function mobBack() {
   const dml = document.querySelector('.dml');
-  if (dml && dml.classList.contains('dm-conv-open')) {
+  const pch = document.getElementById('pch');
+  const adminSub = document.querySelector('.admin-sub-view[style*="flex"]');
+  if (adminSub) {
+    backToAdminMain();
+  } else if (dml && dml.classList.contains('dm-conv-open')) {
     dml.classList.remove('dm-conv-open');
+  } else if (pch && pch.classList.contains('ch-room-open')) {
+    backToChannels();
   } else {
     document.getElementById('app').classList.remove('mob-chat-open');
   }
@@ -1385,6 +1556,59 @@ function showSettingsMainFromHelp() {
   document.getElementById('settingsHelpView').style.display = 'none';
   document.getElementById('settingsMainView').style.display = '';
 }
+
+// ── BEĞENDİKLERİM / KAYDEDİLENLER ─────────────
+function _renderPostsGrid(elId, items) {
+  var el = document.getElementById(elId);
+  if (!items.length) { el.innerHTML = '<div class="ppi-empty">Henüz içerik yok.</div>'; return; }
+  var html = '<div class="ppi-likes-grid">';
+  items.forEach(function(item) {
+    var click = 'viewPost(\'' + esc(item.owner) + '\',' + item.idx + ')';
+    if (item.post.img) {
+      html += '<div class="ppi-like-item" onclick="' + click + '">'
+        + '<img src="' + item.post.img + '" alt="" loading="lazy"/>'
+        + '<div class="ppi-like-owner">' + esc(item.owner) + '</div>'
+        + '</div>';
+    } else {
+      html += '<div class="ppi-like-item" style="background:var(--sf2);display:flex;align-items:center;justify-content:center;padding:8px;" onclick="' + click + '">'
+        + '<div style="font-size:11px;color:var(--t2);text-align:center;overflow:hidden;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;">' + esc((item.post.caption || '').substring(0, 80)) + '</div>'
+        + '<div class="ppi-like-owner">' + esc(item.owner) + '</div>'
+        + '</div>';
+    }
+  });
+  html += '</div>';
+  el.innerHTML = html;
+}
+function openLikedView() {
+  document.getElementById('settingsMainView').style.display = 'none';
+  document.getElementById('settingsLikedView').style.display = '';
+  var liked = [];
+  Object.keys(userPosts).forEach(function(uname) {
+    (userPosts[uname] || []).forEach(function(post, idx) {
+      if (post.likes && post.likes.includes(me.name)) liked.push({ owner: uname, post: post, idx: idx });
+    });
+  });
+  _renderPostsGrid('settingsLikedContent', liked);
+}
+function showSettingsMainFromLiked() {
+  document.getElementById('settingsLikedView').style.display = 'none';
+  document.getElementById('settingsMainView').style.display = '';
+}
+function openSavedView() {
+  document.getElementById('settingsMainView').style.display = 'none';
+  document.getElementById('settingsSavedView').style.display = '';
+  var saved = [];
+  Object.keys(userPosts).forEach(function(uname) {
+    (userPosts[uname] || []).forEach(function(post, idx) {
+      if (post.savedBy && post.savedBy.includes(me.name)) saved.push({ owner: uname, post: post, idx: idx });
+    });
+  });
+  _renderPostsGrid('settingsSavedContent', saved);
+}
+function showSettingsMainFromSaved() {
+  document.getElementById('settingsSavedView').style.display = 'none';
+  document.getElementById('settingsMainView').style.display = '';
+}
 function toggleAccordion(el) {
   const isOpen = el.classList.contains('open');
   document.querySelectorAll('.faq-item.open').forEach(i => i.classList.remove('open'));
@@ -1406,6 +1630,12 @@ let _activeChatBg = 'default';
 
 function openChatBgModal() {
   document.querySelector('#chatBgModalOverlay').classList.add('op');
+  // Açılışta butonu doğru başlat
+  const saveBtn = document.querySelector('.chatbg-restore');
+  if (saveBtn) {
+    saveBtn.style.background = ''; saveBtn.style.color = ''; saveBtn.style.borderColor = '';
+    saveBtn.textContent = '✓ Şu an kullanılan';
+  }
 }
 
 function closeChatBgModal() {
@@ -1413,10 +1643,22 @@ function closeChatBgModal() {
 }
 
 // ── YAZI TİPİ MODAL ──────────────────────────────────
-let _fontSizeActive = 'medium';
+let _fontSizeActive = localStorage.getItem('chatFontSize') || 'medium';
 const _fontSizeMap = { small:'12px', medium:'14px', large:'17px' };
 
+function _applyChatFontSize(size) {
+  document.documentElement.style.setProperty('--chat-fs', _fontSizeMap[size] || '14px');
+}
+// Sayfa yüklenince uygula
+_applyChatFontSize(_fontSizeActive);
+
 function openFontModal() {
+  // Mevcut seçili boyutu yansıt
+  document.querySelectorAll('.font-size-btn').forEach(b => b.classList.remove('active'));
+  const activeBtn = document.getElementById('fontSize' + _fontSizeActive.charAt(0).toUpperCase() + _fontSizeActive.slice(1));
+  if (activeBtn) activeBtn.classList.add('active');
+  const prev = document.querySelector('#fontPreviewBubble');
+  if (prev) prev.style.fontSize = _fontSizeMap[_fontSizeActive];
   document.querySelector('#fontModalOverlay').classList.add('op');
 }
 function closeFontModal() {
@@ -1429,19 +1671,61 @@ function selectFontSize(size, btn) {
   document.querySelector('#fontPreviewBubble').style.fontSize = _fontSizeMap[size];
 }
 function saveFontSettings() {
+  localStorage.setItem('chatFontSize', _fontSizeActive);
+  _applyChatFontSize(_fontSizeActive);
   closeFontModal();
+  toast('Yazı boyutu kaydedildi', 's');
+}
+
+function toggleStoriesBar() {
+  const bar = document.getElementById('storiesBar');
+  const toggle = document.getElementById('storiesToggle');
+  if (!bar || !toggle) return;
+  const hidden = bar.classList.toggle('collapsed');
+  toggle.classList.toggle('collapsed', hidden);
+  localStorage.setItem('storiesBarHidden', hidden ? '1' : '0');
+}
+// Sayfa yüklenince durumu geri yükle
+(function() {
+  if (localStorage.getItem('storiesBarHidden') === '1') {
+    document.addEventListener('DOMContentLoaded', () => {
+      const bar = document.getElementById('storiesBar');
+      const toggle = document.getElementById('storiesToggle');
+      if (bar) bar.classList.add('collapsed');
+      if (toggle) toggle.classList.add('collapsed');
+    });
+  }
+})();
+
+function saveChatBg() {
+  localStorage.setItem('chatBg', _activeChatBg);
+  document.querySelector('#chatBgModalOverlay')?.classList.remove('op');
+  toast('Sohbet arka planı kaydedildi', 's');
 }
 
 function selectChatBg(el) {
   document.querySelectorAll('.chatbg-swatch').forEach(s => s.classList.remove('active'));
   el.classList.add('active');
   _activeChatBg = el.dataset.bg;
-  const msgsEls = document.querySelectorAll('.msgs');
-  msgsEls.forEach(m => {
-    m.style.background = el.style.background;
-    m.style.backgroundImage = el.style.backgroundImage || '';
-    m.style.backgroundSize = el.style.backgroundSize || '';
+  const bg = el.style.background;
+  const bgImg = el.style.backgroundImage || '';
+  const bgSz = el.style.backgroundSize || '';
+  document.querySelectorAll('.msgs').forEach(m => {
+    m.style.background = bg; m.style.backgroundImage = bgImg; m.style.backgroundSize = bgSz;
   });
+  document.querySelectorAll('.cw').forEach(cw => {
+    cw.style.background = bg; cw.style.backgroundImage = bgImg; cw.style.backgroundSize = bgSz;
+  });
+  // Kayıtlı temadan farklıysa Kaydet butonu turuncu + "Kaydet", aynıysa normal + "Şu an kullanılan"
+  const saveBtn = document.querySelector('.chatbg-restore');
+  if (saveBtn) {
+    const saved = localStorage.getItem('chatBg') || 'default';
+    const unsaved = _activeChatBg !== saved;
+    saveBtn.style.background = unsaved ? 'var(--ac)' : '';
+    saveBtn.style.color = unsaved ? '#fff' : '';
+    saveBtn.style.borderColor = unsaved ? 'var(--ac)' : '';
+    saveBtn.textContent = unsaved ? 'Kaydet' : '✓ Şu an kullanılan';
+  }
 }
 
 function resetChatBg() {
@@ -1449,10 +1733,8 @@ function resetChatBg() {
   document.querySelectorAll('.chatbg-swatch').forEach(s => s.classList.remove('active'));
   const def = document.querySelector('.chatbg-swatch[data-bg="default"]');
   if (def) def.classList.add('active');
-  document.querySelectorAll('.msgs').forEach(m => {
-    m.style.background = '';
-    m.style.backgroundImage = '';
-    m.style.backgroundSize = '';
+  document.querySelectorAll('.msgs, .cw').forEach(m => {
+    m.style.background = ''; m.style.backgroundImage = ''; m.style.backgroundSize = '';
   });
   toast('Arka plan sıfırlandı', 's');
 }
@@ -1499,7 +1781,7 @@ function _updateThemeOptions() {
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function() {
-    navigator.serviceWorker.register('/sw.js')
+    navigator.serviceWorker.register('./sw.js')
       .then(function(reg) { console.log('SW kayıtlı:', reg.scope); })
       .catch(function(err) { console.warn('SW kaydı başarısız:', err); });
   });

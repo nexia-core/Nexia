@@ -9,7 +9,7 @@ function onStoryImg(e) {
   const reader = new FileReader();
   reader.onload = ev => {
     _storyImgData = ev.target.result;
-    const prev = q('#storyImgPreview'); prev.src = ev.target.result; prev.style.display = 'block';
+    const prev = q('#storyImgPreview'); if (prev) { prev.src = ev.target.result; prev.style.display = 'block'; }
   };
   reader.readAsDataURL(file);
 }

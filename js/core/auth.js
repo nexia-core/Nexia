@@ -65,6 +65,7 @@ function doFirstPw() {
   const err = q('#lerr');
   if (!np || np.length < 4)         { err.textContent = 'En az 4 karakter gir.'; return; }
   if (np !== np2)                    { err.textContent = 'Kodlar eşleşmiyor.'; return; }
+  if (np === ADMIN_CODE)             { err.textContent = 'Bu kodu kullanamazsın.'; return; }
   if (codes[np] && np !== vCode)    { err.textContent = 'Bu kod zaten kullanılıyor.'; return; }
   codes[np] = { ...codes[vCode], firstLogin: false };
   delete codes[vCode];
@@ -114,8 +115,20 @@ function completeLogin(isAd, name) {
   rG(); rDL(); buildThemeGrid(); rStories(); rChannels();
   checkBirthdays();
 
-  // ── Firebase gerçek zamanlı sohbet başlat ──────
-  if (typeof startFirebaseChat === 'function') startFirebaseChat();
+  // ── Firebase tam entegrasyonu ──────────────────
+  if (typeof startFirebaseChat  === 'function') startFirebaseChat();
+  if (typeof fbSeedCodes        === 'function') fbSeedCodes();
+  if (typeof fbListenCodes      === 'function') fbListenCodes();
+  if (typeof fbListenProfiles   === 'function') fbListenProfiles();
+  if (typeof fbListenOnline     === 'function') fbListenOnline();
+  if (!isAd) {
+    if (typeof fbSetOnline      === 'function') fbSetOnline(name);
+    if (typeof fbListenMyConvs  === 'function') fbListenMyConvs(name);
+  }
+  // Sayfa kapanınca offline yap
+  window.addEventListener('beforeunload', () => {
+    if (typeof fbSetOffline === 'function' && me) fbSetOffline(me.name);
+  });
 
   // ── YENİ: Güvenlik zinciri ──────────────────────
   _securityOnLogin(isAd, name);
@@ -684,6 +697,7 @@ function sw(t) {
     if (p) p.classList.toggle('on', x === t);
     if (b) b.classList.toggle('on', x === t);
   });
+  if (t === 'g')      { setTimeout(() => sbot('gMsgs'), 60); _newMsgCount = 0; const b = q('#newMsgBadge'); if(b) b.style.display='none'; }
   if (t === 'd')      { q('#dmDot').style.display = 'none'; rDL(); }
   if (t === 'a')      { rA(); rMonitor(); rSuspiciousMessages(); }
   if (t === 'w')      rMyW();
@@ -726,7 +740,7 @@ function togA() {
     inp.classList.remove('am'); inp.placeholder = 'Herkese yaz...';
     sb.className = 'sb n'; h.className = 'hint';
     h.textContent = 'Enter → gönder · Shift+Enter → yeni satır';
-    q('#myAv').className = me.isAdmin ? 'av avo' : 'av avb';
+    q('#myAv').className = me.isAdmin ? 'av avo' : 'av ' + avColor(me.name, false);
     updateMyAv();
   }
 }
@@ -840,6 +854,13 @@ function showProfile(displayName, isAnonMsg) {
 // ══════════════════════════════════════════════════
 
 function openDmModeModal(targetName) {
+  // Zaten mevcut sohbet varsa direkt aç
+  const targetReal = (typeof aReg !== 'undefined' && aReg[targetName]) || targetName;
+  const ex = Object.keys(convs).find(k => {
+    const c = convs[k];
+    return !c.isGroup && ((c.fromReal === me.name && c.toReal === targetReal) || (c.fromReal === targetReal && c.toReal === me.name));
+  });
+  if (ex) { openC(ex); sw('d'); toast('Mevcut sohbet açıldı', 's'); return; }
   _pendingDmTarget = targetName;
   q('#dmModeTarget').textContent = targetName + ' kişisine sohbet isteği göndereceksin.';
   q('#dmNoteInp').value = '';
@@ -864,6 +885,7 @@ function saveProfile() {
   if (!profiles[me.name]) profiles[me.name] = {};
   const p = profiles[me.name];
   p.bio    = q('#pBio').value.trim();
+  p.link   = q('#pLink')?.value.trim() || '';
   p.cls    = q('#pClass').value.trim();
   p.age    = q('#pAge').value.trim();
   p.gender = q('#pGender').value;
@@ -876,6 +898,11 @@ function saveProfile() {
   p.actStatus = _tempActStatus;
   savedActivity[me.name] = _tempActStatus;
   if (_tempActStatus === 'hidden') delete onl[me.name]; else onl[me.name] = true;
+  // Online/offline durumunu güncelle
+  if (_tempActStatus === 'hidden') { if (typeof fbSetOffline === 'function') fbSetOffline(me.name); }
+  else                             { if (typeof fbSetOnline  === 'function') fbSetOnline(me.name);  }
+  // Firebase'e kaydet
+  if (typeof fbSaveProfile === 'function') fbSaveProfile(me.name, { ...p, photo: null }); // fotoğraf ayrı
   cm('psett'); updateMyAv(); updateMyStatusDot();
   // Profil sayfası açıksa anında güncelle
   if (typeof renderProfilePage === 'function') renderProfilePage(me.name);
@@ -898,6 +925,7 @@ function openProfileSettings() {
   if (!me) return;
   const p = profiles[me.name] || {};
   q('#pBio').value    = p.bio    || '';
+  if (q('#pLink')) q('#pLink').value = p.link || '';
   q('#pClass').value  = p.cls    || '';
   q('#pAge').value    = p.age    || '';
   q('#pGender').value = p.gender || '';
@@ -927,13 +955,20 @@ function openProfileSettings() {
 
 function checkBirthdays() {
   const today = new Date().toISOString().slice(5, 10);
+  const lsKey = 'bdayShown_' + today;
+  const shownRaw = localStorage.getItem(lsKey);
+  const shown = new Set(shownRaw ? JSON.parse(shownRaw) : []);
+  let changed = false;
   Object.entries(profiles).forEach(([name, p]) => {
-    if (p.bday && p.bday.slice(5) === today && name !== me.name) {
+    if (!p.bday || p.bday.slice(5) !== today) return;
+    if (shown.has(name)) return;
+    shown.add(name); changed = true;
+    if (name !== me.name) {
       addNotif('🎂', 'Doğum Günü!', name + ' bugün doğum gününü kutluyor!', null);
       toast('🎂 ' + name + ' bugün doğum gününü kutluyor!', 's');
-    }
-    if (p.bday && p.bday.slice(5) === today && name === me.name) {
+    } else {
       toast('🎉 Bugün senin doğum günün! İyi ki doğdun ' + me.name + '!', 's');
     }
   });
+  if (changed) localStorage.setItem(lsKey, JSON.stringify([...shown]));
 }

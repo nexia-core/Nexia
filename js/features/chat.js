@@ -100,8 +100,23 @@ function onGMediaFile(e) {
 // GLOBAL CHAT RENDER
 // ══════════════════════════════════════════════════
 
+let _lastGmCount = 0;
+let _newMsgCount = 0;
+
+function jumpToNewMsgs() {
+  sbot('gMsgs');
+  _newMsgCount = 0;
+  const b = q('#newMsgBadge'); if (b) b.style.display = 'none';
+}
+
 function rG() {
-  const el = q('#gMsgs'); el.innerHTML = '';
+  const el = q('#gMsgs'); if (!el) return;
+  // Kullanıcı alta yakın mı?
+  const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+  const newCount = gm.filter(m => m.type !== 'sys' && m.type !== 'ann').length;
+  const addedCount = Math.max(0, newCount - _lastGmCount);
+  _lastGmCount = newCount;
+  el.innerHTML = '';
   gm.forEach(m => {
     if (m.type === 'sys') { el.appendChild(mkS(m.text)); return; }
     if (m.type === 'ann') {
@@ -131,16 +146,21 @@ function rG() {
 
     let textContent = '';
     if (m.recalled) {
-      textContent = me.isAdmin
-        ? `<div class="mx recalled">🚫 Geri alındı — <span style="color:var(--wn);font-style:normal;">orijinal: ${t2h(m.text)}</span></div>`
-        : `<div class="mx recalled">🚫 Bu mesaj geri alındı.</div>`;
+      if (me.isAdmin) {
+        let adminMedia = '';
+        if (m.mediaType === 'image' && m.mediaData) adminMedia = `<img class="msg-img" src="${m.mediaData}" alt="" onclick="openLightbox(this.src)" style="opacity:.65;filter:grayscale(.3)"/>`;
+        else if (m.mediaType === 'video' && m.mediaData) adminMedia = `<video class="msg-video" src="${m.mediaData}" controls style="opacity:.65"></video>`;
+        textContent = `<div class="mx recalled">🚫 Silindi${m.text ? ` — <span style="color:var(--wn);font-style:normal;">${t2h(m.text)}</span>` : ''}${m.mediaName ? ` <span style="color:var(--t3);font-size:11px;">[${esc(m.mediaName)}]</span>` : ''}</div>${adminMedia}`;
+      } else {
+        textContent = `<div class="mx recalled">🚫 Bu mesaj geri alındı.</div>`;
+      }
     } else if (m.editing && isMe) {
       textContent = `<div class="edit-wrap"><textarea class="edit-inp" id="edit-${m.id}">${esc(m.text)}</textarea><div class="edit-btns"><button class="edit-ok" onclick="saveEdit(${m.id},'global',null)">Kaydet</button><button class="edit-cancel" onclick="cancelEdit(${m.id},'global',null)">İptal</button></div></div>`;
     } else {
       let mediaHTML = '';
       if (m.mediaType === 'image' && m.mediaData) mediaHTML = `<img class="msg-img" src="${m.mediaData}" alt="" onclick="openLightbox(this.src)"/>`;
       else if (m.mediaType === 'video' && m.mediaData) mediaHTML = `<video class="msg-video" src="${m.mediaData}" controls></video>`;
-      textContent = `${replyHTML}${m.text ? `<div class="mx ${m.isAnon ? 'an' : ''}" id="mtxt-${m.id}">${t2h(m.text)}</div>` : ''}${mediaHTML}${m.edited ? '<span class="edited-tag">(düzenlendi)</span>' : ''}${m.text && !m.mediaType ? `<button class="translate-btn" onclick="translateMsg(${m.id},'global',null)">🌐 Çevir</button>` : ''}${m.translatedText ? `<div class="translated-text">🇹🇷 ${esc(m.translatedText)}</div>` : ''}`;
+      textContent = `${replyHTML}${m.text ? `<div class="mx ${m.isAnon ? 'an' : ''}" id="mtxt-${m.id}">${t2h(m.text)}</div>` : ''}${mediaHTML}${m.edited ? '<span class="edited-tag">(düzenlendi)</span>' : ''}${m.translatedText ? `<div class="translated-text">🇹🇷 ${esc(m.translatedText)}</div>` : ''}`;
     }
 
     const reactHTML = (!m.recalled && !m.editing) ? buildReactions(m, 'global', null) : '';
@@ -150,24 +170,21 @@ function rG() {
     ${!m.recalled && !m.editing ? `<div class="msg-actions"><button class="mac" title="Tepki ver" onclick="showEmojiPicker(this.closest('.msg-actions'),${m.id},'global',null)">😊</button><button class="mac" title="Yanıtla" onclick="setGReply(gm.find(x=>x.id===${m.id}))">↩</button>${isMe || me.isAdmin ? `<button class="mac" title="Daha fazla" onclick="showCtx(event,${m.id},null,'global')">⋯</button>` : ''}${me.isAdmin && isMuted(m.realName) ? `<button class="mac" style="color:var(--gn)" title="Sesi aç" onclick="unmuteUser('${esc(m.realName)}')">🔇</button>` : ''}</div>` : ''}`;
     if (!m.recalled && !m.editing) d.addEventListener('contextmenu', e => {
       e.preventDefault();
-      e.stopPropagation(); // Doküman düzeyindeki şikayet menüsünün çift açılmasını önle
-      if (isMe || me.isAdmin) {
-        // Kendi mesajı veya admin → eski ctx menüsü (düzenle, sil vb.)
-        showCtx(e, m.id, null, 'global');
-      } else {
-        // Başkasının mesajı → şikayet menüsü
-        _reportTargetId   = String(m.id);
-        _reportTargetText = m.text ? m.text.substring(0, 100) : '';
-        const menu = q('#reportMenu');
-        if (!menu) return;
-        menu.style.display = 'block';
-        menu.style.left = Math.min(e.clientX, window.innerWidth  - 180) + 'px';
-        menu.style.top  = Math.min(e.clientY, window.innerHeight - 120) + 'px';
-      }
+      e.stopPropagation();
+      showCtx(e, m.id, null, 'global');
     });
     el.appendChild(d);
   });
-  sbot('gMsgs');
+  if (atBottom || addedCount === 0) {
+    sbot('gMsgs');
+    _newMsgCount = 0;
+    const b = q('#newMsgBadge'); if (b) b.style.display = 'none';
+  } else if (addedCount > 0) {
+    _newMsgCount += addedCount;
+    const b = q('#newMsgBadge');
+    const cnt = q('#newMsgCount');
+    if (b && cnt) { cnt.textContent = _newMsgCount; b.style.display = 'flex'; }
+  }
 }
 
 function scrollToMsg(id) {
@@ -268,20 +285,28 @@ function translateMsg(msgId, scope, convId) {
   if (scope === 'global') msg = gm.find(m => m.id === msgId);
   else { const c = convs[convId]; if (c) msg = c.msgs.find(m => m.id === msgId); }
   if (!msg || !msg.text) return;
-  if (msg.translatedText) { msg.translatedText = null; if (scope === 'global') rG(); else rDM(convs[convId]); return; }
-  let txt = msg.text.toLowerCase();
-  const trChars = ['ş', 'ğ', 'ü', 'ö', 'ç', 'ı'];
-  const isTr = trChars.some(c => txt.includes(c)) || ['bir', 'bu', 've', 'için', 'olan', 'ile', 'de', 'da', 'den', 'dan', 'ise'].some(w => txt.split(' ').includes(w));
-  if (isTr) {
-    msg.translatedText = '(Zaten Türkçe: ' + msg.text.substring(0, 60) + (msg.text.length > 60 ? '…' : '') + ')';
-  } else {
-    let translated = txt;
-    Object.entries(TR_DICT).forEach(([en, tr]) => { if (tr) translated = translated.replace(new RegExp('\\b' + en + '\\b', 'gi'), tr); });
-    translated = translated.charAt(0).toUpperCase() + translated.slice(1);
-    msg.translatedText = translated;
+  const elId = scope === 'global' ? 'gMsgs' : ('dmMsgs-' + convId);
+  const el = document.getElementById(elId);
+  const savedScroll = el ? el.scrollTop : null;
+
+  if (msg.translatedText) { msg.translatedText = null; if (scope === 'global') rG(); else rDM(convs[convId]); }
+  else {
+    let txt = msg.text.toLowerCase();
+    const trChars = ['ş', 'ğ', 'ü', 'ö', 'ç', 'ı'];
+    const isTr = trChars.some(c => txt.includes(c)) || ['bir', 'bu', 've', 'için', 'olan', 'ile', 'de', 'da', 'den', 'dan', 'ise'].some(w => txt.split(' ').includes(w));
+    if (isTr) {
+      msg.translatedText = '(Zaten Türkçe: ' + msg.text.substring(0, 60) + (msg.text.length > 60 ? '…' : '') + ')';
+    } else {
+      let translated = txt;
+      Object.entries(TR_DICT).forEach(([en, tr]) => { if (tr) translated = translated.replace(new RegExp('\\b' + en + '\\b', 'gi'), tr); });
+      translated = translated.charAt(0).toUpperCase() + translated.slice(1);
+      msg.translatedText = translated;
+    }
+    if (scope === 'global') rG(); else rDM(convs[convId]);
+    toast('Çevrildi 🌐', 's');
   }
-  if (scope === 'global') rG(); else rDM(convs[convId]);
-  toast('Çevrildi 🌐', 's');
+
+  if (savedScroll !== null && el) el.scrollTop = savedScroll;
 }
 
 // ══════════════════════════════════════════════════
@@ -392,6 +417,16 @@ function showCtx(e, msgId, convId, scope) {
   copyBtn.onclick = () => { if (msg && msg.text) navigator.clipboard.writeText(msg.text).then(() => toast('Kopyalandı', 's')); removeCtx(); };
   menu.appendChild(copyBtn);
 
+  // Sabitle — DM (mesaj sahibi veya admin)
+  if (scope === 'dm' && msg && !msg.recalled && (isMe || me.isAdmin)) {
+    const c = convs[convId];
+    const isPinnedDm = c && c.pinnedMsg && c.pinnedMsg.id === msg.id;
+    const pinDmBtn = document.createElement('div'); pinDmBtn.className = 'ctx-item';
+    pinDmBtn.innerHTML = isPinnedDm ? '📌 Sabitlemeyi Kaldır' : '📌 Sabitle';
+    pinDmBtn.onclick = () => { isPinnedDm ? unpinDmMsg(convId) : pinDmMsg(convId, msg.id); removeCtx(); };
+    menu.appendChild(pinDmBtn);
+  }
+
   // Sabitle (admin + global)
   if (me.isAdmin && scope === 'global' && msg && !msg.recalled) {
     const pinBtn = document.createElement('div'); pinBtn.className = 'ctx-item pin';
@@ -419,10 +454,27 @@ function showCtx(e, msgId, convId, scope) {
     menu.appendChild(editBtn);
   }
 
-  // Geri al / Sil
-  const recallBtn = document.createElement('div'); recallBtn.className = 'ctx-item danger'; recallBtn.innerHTML = me.isAdmin ? '🗑️ Sil' : '🚫 Geri Al';
-  recallBtn.onclick = () => { recallMsg(msgId, convId, scope); removeCtx(); };
-  menu.appendChild(recallBtn);
+  // Geri al / Sil (sadece kendi mesajı veya admin)
+  if (isMe || me.isAdmin) {
+    const recallBtn = document.createElement('div'); recallBtn.className = 'ctx-item danger'; recallBtn.innerHTML = me.isAdmin ? '🗑️ Sil' : '🚫 Geri Al';
+    recallBtn.onclick = () => { recallMsg(msgId, convId, scope); removeCtx(); };
+    menu.appendChild(recallBtn);
+  }
+
+  // Şikayet (başkasının mesajı, admin değil)
+  if (!isMe && !me.isAdmin && msg && scope === 'global') {
+    const repBtn = document.createElement('div'); repBtn.className = 'ctx-item danger'; repBtn.innerHTML = '🚩 Şikayet Et';
+    repBtn.onclick = () => {
+      _reportTargetId = String(msg.id);
+      _reportTargetText = msg.text ? msg.text.substring(0, 100) : '';
+      const rm = q('#reportMenu'); if (!rm) { removeCtx(); return; }
+      rm.style.display = 'block';
+      rm.style.left = Math.min(e.clientX, window.innerWidth - 180) + 'px';
+      rm.style.top  = Math.min(e.clientY, window.innerHeight - 120) + 'px';
+      removeCtx();
+    };
+    menu.appendChild(repBtn);
+  }
 
   // Sustur (admin)
   if (me.isAdmin && msg) {
@@ -450,7 +502,7 @@ function recallMsg(msgId, convId, scope) {
     const m = gm.find(x => x.id === msgId); if (!m) return; m.recalled = true; rG(); toast('Mesaj geri alındı', 'w');
   } else {
     const c = convs[convId]; if (!c) return; const m = c.msgs.find(x => x.id === msgId); if (!m) return;
-    m.recalled = true; if (m.mediaData) m.mediaData = null; rDM(c); toast('Mesaj geri alındı', 'w');
+    m.recalled = true; rDM(c); toast('Mesaj geri alındı', 'w');
   }
 }
 
