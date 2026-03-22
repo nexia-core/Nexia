@@ -220,16 +220,30 @@
 /* #6 — Geçmiş paneli */
 .bot-hdr-btn { background:transparent; border:none; cursor:pointer; font-size:15px; padding:4px 6px; border-radius:6px; transition:background .15s; margin-left:auto; }
 .bot-hdr-btn:hover { background:var(--sf2); }
-.bot-hist-item { background:var(--sf2); border-radius:8px; padding:10px 12px; border-left:2px solid var(--bd2); transition:border-color .15s; }
-.bot-hist-item:hover { border-left-color:var(--ac); }
-.bot-hist-meta { display:flex; align-items:center; justify-content:space-between; margin-bottom:5px; }
-.bot-hist-mode { font-size:10px; font-family:'Geist Mono',monospace; color:var(--ac); font-weight:700; }
+
+/* NEXUS GEÇMİŞ — modern tasarım */
+.nhist-box { background:var(--sf); border-radius:18px; width:100%; max-width:520px; max-height:82vh; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 24px 60px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.06); animation:popIn .22s cubic-bezier(.34,1.56,.64,1) both; }
+.nhist-hdr { padding:18px 20px 16px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--bd); flex-shrink:0; }
+.nhist-hdr-left { display:flex; align-items:center; gap:12px; }
+.nhist-icon { width:36px; height:36px; border-radius:10px; background:linear-gradient(135deg,var(--ac),var(--ac2,#f97316)); display:flex; align-items:center; justify-content:center; color:#fff; flex-shrink:0; }
+.nhist-title { font-size:15px; font-weight:700; letter-spacing:-.3px; font-family:'Geist Mono',monospace; }
+.nhist-sub { font-size:11px; color:var(--t3); margin-top:1px; }
+.nhist-clear-btn { display:flex; align-items:center; gap:5px; background:transparent; border:1px solid var(--bd2); border-radius:8px; padding:5px 12px; font-size:12px; cursor:pointer; color:var(--t2); transition:all .15s; font-family:inherit; }
+.nhist-clear-btn:hover { background:rgba(239,68,68,.12); color:#ef4444; border-color:rgba(239,68,68,.35); }
+.nhist-close-btn { width:30px; height:30px; border-radius:8px; background:var(--sf2); border:1px solid var(--bd); cursor:pointer; display:flex; align-items:center; justify-content:center; color:var(--t2); transition:all .15s; }
+.nhist-close-btn:hover { background:var(--sf3); color:var(--tx); }
+.nhist-list { overflow-y:auto; flex:1; padding:14px; display:flex; flex-direction:column; gap:10px; }
+.nhist-list::-webkit-scrollbar { width:3px; }
+.nhist-list::-webkit-scrollbar-thumb { background:var(--bd2); border-radius:2px; }
+.bot-hist-item { background:var(--sf2); border-radius:12px; padding:14px 16px; border:1px solid var(--bd); transition:border-color .15s,background .15s; cursor:default; }
+.bot-hist-item:hover { border-color:var(--ac); background:var(--sf3); }
+.bot-hist-meta { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+.bot-hist-mode { font-size:10px; font-family:'Geist Mono',monospace; background:rgba(var(--ac-rgb,251,146,60),.15); color:var(--ac); padding:2px 8px; border-radius:20px; font-weight:700; }
 .bot-hist-time { font-size:10px; color:var(--t3); }
-.bot-hist-q { font-size:12px; color:var(--tx); font-weight:600; margin-bottom:3px; }
-.bot-hist-a { font-size:11px; color:var(--t2); line-height:1.45; }
-.bot-hist-empty { padding:20px; text-align:center; color:var(--t3); font-size:13px; }
-.bot-hist-clear-btn { background:var(--sf2); border:1px solid var(--bd2); border-radius:6px; padding:4px 10px; font-size:12px; cursor:pointer; color:var(--t2); transition:all .15s; }
-.bot-hist-clear-btn:hover { background:rgba(239,68,68,.15); color:#ef4444; border-color:rgba(239,68,68,.3); }
+.bot-hist-q { font-size:13px; color:var(--tx); font-weight:600; margin-bottom:6px; line-height:1.4; }
+.bot-hist-a { font-size:12px; color:var(--t2); line-height:1.55; }
+.bot-hist-empty { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; padding:48px 20px; color:var(--t3); font-size:13px; text-align:center; }
+.bot-hist-empty::before { content:'🕐'; font-size:36px; opacity:.4; }
 
 /* Sistem mesajı (oturum bilgisi) */
 .bot-sys-msg { text-align:center; font-size:10px; color:var(--t3); font-family:'Geist Mono',monospace; padding:2px 0; letter-spacing:.5px; }
@@ -300,7 +314,7 @@
 
 /* ─── CHANNELS / ROOMS ─── */
 /* ── WHATSAPP STYLE GROUPS ── */
-.channels-sidebar { width:100%; max-width:320px; flex-shrink:0; display:flex; flex-direction:column; position:relative; z-index:1; border-right:1px solid var(--bd); background:var(--sf); }
+.channels-sidebar { width:100%; max-width:320px; flex-shrink:0; display:flex; flex-direction:column; position:relative; z-index:1; border-right:1px solid var(--bd); background:var(--sf); align-self:stretch; }
 .channels-head { padding:0 16px; height:58px; background:var(--sf2); font-size:15px; font-weight:700; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--bd); flex-shrink:0; letter-spacing:-.2px; }
 .ch-head-btn { background:transparent; border:none; color:var(--t2); cursor:pointer; padding:6px; border-radius:8px; display:flex; align-items:center; transition:color .15s,background .15s; }
 .ch-head-btn:hover { background:var(--sf3); color:var(--ac); }

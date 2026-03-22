@@ -427,6 +427,8 @@ function openBotHistory() {
   const modal = document.getElementById('botHistoryModal'); if (!modal) return;
   const grid  = document.getElementById('botHistoryList'); if (!grid)  return;
   const logs  = (typeof me !== 'undefined' && me?.name) ? getNexusLogs(me.name) : [];
+  const countEl = document.getElementById('nhist-count');
+  if (countEl) countEl.textContent = logs.length ? logs.length + ' konuşma kaydı' : '';
   if (!logs.length) {
     grid.innerHTML = '<div class="bot-hist-empty">Henüz kayıtlı konuşma yok.</div>';
   } else {

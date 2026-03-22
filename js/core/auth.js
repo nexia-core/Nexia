@@ -1065,10 +1065,18 @@ function _listenForApproval(uid) {
 }
 
 async function doSetup() {
-  const nick   = q('#setupNick')?.value.trim();
+  const firstName = q('#setupFirstName')?.value.trim();
+  const lastName  = q('#setupLastName')?.value.trim();
+  const nick      = firstName && lastName ? firstName + ' ' + lastName : (firstName || lastName);
   const school = q('#setupSchool')?.value;
+  const gender      = q('#setupGender')?.value;
+  const orientation = q('#setupOrientation')?.value;
+  const cls         = q('#setupClass')?.value;
+  const birth       = q('#setupBirth')?.value;
+  const bio         = q('#setupBio')?.value.trim();
   const errEl  = q('#lerr');
-  if (!nick || nick.length < 2)  { errEl.textContent = 'En az 2 karakter gir.'; return; }
+  if (!firstName || firstName.length < 2) { errEl.textContent = 'İsim en az 2 karakter olmalı.'; return; }
+  if (!lastName  || lastName.length  < 2) { errEl.textContent = 'Soyisim en az 2 karakter olmalı.'; return; }
   if (!school)                    { errEl.textContent = 'Okulunu seç.'; return; }
   if (!_gAuthUser)               { _showLsSection('ls-google'); return; }
   errEl.textContent = 'Kontrol ediliyor...';
@@ -1081,7 +1089,14 @@ async function doSetup() {
     uid:       _gAuthUser.uid,
     email:     _gAuthUser.email,
     nickname:  nick,
+    firstName,
+    lastName,
     school,
+    gender:      gender      || null,
+    orientation: orientation || null,
+    class:       cls         || null,
+    birthDate: birth  || null,
+    bio:       bio    || null,
     status:    'pending',
     isAdmin:   false,
     photoURL:  _gAuthUser.photoURL || null,

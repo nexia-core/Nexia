@@ -194,12 +194,36 @@
     <div id="ls-setup" style="display:none">
       <h2 style="margin-bottom:6px;">Profilini Oluştur</h2>
       <p style="margin-bottom:18px;">Sana nasıl görüneceğini seç</p>
-      <input class="lfi" id="setupNick" placeholder="Görünen adın (örn: Ahmet Y.)" maxlength="30" onkeydown="if(event.key==='Enter')doSetup()"/>
-      <select class="lfi ls-school" id="setupSchool" style="margin-bottom:10px;">
+      <input class="lfi" id="setupFirstName" placeholder="İsim" maxlength="20"/>
+      <input class="lfi" id="setupLastName" placeholder="Soyisim" maxlength="30"/>
+      <select class="lfi ls-school" id="setupSchool">
         <option value="">🏫 Okulunu seç...</option>
         <option value="Şehit Akın Sertçelik AİHL">🕌 Şehit Akın Sertçelik AİHL</option>
         <option value="Ataşehir Kız AİHL">🕌 Ataşehir Kız AİHL</option>
       </select>
+      <select class="lfi ls-school" id="setupGender">
+        <option value="">⚧ Cinsiyet seç...</option>
+        <option value="Erkek">👦 Erkek</option>
+        <option value="Kız">👧 Kız</option>
+        <option value="Belirtmek istemiyorum">🤐 Belirtmek istemiyorum</option>
+      </select>
+      <select class="lfi ls-school" id="setupOrientation">
+        <option value="">💫 Yönelim seç...</option>
+        <option value="Heteroseksüel">Heteroseksüel</option>
+        <option value="Biseksüel">Biseksüel</option>
+        <option value="Eşcinsel">Eşcinsel</option>
+        <option value="Aseksüel">Aseksüel</option>
+        <option value="Belirtmek istemiyorum">Belirtmek istemiyorum</option>
+      </select>
+      <select class="lfi ls-school" id="setupClass">
+        <option value="">🎓 Sınıfını seç...</option>
+        <option value="9">9. Sınıf</option>
+        <option value="10">10. Sınıf</option>
+        <option value="11">11. Sınıf</option>
+        <option value="12">12. Sınıf</option>
+      </select>
+      <input class="lfi" id="setupBirth" type="date" placeholder="Doğum tarihi" style="color:var(--t2);" title="Doğum tarihi"/>
+      <input class="lfi" id="setupBio" placeholder="Hakkında (opsiyonel, maks 80 karakter)" maxlength="80"/>
       <button class="lbtn" onclick="doSetup()">Kayıt Ol →</button>
       <button class="lbtn-ghost" onclick="doSignOut()">İptal</button>
     </div>
@@ -889,15 +913,28 @@
 
     <!-- #6 — NEXUS GEÇMİŞ MODALİ -->
     <div class="modal" id="botHistoryModal" onclick="if(event.target===this)closeBotHistory()">
-      <div class="modal-box" style="max-width:480px;max-height:80vh;display:flex;flex-direction:column;">
-        <div class="modal-hdr">
-          <span style="font-family:'Geist Mono',monospace;font-size:14px;">📋 NEXUS Geçmişi</span>
+      <div class="nhist-box">
+        <div class="nhist-hdr">
+          <div class="nhist-hdr-left">
+            <div class="nhist-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+            <div>
+              <div class="nhist-title">NEXUS Geçmişi</div>
+              <div class="nhist-sub" id="nhist-count"></div>
+            </div>
+          </div>
           <div style="display:flex;gap:8px;align-items:center;">
-            <button class="bot-hist-clear-btn" onclick="clearBotHistory()">🗑 Temizle</button>
-            <button class="modal-cls" onclick="closeBotHistory()">✕</button>
+            <button class="nhist-clear-btn" onclick="clearBotHistory()">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+              Temizle
+            </button>
+            <button class="nhist-close-btn" onclick="closeBotHistory()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
           </div>
         </div>
-        <div id="botHistoryList" style="overflow-y:auto;flex:1;padding:10px 14px;display:flex;flex-direction:column;gap:8px;"></div>
+        <div id="botHistoryList" class="nhist-list"></div>
       </div>
     </div>
 
@@ -1339,6 +1376,7 @@
         <!-- ── GENEL BAKIŞ ── -->
         <div id="adminSec-genel" class="admin-sub-view" style="display:none;">
           <div class="admin-sub-header">
+            <button class="admin-back-btn" onclick="backToAdminMain()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg> Geri</button>
             <span class="admin-sub-title">📊 Genel Bakış</span>
           </div>
           <div class="acard">
@@ -1364,6 +1402,7 @@
         <!-- ── KULLANICI YÖNETİMİ ── -->
         <div id="adminSec-kullanici" class="admin-sub-view" style="display:none;">
           <div class="admin-sub-header">
+            <button class="admin-back-btn" onclick="backToAdminMain()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg> Geri</button>
             <span class="admin-sub-title">👥 Kullanıcı Yönetimi</span>
           </div>
           <!-- Bekleyen üyeler -->
@@ -1375,13 +1414,6 @@
           <div class="acard">
             <div class="ach"><h3>🌐 Google Üyeleri</h3><span class="ach-s" id="googleUsersCnt">0 üye</span></div>
             <div class="acb" id="googleUsersList"><div style="color:var(--t3);font-size:13px;">Henüz üye yok.</div></div>
-          </div>
-          <div class="acard">
-            <div class="ach"><h3>👥 Kullanıcı Listesi</h3><span class="ach-s">İsme tıkla → Detay</span></div>
-            <div class="acb">
-              <div class="tbl-wrap"><table class="tbl"><thead><tr><th>İsim</th><th>Kod</th><th>Durum</th><th>İşlemler</th></tr></thead><tbody id="utbody"></tbody></table></div>
-              <div class="ar"><input type="text" id="ncInp" placeholder="Yeni kod" style="text-transform:uppercase"/><button class="arb" onclick="addC()">+ Ekle</button></div>
-            </div>
           </div>
           <div class="acard">
             <div class="ach"><h3>👁 Anonim Kimlik Kaydı</h3><span class="ach-s">Sadece sen</span></div>
@@ -1402,6 +1434,7 @@
         <!-- ── İÇERİK YÖNETİMİ ── -->
         <div id="adminSec-icerik" class="admin-sub-view" style="display:none;">
           <div class="admin-sub-header">
+            <button class="admin-back-btn" onclick="backToAdminMain()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg> Geri</button>
             <span class="admin-sub-title">📝 İçerik Yönetimi</span>
           </div>
           <div class="acard">
@@ -1429,6 +1462,7 @@
         <!-- ── İZLEME & LOGLAR ── -->
         <div id="adminSec-izleme" class="admin-sub-view" style="display:none;">
           <div class="admin-sub-header">
+            <button class="admin-back-btn" onclick="backToAdminMain()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg> Geri</button>
             <span class="admin-sub-title">🔍 İzleme & Loglar</span>
           </div>
           <div class="acard">
@@ -1448,6 +1482,7 @@
         <!-- ── GÜVENLİK ── -->
         <div id="adminSec-guvenlik" class="admin-sub-view" style="display:none;">
           <div class="admin-sub-header">
+            <button class="admin-back-btn" onclick="backToAdminMain()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg> Geri</button>
             <span class="admin-sub-title">🛡️ Güvenlik</span>
           </div>
           <div class="acard">
