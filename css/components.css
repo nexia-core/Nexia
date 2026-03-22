@@ -210,7 +210,7 @@
 .dmsb { width:100%; max-width:280px; border-right:1px solid var(--bd); display:flex; flex-direction:column; flex-shrink:0; position:relative; z-index:1; background:var(--sf); }
 .dmsb-h { padding:14px 14px 10px; display:flex; flex-direction:column; gap:10px; flex-shrink:0; border-bottom:1px solid var(--bd); }
 .dmsb-h h3 { font-size:15px; font-weight:700; color:var(--tx); }
-.dm-actions { display:flex; gap:6px; flex-wrap:nowrap; overflow-x:auto; }
+.dm-actions { display:flex; gap:6px; flex-wrap:wrap; overflow-x:hidden; }
 /* DM Search */
 .dm-search-wrap { padding:8px 10px; border-bottom:1px solid var(--bd); flex-shrink:0; }
 .dm-search-inp { width:100%; background:var(--sf2); border:none; border-radius:10px; padding:8px 12px 8px 34px; font-size:13px; color:var(--tx); font-family:'Instrument Sans',sans-serif; outline:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:10px center; }

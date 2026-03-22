@@ -342,7 +342,7 @@ function rPendingUsers() {
 function rGoogleUsers() {
   const el  = q('#googleUsersList'); if (!el) return;
   const cnt = q('#googleUsersCnt');
-  const approved = _googleUsers.filter(u => u.status !== 'pending');
+  const approved = _googleUsers.filter(u => u.status !== 'pending' && !u.isAdmin);
   if (cnt) cnt.textContent = _googleUsers.length + ' üye';
 
   // Arama kutusu
