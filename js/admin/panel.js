@@ -371,15 +371,18 @@ function rGoogleUsers() {
   }
   el.innerHTML = '';
   filtered.forEach(u => {
-    const d = document.createElement('div'); d.className = 'mli'; d.style.cssText = 'gap:8px;flex-wrap:wrap;align-items:center;';
+    const d = document.createElement('div'); d.className = 'mli gu-row'; d.style.cssText = 'gap:8px;flex-wrap:wrap;align-items:center;';
     const statusColor = u.status === 'approved' ? 'var(--gn)' : 'var(--dg)';
     const statusTxt   = u.status === 'approved' ? '✅ Onaylı' : '⛔ Banlı';
     const schoolBadge = u.school === 'Şehit Akın Sertçelik AİHL'
       ? '<span class="school-badge erkek">Şehit Akın</span>'
       : u.school === 'Ataşehir Kız AİHL' ? '<span class="school-badge kiz">Ataşehir Kız</span>' : '';
+    const avatarHtml = u.photoURL
+      ? `<img src="${esc(u.photoURL)}" class="gu-avatar" referrerpolicy="no-referrer" onclick="openGoogleUserDetail('${esc(u.uid)}')" style="cursor:pointer;"/>`
+      : `<div class="gu-avatar gu-avatar-ph" onclick="openGoogleUserDetail('${esc(u.uid)}')" style="cursor:pointer;">${(u.nickname||'?')[0].toUpperCase()}</div>`;
     d.innerHTML = `
-      ${u.photoURL ? `<img src="${esc(u.photoURL)}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;flex-shrink:0;" referrerpolicy="no-referrer"/>` : '<div style="width:28px;height:28px;border-radius:50%;background:var(--sf3);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;">👤</div>'}
-      <span class="mli-w">${esc(u.nickname || '?')}</span>
+      ${avatarHtml}
+      <span class="mli-w gu-name" onclick="openGoogleUserDetail('${esc(u.uid)}')" style="cursor:pointer;">${esc(u.nickname || '?')}</span>
       ${schoolBadge}
       <span style="font-size:11px;color:${statusColor};">${statusTxt}</span>
       <span style="font-size:11px;color:var(--t3);">${esc(u.email || '')}</span>
@@ -410,4 +413,159 @@ async function adminDeleteUser(uid) {
   if (typeof fbDeleteUserDoc !== 'function') return;
   await fbDeleteUserDoc(uid);
   toast('Kullanıcı silindi 🗑', 'w');
+}
+
+// ══════════════════════════════════════════════════
+// GOOGLE KULLANICI DETAY PANELİ
+// ══════════════════════════════════════════════════
+function openGoogleUserDetail(uid) {
+  const u = _googleUsers.find(x => x.uid === uid);
+  if (!u) return;
+  const overlay = document.getElementById('guDetailOverlay');
+  if (!overlay) return;
+
+  // Avatar
+  const havEl = overlay.querySelector('.gud-avatar');
+  if (havEl) {
+    if (u.photoURL) {
+      havEl.innerHTML = `<img src="${esc(u.photoURL)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" referrerpolicy="no-referrer"/>`;
+    } else {
+      havEl.innerHTML = (u.nickname||'?')[0].toUpperCase();
+      havEl.className = 'gud-avatar ' + avColor(u.nickname||'A', false);
+    }
+  }
+
+  // Başlık
+  const hn = overlay.querySelector('.gud-name'); if (hn) hn.textContent = u.nickname || '—';
+  const hs = overlay.querySelector('.gud-email'); if (hs) hs.textContent = u.email || '';
+
+  // Body
+  const body = overlay.querySelector('.gud-body'); if (!body) return;
+  body.innerHTML = '';
+
+  // — Temel Bilgiler
+  const infos = [
+    ['İsim', u.firstName || '—'],
+    ['Soyisim', u.lastName || '—'],
+    ['Okul', u.school || '—'],
+    ['Cinsiyet', u.gender || '—'],
+    ['Yönelim', u.orientation || '—'],
+    ['Sınıf', u.cls ? u.cls + '. Sınıf' : '—'],
+    ['Doğum Tarihi', u.birth || '—'],
+    ['Durum', u.status === 'approved' ? '✅ Onaylı' : u.status === 'banned' ? '⛔ Banlı' : '⏳ Bekliyor'],
+    ['Kayıt', u.createdAt ? new Date(u.createdAt).toLocaleDateString('tr-TR') : '—'],
+  ];
+  const sec1 = document.createElement('div');
+  sec1.innerHTML = '<div class="aup-sec-label">Temel Bilgiler</div>';
+  const grid = document.createElement('div'); grid.className = 'aup-grid';
+  infos.forEach(([l, v]) => {
+    const c = document.createElement('div'); c.className = 'aup-cell';
+    c.innerHTML = `<div class="aup-cell-lbl">${l}</div><div class="aup-cell-val">${esc(String(v))}</div>`;
+    grid.appendChild(c);
+  });
+  sec1.appendChild(grid);
+  if (u.bio) {
+    const bd = document.createElement('div'); bd.style.marginTop = '10px';
+    bd.innerHTML = `<div class="aup-sec-label" style="margin-bottom:5px;">Biyografi</div><div class="aup-bio-box">${esc(u.bio)}</div>`;
+    sec1.appendChild(bd);
+  }
+  body.appendChild(sec1);
+
+  // — Sohbetler (convs)
+  const userConvs = Object.values(convs).filter(c =>
+    c.isGroup ? c.members?.includes(u.nickname) : (c.fromReal === u.nickname || c.toReal === u.nickname)
+  );
+  if (userConvs.length) {
+    const sec2 = document.createElement('div');
+    sec2.innerHTML = `<div class="aup-sec-label" style="margin-top:14px;">Sohbetler (${userConvs.length})</div>`;
+    userConvs.forEach(c => {
+      const peer = c.isGroup ? c.name : (c.fromReal === u.nickname ? c.toReal : c.fromReal);
+      const row = document.createElement('div'); row.className = 'aup-conv'; row.style.marginBottom = '6px';
+      const head = document.createElement('div'); head.className = 'aup-conv-head';
+      head.innerHTML = `<div class="aup-conv-peer">${c.isGroup ? '👥 ' + esc(c.name) : esc(u.nickname) + ' ↔ ' + esc(peer)}</div><span class="aup-conv-cnt">${c.msgs.filter(m=>!m.isSys).length} mesaj</span><span class="aup-conv-badge ${c.status}">${c.status==='active'?'Aktif':'Bekliyor'}</span><span class="aup-conv-arrow">›</span>`;
+      const msgs = document.createElement('div'); msgs.className = 'aup-conv-msgs';
+      head.onclick = () => {
+        const open = msgs.classList.toggle('op');
+        head.querySelector('.aup-conv-arrow').style.transform = open ? 'rotate(90deg)' : '';
+        if (!open || msgs.childNodes.length) return;
+        const ms = c.msgs.filter(m=>!m.isSys);
+        if (!ms.length) { msgs.innerHTML = '<div style="color:var(--t3);font-size:12px;">Mesaj yok.</div>'; return; }
+        ms.forEach(m => {
+          const r = document.createElement('div'); r.className = 'aup-msg-row';
+          r.innerHTML = `<span class="aup-msg-who ${m.isAnon?'an':''}">${esc(m.from)}</span><span class="aup-msg-txt">${esc(m.recalled?'[geri alındı]':(m.text||'[medya]'))}</span><span class="aup-msg-t">${ft(m.time)}</span>`;
+          msgs.appendChild(r);
+        });
+      };
+      row.appendChild(head); row.appendChild(msgs); sec2.appendChild(row);
+    });
+    body.appendChild(sec2);
+  }
+
+  // — NEXUS Geçmişi
+  if (typeof getNexusLogs === 'function') {
+    const nxLogs = getNexusLogs(u.nickname || u.uid);
+    const sec3 = document.createElement('div');
+    sec3.style.marginTop = '14px';
+    sec3.innerHTML = `<div class="aup-sec-label">⚡ NEXUS Geçmişi</div>`;
+    if (!nxLogs.length) {
+      sec3.innerHTML += '<div style="color:var(--t3);font-size:12px;">NEXUS konuşması yok.</div>';
+    } else {
+      const btn = document.createElement('button');
+      btn.className = 'gud-nexus-btn';
+      btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg> ${nxLogs.length} konuşmayı görüntüle →`;
+      btn.onclick = () => openNexusViewer(u.nickname || u.uid, nxLogs);
+      sec3.appendChild(btn);
+      // Son 3 önizleme
+      nxLogs.slice(-3).reverse().forEach(l => {
+        const modeLabel = ({fast:'⚡ Hızlı', think:'🧠 Derin', pro:'👑 Pro'})[l.m] || '⚡';
+        const row = document.createElement('div'); row.className = 'bot-hist-item'; row.style.marginTop = '6px';
+        row.innerHTML = `<div class="bot-hist-meta"><span class="bot-hist-mode">${modeLabel}</span><span class="bot-hist-time">${ft(new Date(l.t))}</span></div><div class="bot-hist-q">${esc(l.u.substring(0,80))}${l.u.length>80?'…':''}</div><div class="bot-hist-a">${esc(l.b.substring(0,100))}${l.b.length>100?'…':''}</div>`;
+        sec3.appendChild(row);
+      });
+    }
+    body.appendChild(sec3);
+  }
+
+  // İşlem butonları
+  const sec4 = document.createElement('div');
+  sec4.style.cssText = 'display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;';
+  sec4.innerHTML = u.status === 'banned'
+    ? `<button class="ts tg" style="flex:1;padding:10px;" onclick="adminApproveUser('${esc(u.uid)}');closeGUDetail()">✓ Banı Kaldır</button>`
+    : `<button class="ts td" style="flex:1;padding:10px;" onclick="adminBanUser('${esc(u.uid)}');closeGUDetail()">⛔ Banla</button>`;
+  sec4.innerHTML += `<button class="ts tw" style="flex:1;padding:10px;" onclick="adminDeleteUser('${esc(u.uid)}');closeGUDetail()">🗑 Sil</button>`;
+  body.appendChild(sec4);
+
+  overlay.classList.add('op');
+}
+
+function closeGUDetail() {
+  const o = document.getElementById('guDetailOverlay'); if (o) o.classList.remove('op');
+}
+
+function openNexusViewer(name, logs) {
+  closeGUDetail();
+  const overlay = document.getElementById('nexusViewerOverlay');
+  if (!overlay) return;
+  const title = overlay.querySelector('.nv-title'); if (title) title.textContent = name + ' — NEXUS Konuşmaları';
+  const list  = overlay.querySelector('.nv-list');  if (!list)  return;
+  list.innerHTML = '';
+  [...logs].reverse().forEach((l, i) => {
+    const modeLabel = ({fast:'⚡ Hızlı', think:'🧠 Derin', pro:'👑 Pro'})[l.m] || '⚡';
+    const timeStr = (() => { try { const d=new Date(l.t); return d.toLocaleDateString('tr-TR')+' '+d.toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'}); } catch(e){return '';} })();
+    const item = document.createElement('div'); item.className = 'nv-item';
+    item.innerHTML = `
+      <div class="nv-item-head">
+        <span class="bot-hist-mode">${modeLabel}</span>
+        <span class="nv-item-num">#${logs.length - i}</span>
+        <span class="bot-hist-time">${timeStr}</span>
+      </div>
+      <div class="nv-bubble nv-user"><span class="nv-who">👤 ${esc(name)}</span>${esc(l.u)}</div>
+      <div class="nv-bubble nv-bot"><span class="nv-who">⚡ NEXUS</span>${esc(l.b)}</div>`;
+    list.appendChild(item);
+  });
+  overlay.classList.add('op');
+}
+
+function closeNexusViewer() {
+  const o = document.getElementById('nexusViewerOverlay'); if (o) o.classList.remove('op');
 }

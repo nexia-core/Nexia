@@ -293,6 +293,33 @@
   </div>
 </div>
 
+<!-- GOOGLE USER DETAIL -->
+<div class="aup-overlay" id="guDetailOverlay" onclick="if(event.target===this)closeGUDetail()">
+  <div class="aup-box" style="max-width:520px;">
+    <div class="aup-head">
+      <div class="gud-avatar avb" style="width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;flex-shrink:0;overflow:hidden;"></div>
+      <div style="flex:1;min-width:0;">
+        <div class="aup-htitle gud-name">—</div>
+        <div class="aup-hsub gud-email" style="font-size:11px;"></div>
+      </div>
+      <button class="aup-hclose" onclick="closeGUDetail()">✕</button>
+    </div>
+    <div class="aup-body gud-body"></div>
+  </div>
+</div>
+
+<!-- NEXUS KONUŞMA GÖRÜNTÜLEYICI -->
+<div class="aup-overlay" id="nexusViewerOverlay" onclick="if(event.target===this)closeNexusViewer()">
+  <div class="aup-box" style="max-width:600px;">
+    <div class="aup-head">
+      <div style="width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,var(--ac),#f97316);display:flex;align-items:center;justify-content:center;flex-shrink:0;">⚡</div>
+      <div style="flex:1;min-width:0;"><div class="aup-htitle nv-title">NEXUS Konuşmaları</div><div class="aup-hsub">Tüm konuşma geçmişi</div></div>
+      <button class="aup-hclose" onclick="closeNexusViewer()">✕</button>
+    </div>
+    <div class="aup-body nv-list" style="gap:14px;"></div>
+  </div>
+</div>
+
 <!-- ADMIN USER DETAIL -->
 <div class="aup-overlay" id="aupOverlay">
   <div class="aup-box">

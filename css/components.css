@@ -141,6 +141,20 @@
 .pb-close { background:var(--sf2); border-color:transparent; color:var(--t2); }
 .pb-close:hover { background:var(--sf3); }
 
+/* ─── GOOGLE USER LIST ─── */
+.gu-avatar { width:32px; height:32px; border-radius:50%; object-fit:cover; flex-shrink:0; }
+.gu-avatar-ph { width:32px; height:32px; border-radius:50%; background:var(--sf3); display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; flex-shrink:0; }
+.gu-name:hover { color:var(--ac); text-decoration:underline; }
+.gud-nexus-btn { display:inline-flex; align-items:center; gap:7px; background:linear-gradient(135deg,rgba(var(--ac-rgb,251,146,60),.15),rgba(var(--ac-rgb,251,146,60),.08)); border:1px solid rgba(var(--ac-rgb,251,146,60),.3); border-radius:10px; padding:10px 16px; color:var(--ac); font-size:13px; font-weight:600; cursor:pointer; width:100%; margin-bottom:8px; transition:all .15s; font-family:inherit; }
+.gud-nexus-btn:hover { background:rgba(var(--ac-rgb,251,146,60),.22); }
+/* ─── NEXUS VIEWER ─── */
+.nv-item { display:flex; flex-direction:column; gap:8px; padding:14px; background:var(--sf2); border-radius:12px; border:1px solid var(--bd); }
+.nv-item-head { display:flex; align-items:center; gap:8px; margin-bottom:2px; }
+.nv-item-num { font-size:10px; font-family:'Geist Mono',monospace; color:var(--t3); }
+.nv-bubble { padding:10px 14px; border-radius:10px; font-size:13px; line-height:1.55; white-space:pre-wrap; word-break:break-word; }
+.nv-bubble.nv-user { background:var(--ac-d); border-bottom-left-radius:3px; }
+.nv-bubble.nv-bot { background:var(--sf3); border-bottom-right-radius:3px; }
+.nv-who { display:block; font-size:10px; font-weight:700; color:var(--t3); margin-bottom:4px; font-family:'Geist Mono',monospace; }
 /* ─── ADMIN USER DETAIL PANEL ─── */
 .aup-overlay { position:fixed; inset:0; z-index:4800; background:rgba(0,0,0,.7); display:none; align-items:center; justify-content:center; backdrop-filter:blur(4px); }
 .aup-overlay.op { display:flex; }
