@@ -1,6 +1,6 @@
 // ══════════════════════════════════════════════════
 // FIREBASE v9 MODÜLER SDK — NEXIA1CHAT
-// v5 — Global Chat + Profil + Online + DM + Kodlar + Storage
+// v6 — Global Chat + Profil + Online + DM + Kodlar + Storage + Auth
 // ══════════════════════════════════════════════════
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
@@ -11,6 +11,10 @@ import {
   doc, setDoc, getDoc, deleteDoc, getDocs,
   where, updateDoc
 } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+import {
+  getAuth, signInWithPopup, GoogleAuthProvider,
+  signOut as _fbSignOut, onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 // imgbb kullanılıyor — Firebase Storage bu bölgede ücretsiz değil
 
 const firebaseConfig = {
@@ -351,4 +355,62 @@ window.fbSeedCodes = async function() {
   } catch(e) { console.error('Seed hatası:', e); }
 };
 
-console.log('Firebase v3 modülü yüklendi ✓');
+// ══════════════════════════════════════════════════
+// 7 — GOOGLE AUTH & KULLANICI YÖNETİMİ
+// ══════════════════════════════════════════════════
+
+const _auth        = getAuth(app);
+const _gProvider   = new GoogleAuthProvider();
+
+window.fbGoogleSignIn = async function() {
+  try {
+    const result = await signInWithPopup(_auth, _gProvider);
+    return result.user;
+  } catch(e) {
+    if (e.code !== 'auth/popup-closed-by-user') console.error('Google giriş hatası:', e);
+    return null;
+  }
+};
+
+window.fbSignOut = async function() {
+  try { await _fbSignOut(_auth); } catch(e) {}
+};
+
+window.fbGetUserDoc = async function(uid) {
+  try {
+    const snap = await getDoc(doc(db, 'users', uid));
+    return snap.exists() ? { uid: snap.id, ...snap.data() } : null;
+  } catch(e) { return null; }
+};
+
+window.fbSaveUserDoc = async function(uid, data) {
+  try { await setDoc(doc(db, 'users', uid), data, { merge: true }); }
+  catch(e) { console.error('Kullanıcı kayıt hatası:', e); }
+};
+
+window.fbListenUserDoc = function(uid, callback) {
+  return onSnapshot(doc(db, 'users', uid), snap => {
+    callback(snap.exists() ? { uid: snap.id, ...snap.data() } : null);
+  });
+};
+
+window.fbListenAllUsers = function(callback) {
+  return onSnapshot(
+    query(collection(db, 'users'), orderBy('createdAt', 'desc')),
+    snap => { callback(snap.docs.map(d => ({ uid: d.id, ...d.data() }))); }
+  );
+};
+
+window.fbApproveUser = async function(uid) {
+  try { await updateDoc(doc(db, 'users', uid), { status: 'approved' }); } catch(e) {}
+};
+
+window.fbBanUserByUid = async function(uid) {
+  try { await updateDoc(doc(db, 'users', uid), { status: 'banned' }); } catch(e) {}
+};
+
+window.fbDeleteUserDoc = async function(uid) {
+  try { await deleteDoc(doc(db, 'users', uid)); } catch(e) {}
+};
+
+console.log('Firebase v6 modülü yüklendi ✓');

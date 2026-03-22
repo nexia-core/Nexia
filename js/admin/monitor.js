@@ -216,6 +216,32 @@ function forceLogout(name) {
 // ─────────────────────────────────────────────────
 // ŞÜPHELI MESAJLAR
 // ─────────────────────────────────────────────────
+// ─────────────────────────────────────────────────
+// KİLİT İSTEKLERİ
+// ─────────────────────────────────────────────────
+function renderFreezeRequests(listId) {
+  const el = q('#' + listId); if (!el) return;
+  el.innerHTML = '';
+  if (!freezeRequests.length) {
+    el.innerHTML = '<div style="color:var(--t3);font-size:13px;">Bekleyen kilit isteği yok ✅</div>';
+    return;
+  }
+  freezeRequests.forEach(req => {
+    const d = document.createElement('div'); d.className = 'mon-entry';
+    d.innerHTML = `
+      <div class="mon-entry-main">
+        <span class="mon-name">🔒 ${esc(req.name)}</span>
+        <span class="mon-time">${ft(req.time)}</span>
+      </div>
+      <div class="mon-entry-device">${esc(req.reason || '')}</div>
+      <div class="mon-entry-actions">
+        <button class="ts tg" onclick="freezeAccount('${esc(req.name)}');freezeRequests.splice(freezeRequests.indexOf(freezeRequests.find(r=>r.name==='${esc(req.name)}')),1);renderFreezeRequests('${listId}')">❄️ Onayla</button>
+        <button class="ts td" onclick="freezeRequests.splice(freezeRequests.indexOf(freezeRequests.find(r=>r.name==='${esc(req.name)}')),1);renderFreezeRequests('${listId}')">✕ Reddet</button>
+      </div>`;
+    el.appendChild(d);
+  });
+}
+
 function rSuspiciousMessages() {
   const el = q('#suspiciousMsgList'); if (!el) return;
   el.innerHTML = '';

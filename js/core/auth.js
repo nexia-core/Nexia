@@ -976,3 +976,182 @@ function checkBirthdays() {
   });
   if (changed) localStorage.setItem(lsKey, JSON.stringify([...shown]));
 }
+// ══════════════════════════════════════════════════
+// GOOGLE AUTH SİSTEMİ
+// ══════════════════════════════════════════════════
+
+let _gAuthUser         = null;  // Firebase Auth kullanıcı nesnesi
+let _pendingUnsubFn    = null;  // Firestore onay dinleyici
+
+function _showLsSection(id) {
+  ['ls-google','ls-admin','ls-setup','ls-pending'].forEach(s => {
+    const el = document.getElementById(s); if (el) el.style.display = 'none';
+  });
+  const el = document.getElementById(id); if (el) el.style.display = '';
+  const errEl = q('#lerr'); if (errEl) errEl.textContent = '';
+}
+
+function showAdminLogin() { _showLsSection('ls-admin'); }
+function showGoogleLogin() { _showLsSection('ls-google'); }
+
+async function doGoogleSignIn() {
+  const errEl = q('#lerr');
+  errEl.textContent = 'Bekleniyor...';
+  if (typeof fbGoogleSignIn !== 'function') { errEl.textContent = 'Bağlantı hatası. Sayfayı yenile.'; return; }
+  const user = await fbGoogleSignIn();
+  if (!user) { errEl.textContent = ''; return; }
+  _gAuthUser = user;
+  errEl.textContent = 'Bilgiler alınıyor...';
+  await _handleGoogleUser(user);
+}
+
+async function _handleGoogleUser(user) {
+  const ADMIN_EMAIL = 'karabuluttalha154@gmail.com';
+  const errEl = q('#lerr');
+  if (typeof fbGetUserDoc !== 'function') { errEl.textContent = 'Firebase bağlantı hatası.'; return; }
+
+  // Yönetici e-postası → otomatik admin, onay gerekmez
+  if (user.email === ADMIN_EMAIL) {
+    const adminData = {
+      uid: user.uid, email: user.email, nickname: 'Admin',
+      school: '', status: 'approved', isAdmin: true,
+      photoURL: user.photoURL || null, createdAt: new Date().toISOString()
+    };
+    if (typeof fbSaveUserDoc === 'function') await fbSaveUserDoc(user.uid, adminData);
+    completeGoogleLogin(adminData);
+    return;
+  }
+
+  const userData = await fbGetUserDoc(user.uid);
+  errEl.textContent = '';
+  if (!userData) {
+    _showLsSection('ls-setup');
+    const nickInp = q('#setupNick');
+    if (nickInp && user.displayName) nickInp.value = user.displayName.split(' ')[0];
+    return;
+  }
+  if (userData.status === 'banned') {
+    errEl.textContent = 'Bu hesap engellendi.';
+    if (typeof fbSignOut === 'function') await fbSignOut();
+    _gAuthUser = null;
+    return;
+  }
+  if (userData.status === 'pending') {
+    _showLsSection('ls-pending');
+    _listenForApproval(user.uid);
+    return;
+  }
+  if (userData.status === 'approved') {
+    completeGoogleLogin(userData);
+  }
+}
+
+function _listenForApproval(uid) {
+  if (_pendingUnsubFn) { _pendingUnsubFn(); _pendingUnsubFn = null; }
+  if (typeof fbListenUserDoc !== 'function') return;
+  _pendingUnsubFn = fbListenUserDoc(uid, userData => {
+    if (!userData) return;
+    if (userData.status === 'approved') {
+      if (_pendingUnsubFn) { _pendingUnsubFn(); _pendingUnsubFn = null; }
+      completeGoogleLogin(userData);
+    } else if (userData.status === 'banned') {
+      if (_pendingUnsubFn) { _pendingUnsubFn(); _pendingUnsubFn = null; }
+      const errEl = q('#lerr');
+      if (errEl) errEl.textContent = 'Hesabın engellendi.';
+      if (typeof fbSignOut === 'function') fbSignOut();
+      _showLsSection('ls-google');
+    }
+  });
+}
+
+async function doSetup() {
+  const nick   = q('#setupNick')?.value.trim();
+  const school = q('#setupSchool')?.value;
+  const errEl  = q('#lerr');
+  if (!nick || nick.length < 2)  { errEl.textContent = 'En az 2 karakter gir.'; return; }
+  if (!school)                    { errEl.textContent = 'Okulunu seç.'; return; }
+  if (!_gAuthUser)               { _showLsSection('ls-google'); return; }
+  errEl.textContent = 'Kaydediliyor...';
+  await fbSaveUserDoc(_gAuthUser.uid, {
+    uid:       _gAuthUser.uid,
+    email:     _gAuthUser.email,
+    nickname:  nick,
+    school,
+    status:    'pending',
+    isAdmin:   false,
+    photoURL:  _gAuthUser.photoURL || null,
+    createdAt: new Date().toISOString()
+  });
+  errEl.textContent = '';
+  _showLsSection('ls-pending');
+  _listenForApproval(_gAuthUser.uid);
+}
+
+async function doSignOut() {
+  if (_pendingUnsubFn) { _pendingUnsubFn(); _pendingUnsubFn = null; }
+  if (typeof fbSignOut === 'function') await fbSignOut();
+  _gAuthUser = null;
+  _showLsSection('ls-google');
+}
+
+function completeGoogleLogin(userData) {
+  if (_pendingUnsubFn) { _pendingUnsubFn(); _pendingUnsubFn = null; }
+  const isAd = userData.isAdmin || false;
+  const name = userData.nickname;
+  const aid  = 'Anonim#' + Math.floor(1000 + Math.random() * 9000);
+
+  me = { name, uid: userData.uid, email: userData.email, school: userData.school || '', isAdmin: isAd, anonId: aid, photo: userData.photoURL || null };
+
+  const savedAct = isAd ? 'hidden' : (savedActivity[name] || 'online');
+  if (!profiles[name]) {
+    profiles[name] = { cls:'', age:'', bio:'', gender:'', orientation:'', bday:'', visNormal:true, visAnon:false, photo: userData.photoURL || null, actStatus: savedAct };
+  } else {
+    profiles[name].actStatus = savedAct;
+    if (userData.photoURL && !profiles[name].photo) profiles[name].photo = userData.photoURL;
+  }
+  if (savedAct !== 'hidden') onl[name] = true;
+  aReg[aid] = name;
+
+  q('#lock').style.display = 'none';
+  q('#app').style.display  = 'flex';
+
+  updateMyAv();
+  updateMyStatusDot();
+
+  if (isAd) {
+    q('#ta').style.display  = '';
+    q('#tfr').style.display = '';
+    q('#myAv').className    = 'av avo';
+    q('#tw').style.display  = 'none';
+  }
+
+  demo();
+  gm.push({ type:'sys', text:"OkulNet'e hoş geldiniz. Saygılı iletişim hepimizin sorumluluğu." });
+  rG(); rDL(); buildThemeGrid(); rStories(); rChannels();
+  checkBirthdays();
+
+  if (typeof startFirebaseChat === 'function') startFirebaseChat();
+  if (typeof fbListenCodes     === 'function') fbListenCodes();
+  if (typeof fbListenProfiles  === 'function') fbListenProfiles();
+  if (typeof fbListenOnline    === 'function') fbListenOnline();
+  if (isAd) {
+    if (typeof fbListenReports       === 'function') fbListenReports();
+    if (typeof initAdminGoogleUsers  === 'function') initAdminGoogleUsers();
+  }
+  if (!isAd) {
+    if (typeof fbSetOnline     === 'function') fbSetOnline(name);
+    if (typeof fbListenMyConvs === 'function') fbListenMyConvs(name);
+  }
+
+  window.addEventListener('beforeunload', () => {
+    if (typeof fbSetOffline === 'function' && me) fbSetOffline(me.name);
+    if (typeof fbSignOut    === 'function') fbSignOut();
+  });
+
+  if (typeof recordLogin === 'function') recordLogin(name, 'Google', isAd);
+  if (!isAd && typeof _sessionStart === 'function') _sessionStart();
+  if (!isAd && typeof _concurrentLoginInit === 'function') _concurrentLoginInit(name);
+
+  if (isAd) { rA(); toast('Admin paneline hoş geldin 👁', 'w'); }
+  else toast('Hoş geldin, ' + name + '! 👋', 's');
+}

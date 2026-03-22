@@ -12,8 +12,9 @@ function rChannels() {
     const isMember = ch.members.includes(me?.name || '') || me?.isAdmin;
     const isActive = activeChannel?.id === ch.id;
     const lastMsg = ch.msgs.filter(m => !m.isSys).slice(-1)[0];
-    const subtitle = lastMsg
-      ? `${esc(lastMsg.from)}: ${esc(lastMsg.text.substring(0, 40))}`
+    const lastTxt = lastMsg ? (lastMsg.text || (lastMsg.mediaType === 'image' ? '📷 Fotoğraf' : lastMsg.mediaType === 'video' ? '🎥 Video' : '[medya]')) : null;
+    const subtitle = lastTxt
+      ? `${esc(lastMsg.from)}: ${esc(lastTxt.substring(0, 40))}`
       : (ch.desc || 'Henüz mesaj yok');
     const timeStr = lastMsg ? ft(lastMsg.time) : '';
     const unread = isActive ? 0 : (ch.unread || 0);

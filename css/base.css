@@ -121,6 +121,23 @@ body { background:var(--bg); color:var(--tx); font-family:'Instrument Sans',sans
 .step-badge { font-family:'Geist Mono',monospace; font-size:10px; letter-spacing:1.5px; color:var(--wn); background:var(--wn-d); border:1px solid rgba(255,170,0,.25); border-radius:4px; padding:3px 8px; display:inline-block; margin-bottom:14px; }
 .pw-rules { font-size:11px; color:var(--t3); margin-top:-4px; margin-bottom:10px; font-family:'Geist Mono',monospace; }
 
+/* ── GOOGLE GİRİŞ BUTONU ── */
+.google-btn { width:100%; padding:13px 16px; background:#fff; border:none; border-radius:var(--r); color:#1f1f1f; font-weight:600; font-size:14px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:10px; transition:all .2s; box-shadow:0 2px 8px rgba(0,0,0,.25); margin-bottom:12px; font-family:'Instrument Sans',sans-serif; }
+.google-btn:hover { transform:translateY(-1px); box-shadow:0 6px 20px rgba(0,0,0,.35); }
+.google-btn:active { transform:translateY(0); }
+.google-btn svg { flex-shrink:0; }
+.lock-divider { display:flex; align-items:center; gap:10px; margin:6px 0 10px; color:var(--t3); font-size:11px; font-family:'Geist Mono',monospace; }
+.lock-divider::before, .lock-divider::after { content:''; flex:1; height:1px; background:var(--bd2); }
+.lbtn-ghost { width:100%; padding:11px; background:transparent; border:1px solid var(--bd2); border-radius:var(--r); color:var(--t2); font-size:13px; cursor:pointer; transition:all .2s; font-family:'Instrument Sans',sans-serif; margin-top:6px; }
+.lbtn-ghost:hover { background:var(--sf2); color:var(--tx); border-color:var(--bd); }
+.ls-school { appearance:none; -webkit-appearance:none; color:var(--tx); }
+.ls-school option { background:var(--sf2); color:var(--tx); }
+.ls-pending-icon { font-size:40px; text-align:center; margin-bottom:12px; animation:pendingPulse 2s ease-in-out infinite; }
+@keyframes pendingPulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+.school-badge { display:inline-block; font-size:11px; padding:2px 8px; border-radius:4px; font-family:'Geist Mono',monospace; font-weight:600; }
+.school-badge.erkek { background:rgba(0,200,255,.1); color:#00c8ff; }
+.school-badge.kiz  { background:rgba(192,132,252,.1); color:#c084fc; }
+
 @media (max-width: 768px) {
   body { overflow-x: hidden; font-size: 13px; }
   .lock-card { padding: 20px; margin: 0 15px; width: auto; max-width: 100%; }

@@ -20,8 +20,10 @@
   .adml { padding:14px; }
   .lock-card { max-width:360px; }
   /* Tablet taşma düzeltmesi */
-  html, body { height:100%; overflow:hidden; }
+  html, body { height:100dvh; overflow:hidden; }
+  #app { height:100dvh; }
   .gc, .dml, .adml-wrap { height:100%; max-height:100%; overflow:hidden; }
+  .panel { height:100%; overflow:hidden; }
   .msgs, .bot-msgs { overflow-y:auto; }
   .tbtn { padding:16px 14px; font-size:15px; }
   .tabs { overflow-x:auto; -webkit-overflow-scrolling:touch; }

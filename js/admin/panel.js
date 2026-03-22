@@ -288,3 +288,105 @@ function openUserDetail(name) {
 
   om('aupOverlay'); q('#aupOverlay').onclick = e => { if (e.target === q('#aupOverlay')) cm('aupOverlay'); };
 }
+
+// ──────────────────────────────────────────────────
+// DOĞUM GÜNÜ KONTROLÜ (ileride uygulanabilir)
+// ──────────────────────────────────────────────────
+function checkBirthdays() {
+  // Placeholder — profillerde bday alanı varsa burada kontrol edilecek
+}
+
+// ══════════════════════════════════════════════════
+// GOOGLE KULLANICI YÖNETİMİ
+// ══════════════════════════════════════════════════
+
+let _googleUsers = [];
+
+function initAdminGoogleUsers() {
+  if (typeof fbListenAllUsers !== 'function') return;
+  fbListenAllUsers(users => {
+    _googleUsers = users;
+    rPendingUsers();
+    rGoogleUsers();
+  });
+}
+
+function rPendingUsers() {
+  const el  = q('#pendingUsersList'); if (!el) return;
+  const cnt = q('#pendingCnt');
+  const pending = _googleUsers.filter(u => u.status === 'pending');
+  if (cnt) cnt.textContent = pending.length + ' kişi';
+  if (!pending.length) {
+    el.innerHTML = '<div style="color:var(--t3);font-size:13px;">Bekleyen üye yok ✅</div>';
+    return;
+  }
+  el.innerHTML = '';
+  pending.forEach(u => {
+    const d = document.createElement('div'); d.className = 'mli'; d.style.cssText = 'gap:8px;flex-wrap:wrap;align-items:center;';
+    const schoolBadge = u.school === 'Erkek İHL'
+      ? '<span class="school-badge erkek">Erkek İHL</span>'
+      : '<span class="school-badge kiz">Kız İHL</span>';
+    d.innerHTML = `
+      ${u.photoURL ? `<img src="${esc(u.photoURL)}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;flex-shrink:0;" referrerpolicy="no-referrer"/>` : '<div style="width:32px;height:32px;border-radius:50%;background:var(--sf3);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">?</div>'}
+      <span class="mli-w">${esc(u.nickname || '?')}</span>
+      ${schoolBadge}
+      <span style="font-size:11px;color:var(--t3);">${esc(u.email || '')}</span>
+      <span style="margin-left:auto;display:flex;gap:6px;">
+        <button class="ts tg" onclick="adminApproveUser('${esc(u.uid)}')">✓ Onayla</button>
+        <button class="ts td" onclick="adminBanUser('${esc(u.uid)}')">✕ Reddet</button>
+      </span>`;
+    el.appendChild(d);
+  });
+}
+
+function rGoogleUsers() {
+  const el  = q('#googleUsersList'); if (!el) return;
+  const cnt = q('#googleUsersCnt');
+  const approved = _googleUsers.filter(u => u.status !== 'pending');
+  if (cnt) cnt.textContent = _googleUsers.length + ' üye';
+  if (!approved.length) {
+    el.innerHTML = '<div style="color:var(--t3);font-size:13px;">Henüz üye yok.</div>';
+    return;
+  }
+  el.innerHTML = '';
+  approved.forEach(u => {
+    const d = document.createElement('div'); d.className = 'mli'; d.style.cssText = 'gap:8px;flex-wrap:wrap;align-items:center;';
+    const statusColor = u.status === 'approved' ? 'var(--gn)' : 'var(--dg)';
+    const statusTxt   = u.status === 'approved' ? '✅ Onaylı' : '⛔ Banlı';
+    const schoolBadge = u.school === 'Erkek İHL'
+      ? '<span class="school-badge erkek">Erkek İHL</span>'
+      : u.school === 'Kız İHL' ? '<span class="school-badge kiz">Kız İHL</span>' : '';
+    d.innerHTML = `
+      ${u.photoURL ? `<img src="${esc(u.photoURL)}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;flex-shrink:0;" referrerpolicy="no-referrer"/>` : '<div style="width:28px;height:28px;border-radius:50%;background:var(--sf3);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;">👤</div>'}
+      <span class="mli-w">${esc(u.nickname || '?')}</span>
+      ${schoolBadge}
+      <span style="font-size:11px;color:${statusColor};">${statusTxt}</span>
+      <span style="font-size:11px;color:var(--t3);">${esc(u.email || '')}</span>
+      <span style="margin-left:auto;display:flex;gap:6px;">
+        ${u.status === 'banned'
+          ? `<button class="ts tg" onclick="adminApproveUser('${esc(u.uid)}')">✓ Çöz</button>`
+          : `<button class="ts td" onclick="adminBanUser('${esc(u.uid)}')">⛔ Banla</button>`}
+        <button class="ts tw" onclick="adminDeleteUser('${esc(u.uid)}')">🗑 Sil</button>
+      </span>`;
+    el.appendChild(d);
+  });
+}
+
+async function adminApproveUser(uid) {
+  if (typeof fbApproveUser !== 'function') return;
+  await fbApproveUser(uid);
+  toast('Kullanıcı onaylandı ✅', 's');
+}
+
+async function adminBanUser(uid) {
+  if (typeof fbBanUserByUid !== 'function') return;
+  await fbBanUserByUid(uid);
+  toast('Kullanıcı banlı ⛔', 'e');
+}
+
+async function adminDeleteUser(uid) {
+  if (!confirm('Bu kullanıcıyı tamamen sil?')) return;
+  if (typeof fbDeleteUserDoc !== 'function') return;
+  await fbDeleteUserDoc(uid);
+  toast('Kullanıcı silindi 🗑', 'w');
+}

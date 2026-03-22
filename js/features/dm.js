@@ -104,7 +104,7 @@ function rDL() {
     const hasDraft = !c.isGroup && _dmDrafts[c.id];
     const prev = hasDraft
       ? '📝 ' + _dmDrafts[c.id].substring(0, 24) + (_dmDrafts[c.id].length > 24 ? '…' : '')
-      : (last ? last.text.substring(0, 26) + (last.text.length > 26 ? '…' : '') : (c.status === 'pending' ? 'Bekleyen istek' : 'Henüz mesaj yok'));
+      : (last ? ((last.text || (last.mediaType === 'image' ? '📷 Fotoğraf' : last.mediaType === 'video' ? '🎥 Video' : '[medya]'))).substring(0, 26) + ((last.text || '').length > 26 ? '…' : '') : (c.status === 'pending' ? 'Bekleyen istek' : 'Henüz mesaj yok'));
     const p = c.isGroup ? null : (profiles[c.fromReal === me.name ? c.toReal : c.fromReal] || {});
     const avc = avColor(ot, false);
     const inner = c.isGroup ? '👥' : (p && p.photo ? `<img src="${p.photo}" style="width:100%;height:100%;object-fit:cover;"/>` : ot[0]?.toUpperCase() || '?');
