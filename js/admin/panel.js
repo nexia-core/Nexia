@@ -344,18 +344,39 @@ function rGoogleUsers() {
   const cnt = q('#googleUsersCnt');
   const approved = _googleUsers.filter(u => u.status !== 'pending');
   if (cnt) cnt.textContent = _googleUsers.length + ' üye';
-  if (!approved.length) {
-    el.innerHTML = '<div style="color:var(--t3);font-size:13px;">Henüz üye yok.</div>';
+
+  // Arama kutusu
+  let searchEl = q('#googleUsersSearch');
+  if (!searchEl) {
+    searchEl = document.createElement('input');
+    searchEl.id = 'googleUsersSearch';
+    searchEl.className = 'sett-inp';
+    searchEl.placeholder = '🔍 İsim, e-posta veya okul ara...';
+    searchEl.style.cssText = 'width:100%;margin-bottom:10px;font-size:13px;';
+    searchEl.oninput = rGoogleUsers;
+    el.parentElement.insertBefore(searchEl, el);
+  }
+  const q2 = (searchEl.value || '').toLowerCase().trim();
+
+  const filtered = approved.filter(u =>
+    !q2 ||
+    (u.nickname || '').toLowerCase().includes(q2) ||
+    (u.email || '').toLowerCase().includes(q2) ||
+    (u.school || '').toLowerCase().includes(q2)
+  );
+
+  if (!filtered.length) {
+    el.innerHTML = '<div style="color:var(--t3);font-size:13px;">' + (q2 ? 'Sonuç bulunamadı.' : 'Henüz üye yok.') + '</div>';
     return;
   }
   el.innerHTML = '';
-  approved.forEach(u => {
+  filtered.forEach(u => {
     const d = document.createElement('div'); d.className = 'mli'; d.style.cssText = 'gap:8px;flex-wrap:wrap;align-items:center;';
     const statusColor = u.status === 'approved' ? 'var(--gn)' : 'var(--dg)';
     const statusTxt   = u.status === 'approved' ? '✅ Onaylı' : '⛔ Banlı';
-    const schoolBadge = u.school === 'Erkek İHL'
-      ? '<span class="school-badge erkek">Erkek İHL</span>'
-      : u.school === 'Kız İHL' ? '<span class="school-badge kiz">Kız İHL</span>' : '';
+    const schoolBadge = u.school === 'Şehit Akın Sertçelik AİHL'
+      ? '<span class="school-badge erkek">Şehit Akın</span>'
+      : u.school === 'Ataşehir Kız AİHL' ? '<span class="school-badge kiz">Ataşehir Kız</span>' : '';
     d.innerHTML = `
       ${u.photoURL ? `<img src="${esc(u.photoURL)}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;flex-shrink:0;" referrerpolicy="no-referrer"/>` : '<div style="width:28px;height:28px;border-radius:50%;background:var(--sf3);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;">👤</div>'}
       <span class="mli-w">${esc(u.nickname || '?')}</span>

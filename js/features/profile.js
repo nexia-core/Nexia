@@ -48,7 +48,7 @@ function shareProfileCard() {
   const p = profiles[target] || {};
   const msgCount = [...gm, ...Object.values(convs).flatMap(c => c.msgs)]
     .filter(m => (m.realName || m.fromReal) === target && !m.isSys).length;
-  const text = `🎓 OkulNet Profil Kartı\n━━━━━━━━━━━━━━━\n👤 ${target}\n${p.cls ? '🏫 Sınıf: ' + p.cls + '\n' : ''}${p.age ? '🎂 Yaş: ' + p.age + '\n' : ''}${p.bio ? '💬 ' + p.bio + '\n' : ''}📊 Toplam ${msgCount} mesaj\n━━━━━━━━━━━━━━━\nOkulNet ile paylaşıldı`;
+  const text = `🎓 Nexia Profil Kartı\n━━━━━━━━━━━━━━━\n👤 ${target}\n${p.cls ? '🏫 Sınıf: ' + p.cls + '\n' : ''}${p.age ? '🎂 Yaş: ' + p.age + '\n' : ''}${p.bio ? '💬 ' + p.bio + '\n' : ''}📊 Toplam ${msgCount} mesaj\n━━━━━━━━━━━━━━━\nNexia ile paylaşıldı`;
   if (navigator.clipboard) navigator.clipboard.writeText(text).then(() => toast('Profil kartı kopyalandı! 📋', 's'));
   else toast('Kopyalanamadı', 'e');
 }

@@ -111,7 +111,7 @@ function completeLogin(isAd, name) {
   }
 
   demo();
-  gm.push({ type:'sys', text:"OkulNet'e hoş geldiniz. Saygılı iletişim hepimizin sorumluluğu." });
+  gm.push({ type:'sys', text:"Nexia'ya hoş geldiniz. Saygılı iletişim hepimizin sorumluluğu." });
   rG(); rDL(); buildThemeGrid(); rStories(); rChannels();
   checkBirthdays();
 
@@ -1071,6 +1071,11 @@ async function doSetup() {
   if (!nick || nick.length < 2)  { errEl.textContent = 'En az 2 karakter gir.'; return; }
   if (!school)                    { errEl.textContent = 'Okulunu seç.'; return; }
   if (!_gAuthUser)               { _showLsSection('ls-google'); return; }
+  errEl.textContent = 'Kontrol ediliyor...';
+  if (typeof fbCheckNickname === 'function') {
+    const taken = await fbCheckNickname(nick);
+    if (taken) { errEl.textContent = 'Bu kullanıcı adı alınmış, başka bir tane seç.'; return; }
+  }
   errEl.textContent = 'Kaydediliyor...';
   await fbSaveUserDoc(_gAuthUser.uid, {
     uid:       _gAuthUser.uid,
@@ -1126,7 +1131,7 @@ function completeGoogleLogin(userData) {
   }
 
   demo();
-  gm.push({ type:'sys', text:"OkulNet'e hoş geldiniz. Saygılı iletişim hepimizin sorumluluğu." });
+  gm.push({ type:'sys', text:"Nexia'ya hoş geldiniz. Saygılı iletişim hepimizin sorumluluğu." });
   rG(); rDL(); buildThemeGrid(); rStories(); rChannels();
   checkBirthdays();
 

@@ -413,4 +413,9 @@ window.fbDeleteUserDoc = async function(uid) {
   try { await deleteDoc(doc(db, 'users', uid)); } catch(e) {}
 };
 
+window.fbCheckNickname = async function(nickname) {
+  const snap = await getDocs(query(collection(db, 'users'), where('nickname', '==', nickname)));
+  return !snap.empty; // true = alınmış
+};
+
 console.log('Firebase v6 modülü yüklendi ✓');
