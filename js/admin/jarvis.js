@@ -231,7 +231,8 @@ async function askJarvis() {
     });
   } catch (e) { userList = ''; }
 
-  var userContext = '[SİSTEM RAPORU]\n' + report + userList;
+  var fullCtx = jarvisBuildFullContext(text);
+  var userContext = '[SİSTEM RAPORU]\n' + report + userList + fullCtx;
   if (actionNote) {
     userContext += '\n\n' + actionNote;
   }
@@ -499,6 +500,66 @@ function jarvisAnalyzeData() {
 
   report += '\nOda Durumları:\n' + roomStats;
   return report;
+}
+
+// ─── Tam İçerik Okuma (admin isteğiyle) ─────────────────────────────────
+var _FULL_READ_PATTERNS = /\b(oku|göster|incele|analiz\s*et|ne\s*konuş|ne\s*yazdı|mesajlar[ıi]n[ıi]|dm.*oku|sohbet.*oku|kanal.*oku|global.*oku|yaz[ıi]şmalar[ıi]|konuşmalar[ıi]|içerik|tüm\s*mesaj|son\s*mesaj|bugün\s*ne|kim\s*ne\s*dedi|ne\s*dedi)\b/i;
+
+function jarvisBuildFullContext(text) {
+  if (!_FULL_READ_PATTERNS.test(text)) return '';
+
+  var ctx = '\n\n[TAM VERİ ERİŞİMİ]\n';
+
+  // Global chat son 40 mesaj
+  try {
+    var globalMsgs = gm.slice(-40);
+    ctx += '\nGLOBAL SOHBET (son ' + globalMsgs.length + ' mesaj):\n';
+    globalMsgs.forEach(function(m) {
+      if (m.recalled) { ctx += '[' + (m.realName||m.name) + ']: [Silindi]\n'; return; }
+      ctx += '[' + (m.realName||m.name||'?') + ']: ' + (m.text || '[medya]') + '\n';
+    });
+  } catch(e) {}
+
+  // DM sohbetleri
+  try {
+    var convList = Object.values(convs).filter(function(c) { return c.status === 'accepted'; });
+    if (convList.length) {
+      ctx += '\nDM SOHBETLERİ:\n';
+      convList.forEach(function(c) {
+        ctx += '--- ' + c.fromReal + ' ↔ ' + c.toReal + ' ---\n';
+        (c.msgs || []).slice(-20).forEach(function(m) {
+          if (m.isSys) return;
+          ctx += '[' + (m.fromReal||m.from) + ']: ' + (m.text || '[medya]') + '\n';
+        });
+      });
+    }
+  } catch(e) {}
+
+  // Kanal mesajları
+  try {
+    if (channels && channels.length) {
+      ctx += '\nKANAL MESAJLARI:\n';
+      channels.forEach(function(ch) {
+        ctx += '--- ' + ch.name + ' ---\n';
+        (ch.msgs || []).slice(-20).forEach(function(m) {
+          if (m.type === 'sys') return;
+          ctx += '[' + (m.name||'?') + ']: ' + (m.text || '[medya]') + '\n';
+        });
+      });
+    }
+  } catch(e) {}
+
+  // Google kullanıcıları
+  try {
+    if (typeof _googleUsers !== 'undefined' && _googleUsers.length) {
+      ctx += '\nKAYITLI KULLANICILAR:\n';
+      _googleUsers.forEach(function(u) {
+        ctx += '- ' + u.nickname + ' | ' + u.school + ' | ' + u.status + ' | ' + u.email + '\n';
+      });
+    }
+  } catch(e) {}
+
+  return ctx;
 }
 
 // ─── JARVIS Metin Formatlama ──────────────────────────────────────────────

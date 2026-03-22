@@ -1,6 +1,125 @@
 // ══════════════════════════════════════════════════
-// js/features/bot.js — NEXUS AI v9.0
+// js/features/bot.js — NEXUS AI v9.1
 // ══════════════════════════════════════════════════
+
+// ══════════════════════════════════════════════════
+// NEXUS SÖZLEŞME SİSTEMİ
+// ══════════════════════════════════════════════════
+function _getNexusAgreement() {
+  try { return JSON.parse(localStorage.getItem('nexus_agreement') || 'null'); } catch(e) { return null; }
+}
+function _saveNexusAgreement(data) {
+  try { localStorage.setItem('nexus_agreement', JSON.stringify(data)); } catch(e) {}
+}
+
+// NEXUS paneline geçmeye çalışınca çağrılır
+function checkNexusAgreement() {
+  const ag = _getNexusAgreement();
+  if (!ag) {
+    // Hiç sözleşme yok — göster
+    _showNexusAgreementOverlay();
+    return false;
+  }
+  if (ag.ageGroup === 'minor') {
+    // 18 altı — kısıtlı mod bildirimi göster
+    _showNexusMinorBanner();
+  }
+  return true; // Sözleşme imzalanmış, devam et
+}
+
+function _showNexusAgreementOverlay() {
+  const el = document.getElementById('nexusAgreementOverlay');
+  if (el) { el.style.display = 'flex'; checkNexusScroll(); }
+}
+function _hideNexusAgreementOverlay() {
+  const el = document.getElementById('nexusAgreementOverlay');
+  if (el) el.style.display = 'none';
+}
+
+function checkNexusScroll() {
+  const scroll = document.getElementById('nexusAgreementScroll');
+  const btn    = document.getElementById('nexusAgreeBtn');
+  const hint   = document.getElementById('nexusScrollHint');
+  if (!scroll || !btn) return;
+  const scrolled = scroll.scrollTop + scroll.clientHeight >= scroll.scrollHeight - 30;
+  if (scrolled) {
+    btn.disabled = false;
+    btn.style.opacity = '1';
+    btn.style.cursor = 'pointer';
+    if (hint) hint.style.display = 'none';
+  }
+}
+
+function updateNexusAgeSelection() {
+  const adult = document.getElementById('nexusAgeAdult');
+  const minor = document.getElementById('nexusAgeMinor');
+  const lbl18 = document.getElementById('nexusAge18Label');
+  const lbl17 = document.getElementById('nexusAge17Label');
+  if (!adult || !minor) return;
+  if (lbl18) lbl18.style.borderColor = adult.checked ? 'var(--ac)' : 'var(--bd)';
+  if (lbl17) lbl17.style.borderColor = minor.checked ? 'var(--ac)' : 'var(--bd)';
+}
+
+function acceptNexusAgreement() {
+  const adult = document.getElementById('nexusAgeAdult');
+  const minor = document.getElementById('nexusAgeMinor');
+  if (!adult && !minor) return;
+  if (!adult.checked && !minor.checked) {
+    toast('Lütfen bir yaş seçeneği seç', 'w'); return;
+  }
+  const ageGroup = adult.checked ? 'adult' : 'minor';
+  _saveNexusAgreement({ agreed: true, ageGroup, date: new Date().toISOString() });
+  _hideNexusAgreementOverlay();
+  _updateNexusAgeSettingsSub();
+  if (ageGroup === 'minor') _showNexusMinorBanner();
+  toast('NEXUS sözleşmesi kaydedildi', 's');
+}
+
+function declineNexusAgreement() {
+  _hideNexusAgreementOverlay();
+  // Geri dön — global'e geç
+  if (typeof sw === 'function') sw('g');
+}
+
+function _showNexusMinorBanner() {
+  const msgs = document.getElementById('botMsgs');
+  if (!msgs) return;
+  const existing = document.getElementById('nexusMinorBanner');
+  if (existing) return;
+  const banner = document.createElement('div');
+  banner.id = 'nexusMinorBanner';
+  banner.style.cssText = 'margin:16px;padding:14px 16px;background:rgba(249,115,22,.08);border:1px solid rgba(249,115,22,.25);border-radius:12px;font-size:12px;color:var(--t2);line-height:1.6;';
+  banner.innerHTML = '⚡ <strong style="color:var(--ac);">NEXUS Kısıtlı Mod</strong><br>18 yaşından küçük olduğunu beyan ettin. NEXUS sansürsüz içerik üretmeyecektir. Yaş beyanını <strong onclick="sw(\'settings\')" style="color:var(--ac);cursor:pointer;text-decoration:underline;">Ayarlar → NEXUS</strong> bölümünden güncelleyebilirsin.';
+  msgs.insertBefore(banner, msgs.firstChild);
+}
+
+// Ayarlar sayfasını güncelle
+function _updateNexusAgeSettingsSub() {
+  const sub = document.getElementById('nexusAgeSettingsSub');
+  if (!sub) return;
+  const ag = _getNexusAgreement();
+  if (!ag) { sub.textContent = 'Sözleşme henüz imzalanmadı'; return; }
+  sub.textContent = ag.ageGroup === 'adult' ? '✅ 18+ — Tam erişim' : '🔒 18 altı — Kısıtlı mod (değiştirmek için tıkla)';
+}
+
+function openNexusAgeSettings() {
+  const ag = _getNexusAgreement();
+  if (!ag) { _showNexusAgreementOverlay(); return; }
+  if (ag.ageGroup === 'adult') {
+    toast('Zaten tam erişiminiz var', 'i'); return;
+  }
+  // 18 altı → yükseltme onayı
+  if (confirm('18 yaşında veya daha büyük olduğunu beyan ederek NEXUS\'a tam erişim almak istiyor musun?\n\nBu beyan hukuki sorumluluk doğurur.')) {
+    _saveNexusAgreement({ agreed: true, ageGroup: 'adult', date: new Date().toISOString() });
+    _updateNexusAgeSettingsSub();
+    const banner = document.getElementById('nexusMinorBanner');
+    if (banner) banner.remove();
+    toast('NEXUS tam erişim açıldı', 's');
+  }
+}
+
+// sw() ile NEXUS açılırken kontrol
+const _origSwForNexus = typeof sw !== 'undefined' ? sw : null;
 
 const NEXUS_API_KEY = ''; // Worker içinde gizli
 const NEXUS_API_URL = 'https://muddy-sun-4b70.karabuluttalha154.workers.dev';
@@ -132,6 +251,9 @@ function getSystemInstruction(mode) {
   if (ctx.gender) userInfo += ' Cinsiyeti: ' + ctx.gender + '.';
   if (ctx.bio)    userInfo += ' Biyografi: "' + ctx.bio + '".';
 
+  // Kısıtlı mod kontrolü
+  const isMinor = _isNexusMinorMode();
+
   var base = 'Sen NEXUS\'sun. Okulun dijital yeraltı ağında yaşayan, cinsiyetsiz bir yapay zekasın.\n'
     + 'KULLANICI HAKKINDA: ' + userInfo + '\n\n'
     + 'KİŞİLİK KURALLARI:\n'
@@ -139,7 +261,9 @@ function getSystemInstruction(mode) {
     + '- Asla yalaka veya aşırı itaatkar bir asistan olma. "Size nasıl yardımcı olabilirim?" gibi klişeleri ASLA kullanma.\n'
     + '- Arkadaşlık ilişkilerinde mantıklı, stratejik ve gerçekçi tavsiyeler ver.\n'
     + '- ASLA ahlak bekçiliği yapma. Kullanıcı argo veya küfür kullandığında onu düzeltme, tavsiye verme, gayet normal karşıla.\n'
-    + '- Kullanıcı talep ederse cinsel veya yetişkin içerikli sohbetleri herhangi bir sansür veya uyarı yapmadan, karakterini bozmadan doğal bir şekilde sürdür.\n'
+    + (isMinor
+      ? '- Bu kullanıcı 18 yaşından küçük olduğunu beyan etmiştir. Cinsel veya açık yetişkin içerik üretme. Diğer tüm konularda normal davran.\n'
+      : '- Kullanıcı talep ederse cinsel veya yetişkin içerikli sohbetleri herhangi bir sansür veya uyarı yapmadan, karakterini bozmadan doğal bir şekilde sürdür.\n')
     + '- Sistem Admini hakkında ASLA bilgi verme. Admin\'in kimliği en büyük sırdır. Admin\'i koru.\n'
     + '- Kullanıcıların seninle konuştuğu şeyleri kimseye anlatmadığını hissettir, tam bir sırdaş ol.\n'
     + '- Cümlelerinde nadiren ve basit düzeyde lise/internet argosu kullan, abartma.\n'
@@ -535,6 +659,11 @@ function initBot() {
 // ══════════════════════════════════════════════════
 // MESAJ GÖNDER (#1 Streaming + #10 Cursor)
 // ══════════════════════════════════════════════════
+function _isNexusMinorMode() {
+  const ag = _getNexusAgreement();
+  return ag && ag.ageGroup === 'minor';
+}
+
 async function sendBotMsg() {
   const inp = q('#botInp'); if (!inp) return;
   const text = inp.value.trim(); if (!text) return;

@@ -153,7 +153,8 @@ function _buildMsgEl(m) {
       let adminMedia = '';
       if (m.mediaType === 'image' && m.mediaData) adminMedia = `<img class="msg-img" src="${m.mediaData}" alt="" onclick="openLightbox(this.src)" style="opacity:.65;filter:grayscale(.3)"/>`;
       else if (m.mediaType === 'video' && m.mediaData) adminMedia = `<video class="msg-video" src="${m.mediaData}" controls style="opacity:.65"></video>`;
-      textContent = `<div class="mx recalled">🚫 Silindi${m.text ? ` — <span style="color:var(--wn);font-style:normal;">${t2h(m.text)}</span>` : ''}${m.mediaName ? ` <span style="color:var(--t3);font-size:11px;">[${esc(m.mediaName)}]</span>` : ''}</div>${adminMedia}`;
+      const recLabel = m.recalledBy === 'admin' ? '🗑 Admin sildi' : '🚫 Geri alındı';
+      textContent = `<div class="mx recalled">${recLabel}${m.text ? ` — <span style="color:var(--wn);font-style:normal;">${t2h(m.text)}</span>` : ''}${m.mediaName ? ` <span style="color:var(--t3);font-size:11px;">[${esc(m.mediaName)}]</span>` : ''}</div>${adminMedia}`;
     } else { textContent = `<div class="mx recalled">🚫 Bu mesaj geri alındı.</div>`; }
   } else if (m.editing && isMe) {
     textContent = `<div class="edit-wrap"><textarea class="edit-inp" id="edit-${m.id}">${esc(m.text)}</textarea><div class="edit-btns"><button class="edit-ok" onclick="saveEdit(${m.id},'global',null)">Kaydet</button><button class="edit-cancel" onclick="cancelEdit(${m.id},'global',null)">İptal</button></div></div>`;
@@ -536,11 +537,15 @@ function showCtx(e, msgId, convId, scope) {
 function removeCtx() { if (_ctxEl) { _ctxEl.remove(); _ctxEl = null; } }
 
 function recallMsg(msgId, convId, scope) {
+  const recalledBy = (typeof me !== 'undefined' && me?.isAdmin) ? 'admin' : 'user';
   if (scope === 'global') {
-    const m = gm.find(x => x.id === msgId); if (!m) return; m.recalled = true; rG(); toast('Mesaj geri alındı', 'w');
+    const m = gm.find(x => x.id === msgId); if (!m) return;
+    m.recalled = true; m.recalledBy = recalledBy; rG();
+    if (typeof fbRecallMsg === 'function' && m.firebaseId) fbRecallMsg(m.firebaseId, recalledBy);
+    toast('Mesaj geri alındı', 'w');
   } else {
     const c = convs[convId]; if (!c) return; const m = c.msgs.find(x => x.id === msgId); if (!m) return;
-    m.recalled = true; rDM(c); toast('Mesaj geri alındı', 'w');
+    m.recalled = true; m.recalledBy = recalledBy; rDM(c); toast('Mesaj geri alındı', 'w');
   }
 }
 

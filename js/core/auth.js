@@ -460,11 +460,22 @@ function submitReport() {
   const allMsgs = [...gm, ...Object.values(convs).flatMap(c => c.msgs || []), ...channels.flatMap(ch => ch.msgs || [])];
   const target  = allMsgs.find(m => String(m.id) === String(_reportTargetId));
 
+  // Mesajın hangi konuşmada/kanalda olduğunu bul
+  let msgContext = 'global';
+  let msgContextId = null;
+  if (target) {
+    const inConv = Object.values(convs).find(c => (c.msgs||[]).some(m => String(m.id) === String(_reportTargetId)));
+    const inCh   = channels.find(ch => (ch.msgs||[]).some(m => String(m.id) === String(_reportTargetId)));
+    if (inConv) { msgContext = 'dm'; msgContextId = inConv.id; }
+    else if (inCh) { msgContext = 'channel'; msgContextId = inCh.id; }
+  }
+
   const report = {
     id: 'rp_' + Date.now(), reporter: me.name,
     msgId: _reportTargetId, msgText: target?.text || _reportTargetText,
     msgAuthor: target?.name || target?.from || 'Bilinmiyor',
     reason, note, time: new Date(), reviewed: false,
+    msgContext, msgContextId,
   };
   reports.unshift(report);
   if (typeof fbSaveReport === 'function') fbSaveReport(report);

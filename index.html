@@ -908,6 +908,53 @@
       </div>
     </div>
 
+    <!-- NEXUS SÖZLEŞME EKRANI -->
+    <div id="nexusAgreementOverlay" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.92);backdrop-filter:blur(8px);flex-direction:column;align-items:center;justify-content:center;padding:20px;">
+      <div style="width:100%;max-width:480px;background:var(--sf);border:1px solid var(--bd2);border-radius:20px;overflow:hidden;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 24px 80px rgba(0,0,0,.8);">
+        <!-- Başlık -->
+        <div style="padding:24px 24px 16px;border-bottom:1px solid var(--bd);flex-shrink:0;">
+          <div style="font-size:28px;margin-bottom:8px;">⚡</div>
+          <div style="font-size:18px;font-weight:800;color:var(--tx);margin-bottom:4px;">NEXUS Kullanım Koşulları</div>
+          <div style="font-size:12px;color:var(--t3);font-family:'Geist Mono',monospace;">Devam etmeden önce aşağıdakileri oku</div>
+        </div>
+        <!-- Sözleşme metni — scroll zorunlu -->
+        <div id="nexusAgreementScroll" style="flex:1;overflow-y:auto;padding:20px 24px;" onscroll="checkNexusScroll()">
+          <div style="font-size:13px;color:var(--t2);line-height:1.8;display:flex;flex-direction:column;gap:16px;">
+            <div><span style="font-weight:700;color:var(--tx);">1. Yaş Beyanı</span><br>Bu hizmeti kullanmak için 18 yaşında veya daha büyük olduğunu <strong style="color:var(--ac);">bizzat beyan</strong> ediyorsun. 18 yaşından küçüksen NEXUS'a erişimin kısıtlanacaktır.</div>
+            <div><span style="font-weight:700;color:var(--tx);">2. İçerik Sorumluluğu</span><br>NEXUS, sansürsüz ve sınırlandırılmamış bir yapay zekadır. Üretilen her türlü içerikten doğacak sorumluluk <strong style="color:var(--ac);">tamamen kullanıcıya aittir.</strong> Platform bu içeriklerden hukuki olarak sorumlu tutulamaz.</div>
+            <div><span style="font-weight:700;color:var(--tx);">3. Denetim</span><br>NEXUS ile yaptığın konuşmalar platform yöneticisi tarafından denetlenebilir. Gizlilik beklentisi içinde olma.</div>
+            <div><span style="font-weight:700;color:var(--tx);">4. Kötüye Kullanım</span><br>Yasadışı içerik üretimi, başkasına zarar verme veya platformu kötüye kullanma yasaktır. İhlal durumunda hesabın kalıcı olarak askıya alınabilir.</div>
+            <div><span style="font-weight:700;color:var(--tx);">5. Sorumluluk Reddi</span><br>NEXUS'un verdiği hiçbir bilgi profesyonel tavsiye (tıbbi, hukuki, finansal vb.) yerine geçmez.</div>
+          </div>
+          <!-- Yaş seçimi -->
+          <div style="margin-top:24px;padding:16px;background:var(--sf2);border-radius:12px;border:1px solid var(--bd);">
+            <div style="font-size:13px;font-weight:700;color:var(--tx);margin-bottom:12px;">Yaş Beyanı</div>
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px;border-radius:8px;border:1px solid var(--bd);margin-bottom:8px;background:var(--sf);" id="nexusAge18Label">
+              <input type="radio" name="nexusAge" value="adult" id="nexusAgeAdult" style="accent-color:var(--ac);" onchange="updateNexusAgeSelection()">
+              <div>
+                <div style="font-size:13px;font-weight:600;color:var(--tx);">18 yaşında veya daha büyüğüm</div>
+                <div style="font-size:11px;color:var(--t3);">Tüm NEXUS özelliklerine erişebilirsin</div>
+              </div>
+            </label>
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:10px;border-radius:8px;border:1px solid var(--bd);background:var(--sf);" id="nexusAge17Label">
+              <input type="radio" name="nexusAge" value="minor" id="nexusAgeMinor" style="accent-color:var(--ac);" onchange="updateNexusAgeSelection()">
+              <div>
+                <div style="font-size:13px;font-weight:600;color:var(--tx);">18 yaşından küçüğüm</div>
+                <div style="font-size:11px;color:var(--t3);">NEXUS kısıtlı modda çalışır (ayarlardan değiştirebilirsin)</div>
+              </div>
+            </label>
+          </div>
+          <div style="height:20px;"></div>
+        </div>
+        <!-- Butonlar -->
+        <div style="padding:16px 24px;border-top:1px solid var(--bd);flex-shrink:0;display:flex;flex-direction:column;gap:8px;">
+          <div id="nexusScrollHint" style="text-align:center;font-size:11px;color:var(--t3);margin-bottom:4px;">↓ Sözleşmeyi okumak için aşağı kaydır</div>
+          <button id="nexusAgreeBtn" onclick="acceptNexusAgreement()" disabled style="width:100%;padding:14px;background:var(--ac);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:not-allowed;opacity:0.4;transition:all .2s;font-family:'Instrument Sans',sans-serif;">Okudum, Kabul Ediyorum</button>
+          <button onclick="declineNexusAgreement()" style="width:100%;padding:12px;background:transparent;color:var(--t2);border:1px solid var(--bd);border-radius:12px;font-size:13px;font-weight:500;cursor:pointer;font-family:'Instrument Sans',sans-serif;">Kabul Etmiyorum (NEXUS kullanmayacağım)</button>
+        </div>
+      </div>
+    </div>
+
     <!-- BOT PANEL -->
     <div class="panel" id="pbot">
       <div class="bot-panel">
@@ -1123,6 +1170,18 @@
             <div class="si-body">
               <span class="si-label">Kaydedilenler</span>
               <span class="si-sub">Kaydettiğin içerikler</span>
+            </div>
+            <span class="si-arrow">›</span>
+          </div>
+
+          <div class="settings-divider"></div>
+          <div class="settings-section">NEXUS</div>
+
+          <div class="settings-item" onclick="openNexusAgeSettings()">
+            <div class="si-icon-wrap">⚡</div>
+            <div class="si-body">
+              <span class="si-label">NEXUS Erişimi</span>
+              <span class="si-sub" id="nexusAgeSettingsSub">Yükleniyor...</span>
             </div>
             <span class="si-arrow">›</span>
           </div>
@@ -1560,7 +1619,15 @@
   const _titles = {g:'Global',d:"1'e 1 Sohbetler",ch:'Gruplar',bot:'NEXUS',pr:'Profil',w:'Yönetime Yaz',a:'Admin',settings:'Ayarlar',fr:'Kullanıcılar'};
   const _orig = sw;
   sw = function(t) {
+    // NEXUS sözleşme kontrolü
+    if (t === 'bot') {
+      if (typeof checkNexusAgreement === 'function' && !checkNexusAgreement()) return;
+    }
     _orig(t);
+    // Ayarlar sayfası açılınca NEXUS alt başlığını güncelle
+    if (t === 'settings' && typeof _updateNexusAgeSettingsSub === 'function') {
+      setTimeout(_updateNexusAgeSettingsSub, 100);
+    }
     if (window.innerWidth <= 768) {
       document.getElementById('app').classList.add('mob-chat-open');
       const el = document.getElementById('mobTitle');

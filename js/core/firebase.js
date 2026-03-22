@@ -85,6 +85,15 @@ window.startFirebaseChat = function() {
   const q50 = query(collection(db, 'messages'), orderBy('timestamp', 'asc'), limitToLast(50));
   _unsubscribe = onSnapshot(q50, snapshot => {
     snapshot.docChanges().forEach(change => {
+      // Güncellenen mesaj (geri alma / silme)
+      if (change.type === 'modified') {
+        const data = change.doc.data();
+        if (data.recalled) {
+          const m = typeof gm !== 'undefined' && gm.find(x => x.firebaseId === change.doc.id);
+          if (m) { m.recalled = true; m.recalledBy = data.recalledBy || 'user'; if (typeof rG === 'function') rG(); }
+        }
+        return;
+      }
       if (change.type !== 'added') return;
       if (_processedDocs.has(change.doc.id)) return;
       _processedDocs.add(change.doc.id);
@@ -117,6 +126,13 @@ window.startFirebaseChat = function() {
 
 window.stopFirebaseChat = function() {
   if (_unsubscribe) { _unsubscribe(); _unsubscribe = null; }
+};
+
+window.fbRecallMsg = async function(firebaseId, recalledBy) {
+  if (!firebaseId) return;
+  try {
+    await updateDoc(doc(db, 'messages', firebaseId), { recalled: true, recalledBy: recalledBy || 'user' });
+  } catch(e) { console.error('Mesaj geri alma hatası:', e); }
 };
 
 // ══════════════════════════════════════════════════

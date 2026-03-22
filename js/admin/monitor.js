@@ -140,6 +140,7 @@ function rReportsList() {
       </div>
       <div class="mon-entry-actions">
         ${r.reviewed ? '<span style="color:var(--gn);font-size:12px;">✓ İncelendi</span>' : `<button class="ts tg" onclick="markReportReviewed('${r.id}')">✓ İncele</button>`}
+        <button class="ts" style="background:var(--ac-d);color:var(--ac);" onclick="navigateToReport('${r.id}')">🔍 Mesaja Git</button>
         <button class="ts td" onclick="deleteReport('${r.id}')">🗑 Sil</button>
       </div>`;
     el.appendChild(d);
@@ -153,7 +154,30 @@ function markReportReviewed(id) {
 
 function deleteReport(id) {
   const idx = reports.findIndex(x => x.id === id);
-  if (idx >= 0) { reports.splice(idx, 1); rReportsList(); }
+  if (idx >= 0) { reports.splice(idx, 1); rReportsList(); toast('Şikayet silindi', 's'); }
+}
+
+function navigateToReport(id) {
+  const r = reports.find(x => x.id === id); if (!r) return;
+  // Paneli kapat, ilgili konuşmaya git
+  if (r.msgContext === 'dm' && r.msgContextId) {
+    sw('d'); if (typeof openC === 'function') openC(r.msgContextId);
+  } else if (r.msgContext === 'channel' && r.msgContextId) {
+    sw('ch'); if (typeof openChannel === 'function') openChannel(r.msgContextId);
+  } else {
+    sw('g'); // global chat
+  }
+  // Mesajı highlight et
+  setTimeout(() => {
+    const el = document.querySelector(`[data-msg-id="${r.msgId}"]`);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.style.outline = '2px solid var(--ac)';
+      el.style.borderRadius = '8px';
+      setTimeout(() => { el.style.outline = ''; }, 3000);
+    }
+  }, 400);
+  r.reviewed = true; rReportsList();
 }
 
 // ─────────────────────────────────────────────────
