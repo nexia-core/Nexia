@@ -54,7 +54,7 @@ function rFriends() {
     const inner = p.photo ? `<img src="${p.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;"/>` : name[0]?.toUpperCase() || '?';
     const d = document.createElement('div'); d.className = 'friend-item';
     d.innerHTML = `<div class="av ${avc}" style="flex-shrink:0;overflow:hidden;cursor:pointer;" onclick="showProfile('${esc(name)}',false)">${inner}</div>
-    <div class="friend-info"><div class="friend-name" style="cursor:pointer;" onclick="showProfile('${esc(name)}',false)">${esc(name)}</div><div class="friend-cls">${esc(p.cls || '')} ${p.actStatus === 'hidden' ? '⚫' : '🟢'}</div></div>
+    <div class="friend-info"><div class="friend-name" style="cursor:pointer;" onclick="showProfile('${esc(name)}',false)">${esc(name)}</div><div class="friend-cls">${esc(p.cls || '')} ${p.actStatus === 'hidden' ? '⚫' : onl[name] ? '🟢' : '⚫'}</div></div>
     <button class="add-friend-btn${isFr ? ' added' : ''}" onclick="toggleFriend('${esc(name)}',this)">${isFr ? '✓ Arkadaş' : '+ Ekle'}</button>`;
     aEl.appendChild(d);
   });

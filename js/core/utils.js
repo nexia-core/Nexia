@@ -134,9 +134,24 @@ function buildThemeGrid() {
 // BİLDİRİMLER
 // ══════════════════════════════════════════════════
 
+function _playNotifSound() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.connect(g); g.connect(ctx.destination);
+    o.type = 'sine';
+    o.frequency.setValueAtTime(880, ctx.currentTime);
+    o.frequency.setValueAtTime(1100, ctx.currentTime + 0.08);
+    g.gain.setValueAtTime(0.12, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+    o.start(); o.stop(ctx.currentTime + 0.35);
+  } catch(e) {}
+}
+
 function addNotif(icon, title, sub, action) {
   notifications.unshift({ id: Date.now(), icon, title, sub, action, read: false, time: new Date() });
   renderNotifBadge();
+  if (icon === '💬' || icon === '✅') _playNotifSound();
 }
 
 function renderNotifBadge() {

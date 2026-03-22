@@ -246,11 +246,12 @@ function forceLogout(name) {
 function renderFreezeRequests(listId) {
   const el = q('#' + listId); if (!el) return;
   el.innerHTML = '';
-  if (!freezeRequests.length) {
+  const pending = freezeRequests.filter(r => r.status === 'pending');
+  if (!pending.length) {
     el.innerHTML = '<div style="color:var(--t3);font-size:13px;">Bekleyen kilit isteği yok ✅</div>';
     return;
   }
-  freezeRequests.forEach(req => {
+  pending.forEach(req => {
     const d = document.createElement('div'); d.className = 'mon-entry';
     d.innerHTML = `
       <div class="mon-entry-main">
@@ -259,11 +260,25 @@ function renderFreezeRequests(listId) {
       </div>
       <div class="mon-entry-device">${esc(req.reason || '')}</div>
       <div class="mon-entry-actions">
-        <button class="ts tg" onclick="freezeAccount('${esc(req.name)}');freezeRequests.splice(freezeRequests.indexOf(freezeRequests.find(r=>r.name==='${esc(req.name)}')),1);renderFreezeRequests('${listId}')">❄️ Onayla</button>
-        <button class="ts td" onclick="freezeRequests.splice(freezeRequests.indexOf(freezeRequests.find(r=>r.name==='${esc(req.name)}')),1);renderFreezeRequests('${listId}')">✕ Reddet</button>
+        <button class="ts tg" onclick="approveFreezeReq('${esc(req.name)}','${listId}')">❄️ Onayla</button>
+        <button class="ts td" onclick="rejectFreezeReq('${esc(req.name)}','${listId}')">✕ Reddet</button>
       </div>`;
     el.appendChild(d);
   });
+}
+
+function approveFreezeReq(name, listId) {
+  const r = freezeRequests.find(x => x.name === name);
+  if (r) r.status = 'approved';
+  freezeAccount(name);
+  renderFreezeRequests(listId);
+}
+
+function rejectFreezeReq(name, listId) {
+  const r = freezeRequests.find(x => x.name === name);
+  if (r) r.status = 'rejected';
+  toast(name + ' isteği reddedildi', 'w');
+  renderFreezeRequests(listId);
 }
 
 function rSuspiciousMessages() {

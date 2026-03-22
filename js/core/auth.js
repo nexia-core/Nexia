@@ -90,7 +90,7 @@ function completeLogin(isAd, name) {
 
   const savedAct = isAd ? 'hidden' : (savedActivity[name] || 'online');
   if (!profiles[name]) {
-    profiles[name] = { cls:'', age:'', bio:'', gender:'', orientation:'', bday:'', visNormal:true, visAnon:false, photo:null, actStatus:savedAct };
+    profiles[name] = { cls:'', age:'', bio:'', gender:'', orientation:'', visNormal:true, visAnon:false, photo:null, actStatus:savedAct };
   } else {
     profiles[name].actStatus = savedAct;
   }
@@ -113,7 +113,6 @@ function completeLogin(isAd, name) {
   demo();
   gm.push({ type:'sys', text:"Nexia'ya hoş geldiniz. Saygılı iletişim hepimizin sorumluluğu." });
   rG(); rDL(); buildThemeGrid(); rStories(); rChannels();
-  checkBirthdays();
 
   // ── Firebase tam entegrasyonu ──────────────────
   if (typeof startFirebaseChat  === 'function') startFirebaseChat();
@@ -609,45 +608,6 @@ function submitSelfFreeze() {
   toast('İstek admin\'e iletildi ✅', 's');
 }
 
-function approveFreezeRequest(id) {
-  const r = freezeRequests.find(x => x.id === id); if (!r) return;
-  r.status = 'approved'; r.reviewedBy = me?.name; r.reviewTime = new Date();
-  if (typeof frozenAccounts !== 'undefined') frozenAccounts.add(r.name);
-  const entry = Object.values(codes).find(c => c.name === r.name);
-  if (entry) entry.banned = true;
-  securityEvents.unshift({ id: 'se_' + Date.now(), icon: '🔒', title: 'Hesap Donduruldu', detail: r.name, time: new Date() });
-  if (typeof rMonitor === 'function') rMonitor();
-  toast(r.name + ' donduruldu ✅', 's');
-}
-
-function rejectFreezeRequest(id) {
-  const r = freezeRequests.find(x => x.id === id); if (!r) return;
-  r.status = 'rejected'; r.reviewedBy = me?.name; r.reviewTime = new Date();
-  if (typeof rMonitor === 'function') rMonitor();
-  toast(r.name + ' isteği reddedildi', 'w');
-}
-
-function renderFreezeRequests(containerId) {
-  const el = document.getElementById(containerId); if (!el) return;
-  const pending = freezeRequests.filter(r => r.status === 'pending');
-  el.innerHTML = '';
-  if (!pending.length) { el.innerHTML = '<div style="color:var(--t3);font-size:13px;">Bekleyen istek yok ✅</div>'; return; }
-  pending.forEach(r => {
-    const d = document.createElement('div'); d.className = 'mon-entry';
-    d.innerHTML = `
-      <div class="mon-entry-main">
-        <span class="mon-name">${esc(r.name)}</span>
-        <span style="font-size:11px;color:var(--wn);background:var(--wn-d);padding:1px 6px;border-radius:3px;">⏳ Bekliyor</span>
-        <span class="mon-time">${ft(r.time)}</span>
-      </div>
-      <div class="mon-entry-device">Sebep: ${esc(r.reason)}</div>
-      <div class="mon-entry-actions">
-        <button class="ts tw" onclick="approveFreezeRequest('${r.id}');renderFreezeRequests('${containerId}')">✓ Onayla</button>
-        <button class="ts tg" onclick="rejectFreezeRequest('${r.id}');renderFreezeRequests('${containerId}')">✕ Reddet</button>
-      </div>`;
-    el.appendChild(d);
-  });
-}
 
 // ══════════════════════════════════════════════════
 // AVATAR & DURUM
@@ -668,12 +628,13 @@ function updateMyStatusDot() {
 // DEMO VERİSİ
 // ══════════════════════════════════════════════════
 
+let _demoLoaded = false;
 function demo() {
-  const today = new Date().toISOString().slice(5, 10);
-  profiles['Ayşe Kaya']    = { cls:'10-A', age:'16', bio:'Matematik ve resim seviyorum! 🎨', gender:'Kız',   bday:'2009-'+today,  visNormal:true,  visAnon:false, photo:null, actStatus:'online' };
-  profiles['Mehmet Demir'] = { cls:'11-B', age:'17', bio:'Basketbol + müzik = hayat.',       gender:'Erkek', bday:'2008-06-15',   visNormal:true,  visAnon:true,  photo:null, actStatus:'hidden' };
-  profiles['Ahmet Yılmaz'] = { cls:'9-C',  age:'15', bio:'',                                 gender:'Erkek', bday:'2010-03-22',   visNormal:false, visAnon:false, photo:null, actStatus:'online' };
-  profiles['Zeynep Çelik'] = { cls:'10-A', age:'16', bio:'Kitap okumayı ve fotoğraf çekmeyi seviyorum 📷', gender:'Kız', bday:'2009-11-05', visNormal:true, visAnon:true, photo:null, actStatus:'online' };
+  if (_demoLoaded) return; _demoLoaded = true;
+  profiles['Ayşe Kaya']    = { cls:'10-A', age:'16', bio:'Matematik ve resim seviyorum! 🎨', gender:'Kız',   visNormal:true,  visAnon:false, photo:null, actStatus:'online' };
+  profiles['Mehmet Demir'] = { cls:'11-B', age:'17', bio:'Basketbol + müzik = hayat.',       gender:'Erkek', visNormal:true,  visAnon:true,  photo:null, actStatus:'hidden' };
+  profiles['Ahmet Yılmaz'] = { cls:'9-C',  age:'15', bio:'',                                 gender:'Erkek', visNormal:false, visAnon:false, photo:null, actStatus:'online' };
+  profiles['Zeynep Çelik'] = { cls:'10-A', age:'16', bio:'Kitap okumayı ve fotoğraf çekmeyi seviyorum 📷', gender:'Kız', visNormal:true, visAnon:true, photo:null, actStatus:'online' };
 
   const demoAnon = 'Anonim#5512';
   aReg[demoAnon] = 'Zeynep Çelik';
@@ -905,7 +866,6 @@ function saveProfile() {
   p.age    = q('#pAge').value.trim();
   p.gender = q('#pGender').value;
   p.orientation = q('#pOrientation').value;
-  p.bday   = q('#pBday').value || '';
   p.visNormal = q('#visNormal').checked;
   p.visAnon   = q('#visAnon').checked;
   const tp = q('#myPhotoPreview').dataset.tempPhoto;
@@ -945,7 +905,6 @@ function openProfileSettings() {
   q('#pAge').value    = p.age    || '';
   q('#pGender').value = p.gender || '';
   q('#pOrientation').value = p.orientation || '';
-  q('#pBday').value   = p.bday   || '';
   q('#visNormal').checked = p.visNormal !== false;
   q('#visAnon').checked   = p.visAnon === true;
   _tempActStatus = p.actStatus || 'online';
@@ -968,25 +927,6 @@ function openProfileSettings() {
 // DOĞUM GÜNÜ KONTROLÜ
 // ══════════════════════════════════════════════════
 
-function checkBirthdays() {
-  const today = new Date().toISOString().slice(5, 10);
-  const lsKey = 'bdayShown_' + today;
-  const shownRaw = localStorage.getItem(lsKey);
-  const shown = new Set(shownRaw ? JSON.parse(shownRaw) : []);
-  let changed = false;
-  Object.entries(profiles).forEach(([name, p]) => {
-    if (!p.bday || p.bday.slice(5) !== today) return;
-    if (shown.has(name)) return;
-    shown.add(name); changed = true;
-    if (name !== me.name) {
-      addNotif('🎂', 'Doğum Günü!', name + ' bugün doğum gününü kutluyor!', null);
-      toast('🎂 ' + name + ' bugün doğum gününü kutluyor!', 's');
-    } else {
-      toast('🎉 Bugün senin doğum günün! İyi ki doğdun ' + me.name + '!', 's');
-    }
-  });
-  if (changed) localStorage.setItem(lsKey, JSON.stringify([...shown]));
-}
 // ══════════════════════════════════════════════════
 // GOOGLE AUTH SİSTEMİ
 // ══════════════════════════════════════════════════
@@ -1086,6 +1026,8 @@ async function doSetup() {
   const birth       = q('#setupBirth')?.value;
   const bio         = q('#setupBio')?.value.trim();
   const errEl  = q('#lerr');
+  const terms = q('#setupTerms')?.checked;
+  if (!terms) { errEl.textContent = 'Kullanım şartlarını kabul etmelisin.'; return; }
   if (!firstName || firstName.length < 2) { errEl.textContent = 'İsim en az 2 karakter olmalı.'; return; }
   if (!lastName  || lastName.length  < 2) { errEl.textContent = 'Soyisim en az 2 karakter olmalı.'; return; }
   if (!school)                    { errEl.textContent = 'Okulunu seç.'; return; }
@@ -1118,11 +1060,86 @@ async function doSetup() {
   _listenForApproval(_gAuthUser.uid);
 }
 
+function showTermsModal(e) {
+  if (e) e.preventDefault();
+  const m = q('#termsModal'); if (!m) return;
+  m.style.display = 'flex';
+}
+function closeTermsModal() {
+  const m = q('#termsModal'); if (m) m.style.display = 'none';
+}
+function acceptTermsModal() {
+  const cb = q('#setupTerms'); if (cb) cb.checked = true;
+  closeTermsModal();
+}
+
 async function doSignOut() {
   if (_pendingUnsubFn) { _pendingUnsubFn(); _pendingUnsubFn = null; }
   if (typeof fbSignOut === 'function') await fbSignOut();
   _gAuthUser = null;
   _showLsSection('ls-google');
+}
+
+// ── HESAP SİLME ──────────────────────────────────
+function openDeletionModal() {
+  if (!me) return;
+  // Zaten talep varsa farklı göster
+  if (me._deletionPending) {
+    const days = _deletionDaysLeft(me._deletionRequestedAt);
+    if (confirm('Hesabın ' + days + ' gün içinde silinecek.\n\nSilme talebini iptal etmek ister misin?')) {
+      cancelDeletionRequest();
+    }
+    return;
+  }
+  document.getElementById('deletionModal').style.display = 'flex';
+}
+
+function closeDeletionModal() {
+  document.getElementById('deletionModal').style.display = 'none';
+}
+
+function _deletionDaysLeft(requestedAt) {
+  if (!requestedAt) return 7;
+  const ms = 7 * 24 * 60 * 60 * 1000 - (Date.now() - new Date(requestedAt).getTime());
+  return Math.max(1, Math.ceil(ms / (24 * 60 * 60 * 1000)));
+}
+
+async function submitDeletionRequest() {
+  const selected = document.querySelector('input[name="delReason"]:checked');
+  if (!selected) { toast('Lütfen bir neden seç', 'e'); return; }
+  const reason = selected.value;
+  closeDeletionModal();
+  if (typeof fbRequestDeletion === 'function') await fbRequestDeletion(me.uid, reason);
+  me._deletionPending = true;
+  me._deletionRequestedAt = new Date().toISOString();
+  _renderDeletionBanner();
+  toast('Silme talebine alındı. 7 gün içinde işlenecek.', 'w');
+}
+
+async function cancelDeletionRequest() {
+  if (typeof fbCancelDeletion === 'function') await fbCancelDeletion(me.uid);
+  me._deletionPending = false;
+  me._deletionRequestedAt = null;
+  _renderDeletionBanner();
+  const sub = document.getElementById('deletionSettingsSub');
+  if (sub) sub.textContent = 'Hesabını kalıcı olarak sil';
+  toast('Silme talebi iptal edildi ✅', 's');
+}
+
+function _renderDeletionBanner() {
+  const existing = document.getElementById('deletionPendingBanner');
+  if (existing) existing.remove();
+  if (!me?._deletionPending) return;
+  const days = _deletionDaysLeft(me._deletionRequestedAt);
+  const banner = document.createElement('div');
+  banner.id = 'deletionPendingBanner';
+  banner.className = 'deletion-pending-banner';
+  banner.innerHTML = '🗑️ Hesabın <strong>' + days + ' gün</strong> içinde silinecek. <button onclick="cancelDeletionRequest()">Geri Al</button>';
+  // Ayarlar menüsünün üstüne ekle
+  const menu = document.querySelector('.settings-menu');
+  if (menu) menu.parentElement.insertBefore(banner, menu);
+  const sub = document.getElementById('deletionSettingsSub');
+  if (sub) sub.textContent = days + ' gün içinde silinecek — iptal etmek için tıkla';
 }
 
 function completeGoogleLogin(userData) {
@@ -1131,11 +1148,11 @@ function completeGoogleLogin(userData) {
   const name = userData.nickname;
   const aid  = 'Anonim#' + Math.floor(1000 + Math.random() * 9000);
 
-  me = { name, uid: userData.uid, email: userData.email, school: userData.school || '', isAdmin: isAd, anonId: aid, photo: userData.photoURL || null };
+  me = { name, uid: userData.uid, email: userData.email, school: userData.school || '', isAdmin: isAd, anonId: aid, photo: userData.photoURL || null, _deletionPending: userData.deletionPending || false, _deletionRequestedAt: userData.deletionRequestedAt || null };
 
   const savedAct = isAd ? 'hidden' : (savedActivity[name] || 'online');
   if (!profiles[name]) {
-    profiles[name] = { cls:'', age:'', bio:'', gender:'', orientation:'', bday:'', visNormal:true, visAnon:false, photo: userData.photoURL || null, actStatus: savedAct };
+    profiles[name] = { cls:'', age:'', bio:'', gender:'', orientation:'', visNormal:true, visAnon:false, photo: userData.photoURL || null, actStatus: savedAct };
   } else {
     profiles[name].actStatus = savedAct;
     if (userData.photoURL && !profiles[name].photo) profiles[name].photo = userData.photoURL;
@@ -1159,7 +1176,6 @@ function completeGoogleLogin(userData) {
   demo();
   gm.push({ type:'sys', text:"Nexia'ya hoş geldiniz. Saygılı iletişim hepimizin sorumluluğu." });
   rG(); rDL(); buildThemeGrid(); rStories(); rChannels();
-  checkBirthdays();
 
   if (typeof startFirebaseChat === 'function') startFirebaseChat();
   if (typeof fbListenCodes     === 'function') fbListenCodes();
@@ -1185,4 +1201,32 @@ function completeGoogleLogin(userData) {
 
   if (isAd) { rA(); toast('Admin paneline hoş geldin 👁', 'w'); }
   else toast('Hoş geldin, ' + name + '! 👋', 's');
+
+  if (!isAd && me._deletionPending) _renderDeletionBanner();
+  if (!isAd) setTimeout(_maybeShowPwaBanner, 3000);
+}
+
+// ── PWA KURULUM BANNER ────────────────────────────
+let _pwaInstallPrompt = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  _pwaInstallPrompt = e;
+});
+
+function _maybeShowPwaBanner() {
+  if (!_pwaInstallPrompt) return;
+  if (localStorage.getItem('nexia_pwa_dismissed')) return;
+  const b = document.getElementById('pwaBanner'); if (!b) return;
+  b.style.display = 'flex';
+}
+
+function installPwa() {
+  if (!_pwaInstallPrompt) return;
+  _pwaInstallPrompt.prompt();
+  _pwaInstallPrompt.userChoice.then(() => { _pwaInstallPrompt = null; hidePwaBanner(); });
+}
+
+function hidePwaBanner() {
+  const b = document.getElementById('pwaBanner'); if (b) b.style.display = 'none';
+  localStorage.setItem('nexia_pwa_dismissed', '1');
 }

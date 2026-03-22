@@ -182,7 +182,8 @@ function rAC(c) {
   const memberInfo = c.isGroup ? `<div class="dcs">${c.members.join(', ')}</div>` : '';
   const profClick = !c.isGroup && otReal ? `onclick="showProfile('${esc(otReal)}',false)" style="overflow:hidden;cursor:pointer;"` : `style="overflow:hidden;"`;
   const muteIcon = !c.isGroup && isDmMuted(c.id) ? '🔕' : '🔔';
-  const pinnedBar = c.pinnedMsg ? `<div class="dm-pinned-bar" onclick="scrollToDMsg('${c.id}',${c.pinnedMsg.id})"><span class="dm-pinned-icon">📌</span><div class="dm-pinned-body"><div class="dm-pinned-from">${esc(c.pinnedMsg.from)}</div><div class="dm-pinned-text">${esc(c.pinnedMsg.text)}</div></div><button class="dm-pinned-close" onclick="event.stopPropagation();unpinDmMsg('${c.id}')">✕</button></div>` : '';
+  const pm = c.pinnedMsg && c.pinnedMsg.id != null ? c.pinnedMsg : null;
+  const pinnedBar = pm ? `<div class="dm-pinned-bar" onclick="scrollToDMsg('${c.id}',${pm.id})"><span class="dm-pinned-icon">📌</span><div class="dm-pinned-body"><div class="dm-pinned-from">${esc(pm.from||'')}</div><div class="dm-pinned-text">${esc(pm.text||'')}</div></div><button class="dm-pinned-close" onclick="event.stopPropagation();unpinDmMsg('${c.id}')">✕</button></div>` : '';
   el.innerHTML = `
     <div class="dch"><div class="av ${avc}" ${profClick}>${inner}</div>
     <div style="flex:1;min-width:0;"><div class="dcn"${!c.isGroup && otReal ? ` onclick="showProfile('${esc(otReal)}',false)" style="cursor:pointer;"` : ''}>${esc(ot)}</div>${memberInfo}${!c.isGroup ? `<div class="dcs" id="dcs-${c.id}">Aktif sohbet</div>` : ''}</div>

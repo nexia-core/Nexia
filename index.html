@@ -224,6 +224,10 @@
       </select>
       <input class="lfi" id="setupBirth" type="date" placeholder="Doğum tarihi" style="color:var(--t2);" title="Doğum tarihi"/>
       <input class="lfi" id="setupBio" placeholder="Hakkında (opsiyonel, maks 80 karakter)" maxlength="80"/>
+      <label class="terms-check-label">
+        <input type="checkbox" id="setupTerms"/>
+        <span><a href="#" onclick="showTermsModal(event)">Nexia Kullanım Şartları</a>'nı okudum ve kabul ediyorum</span>
+      </label>
       <button class="lbtn" onclick="doSetup()">Kayıt Ol →</button>
       <button class="lbtn-ghost" onclick="doSignOut()">İptal</button>
     </div>
@@ -353,10 +357,6 @@
     <div class="sett-row">
       <div class="sett-lbl">Link</div>
       <input class="sett-inp" id="pLink" placeholder="https://instagram.com/..." maxlength="200"/>
-    </div>
-    <div class="sett-row">
-      <div class="sett-lbl">Doğum Günü</div>
-      <input class="sett-inp" id="pBday" type="date" placeholder="gg/aa/yyyy"/>
     </div>
     <div class="sett-row">
       <div class="sett-lbl">Sınıf</div>
@@ -595,6 +595,55 @@
     <div class="psett-btns">
       <button class="psb-ok" onclick="submitSelfFreeze()">İstek Gönder</button>
       <button class="psb-cancel" onclick="closeSelfFreezeModal()">İptal</button>
+    </div>
+  </div>
+</div>
+
+<!-- KULLANIM ŞARTLARI MODAL -->
+<div id="termsModal" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.85);align-items:center;justify-content:center;backdrop-filter:blur(6px);">
+  <div style="background:var(--sf);border:1px solid var(--bd);border-radius:16px;padding:28px;max-width:460px;width:92%;max-height:80vh;display:flex;flex-direction:column;gap:14px;">
+    <div style="font-size:18px;font-weight:700;">📋 Nexia Kullanım Şartları</div>
+    <div style="overflow-y:auto;flex:1;font-size:13px;color:var(--t2);line-height:1.7;display:flex;flex-direction:column;gap:10px;">
+      <p><b>1. Kimler kullanabilir?</b><br>Nexia yalnızca Şehit Akın Sertçelik AİHL ve Ataşehir Kız AİHL öğrencilerine açıktır. Yanlış bilgi ile kayıt olmak hesabın silinmesine yol açar.</p>
+      <p><b>2. Saygılı ortam</b><br>Hakaret, tehdit, zorbalık, ırkçılık veya cinsel içerik paylaşmak kesinlikle yasaktır. İhlaller hesap dondurma veya kalıcı bana yol açar.</p>
+      <p><b>3. Kişisel veriler</b><br>Adın, okul bilgin ve Google e-posta adresin Nexia altyapısında saklanır. Bu bilgiler üçüncü taraflarla paylaşılmaz ve yalnızca platform işlevleri için kullanılır.</p>
+      <p><b>4. İçerik sorumluluğu</b><br>Paylaştığın her içerikten sen sorumlusun. Yasadışı, telif hakkı ihlali olan veya başkalarının mahremiyetini zedeleyen içerik paylaşamazsın.</p>
+      <p><b>5. Gizlilik & Anonim mod</b><br>Anonim gönderiler yalnızca adminler tarafından görülebilir. Anonim kimliğini kötüye kullanmak hesabın askıya alınmasına neden olur.</p>
+      <p><b>6. Hesap silme</b><br>İstediğin zaman hesabını silebilirsin. Silme işlemi 7 gün askıda kalır; bu süre içinde geri alabilirsin. Mesajların platformda anonim olarak kalır.</p>
+      <p><b>7. Değişiklikler</b><br>Bu şartlar önceden bildirim yapılmaksızın güncellenebilir. Platformu kullanmaya devam etmek yeni şartları kabul ettiğin anlamına gelir.</p>
+    </div>
+    <button class="lbtn" onclick="acceptTermsModal()">Okudum, Kabul Ediyorum ✓</button>
+    <button class="lbtn-ghost" onclick="closeTermsModal()">Kapat</button>
+  </div>
+</div>
+
+<!-- PWA KURULUM BANNER -->
+<div id="pwaBanner" style="display:none;position:fixed;bottom:0;left:0;right:0;z-index:8000;background:var(--sf);border-top:1px solid var(--bd);padding:12px 16px;align-items:center;gap:12px;box-shadow:0 -4px 20px rgba(0,0,0,.3);">
+  <span style="font-size:22px;">📱</span>
+  <div style="flex:1;min-width:0;">
+    <div style="font-size:13px;font-weight:600;">Nexia'yı yükle</div>
+    <div style="font-size:11px;color:var(--t3);">Ana ekrana ekle, uygulama gibi kullan</div>
+  </div>
+  <button class="ts tg" onclick="installPwa()" style="flex-shrink:0;">Ekle</button>
+  <button class="ts" onclick="hidePwaBanner()" style="flex-shrink:0;background:var(--sf2);color:var(--t2);">✕</button>
+</div>
+
+<!-- HESAP SİLME MODAL -->
+<div id="deletionModal" style="display:none;position:fixed;inset:0;z-index:9400;background:rgba(0,0,0,.75);align-items:center;justify-content:center;backdrop-filter:blur(4px);">
+  <div style="background:var(--sf);border:1px solid var(--bd2);border-radius:16px;padding:24px;width:100%;max-width:340px;margin:0 12px;animation:popIn .25s cubic-bezier(.34,1.56,.64,1) both;">
+    <h3 style="font-size:16px;font-weight:700;margin-bottom:6px;color:var(--dg);">🗑️ Hesabını Sil</h3>
+    <p style="font-size:13px;color:var(--t2);margin-bottom:16px;line-height:1.5;">Talebinden sonra hesabın <strong>7 gün</strong> içinde silinir. Bu süre içinde fikir değiştirebilirsin. Mesajların silinmez.</p>
+    <div style="font-size:12px;font-weight:600;color:var(--t3);margin-bottom:8px;letter-spacing:.5px;text-transform:uppercase;">Neden ayrılıyorsun?</div>
+    <div id="deletionReasonList" style="display:flex;flex-direction:column;gap:7px;margin-bottom:16px;">
+      <label class="deletion-reason-opt"><input type="radio" name="delReason" value="Artık kullanmak istemiyorum"> <span>Artık kullanmak istemiyorum</span></label>
+      <label class="deletion-reason-opt"><input type="radio" name="delReason" value="Gizlilik endişelerim var"> <span>Gizlilik endişelerim var</span></label>
+      <label class="deletion-reason-opt"><input type="radio" name="delReason" value="Başka bir hesap açacağım"> <span>Başka bir hesap açacağım</span></label>
+      <label class="deletion-reason-opt"><input type="radio" name="delReason" value="Uygulama beklentimi karşılamıyor"> <span>Uygulama beklentimi karşılamıyor</span></label>
+      <label class="deletion-reason-opt"><input type="radio" name="delReason" value="Diğer"> <span>Diğer</span></label>
+    </div>
+    <div class="psett-btns">
+      <button class="psb-ok" style="background:var(--dg);" onclick="submitDeletionRequest()">Silme Talebi Gönder</button>
+      <button class="psb-cancel" onclick="closeDeletionModal()">Vazgeç</button>
     </div>
   </div>
 </div>
@@ -1227,6 +1276,15 @@
             </div>
             <span class="si-arrow">›</span>
           </div>
+
+          <div class="settings-item danger" id="deletionSettingsItem" onclick="openDeletionModal()">
+            <div class="si-icon-wrap">🗑️</div>
+            <div class="si-body">
+              <span class="si-label">Hesabımı Sil</span>
+              <span class="si-sub" id="deletionSettingsSub">Hesabını kalıcı olarak sil</span>
+            </div>
+            <span class="si-arrow">›</span>
+          </div>
         </div>
       </div><!-- /settingsMainView -->
 
@@ -1469,10 +1527,6 @@
             <div class="ach"><h3>📊 Genel İstatistikler</h3></div>
             <div class="acb" id="statsPanel"></div>
           </div>
-          <div class="acard" id="bdayCard" style="display:none">
-            <div class="ach"><h3>🎂 Doğum Günü Bildirimleri</h3></div>
-            <div class="acb" id="bdayList"></div>
-          </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;" class="admin-dual-grid">
             <div class="acard" style="margin:0;">
               <div class="ach"><h3>🟢 Aktif Kullanıcılar</h3></div>
@@ -1495,6 +1549,11 @@
           <div class="acard">
             <div class="ach"><h3>⏳ Bekleyen Üyeler</h3><span class="ach-s" id="pendingCnt">0 kişi</span></div>
             <div class="acb" id="pendingUsersList"><div style="color:var(--t3);font-size:13px;">Bekleyen üye yok ✅</div></div>
+          </div>
+          <!-- Silinme bekleyen hesaplar -->
+          <div class="acard">
+            <div class="ach"><h3>🗑️ Silinme Bekleyenler</h3><span class="ach-s" id="pendingDeletionCnt">0 kişi</span></div>
+            <div class="acb" id="pendingDeletionList"><div style="color:var(--t3);font-size:13px;">Silinme talebi yok ✅</div></div>
           </div>
           <!-- Tüm Google üyeleri -->
           <div class="acard">
@@ -1612,7 +1671,7 @@
 <!-- ── ADMIN JS ── -->
 <script src="js/admin/panel.js?v=7"></script>
 <script src="js/admin/monitor.js?v=2"></script>
-<script src="js/admin/stats.js"></script>
+<script src="js/admin/stats.js?v=2"></script>
 <script>
 // ── MOBİL GEÇİŞ ─────────────────────────────────
 (function() {

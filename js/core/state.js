@@ -49,7 +49,7 @@ let mld = [];            // admin mesaj logu (moderasyon)
 let inbox = [];          // admin gelen kutusu
 
 let polls = [];          // anketler
-let profiles = {};       // kullanıcı profilleri { name: { cls, age, bio, gender, bday, photo, actStatus, ... } }
+let profiles = {};       // kullanıcı profilleri { name: { cls, age, bio, gender, orientation, photo, actStatus, ... } }
 let savedActivity = {};  // çevrimiçi durum tercihleri { name: 'online'|'hidden' }
 
 // ══════════════════════════════════════════════════

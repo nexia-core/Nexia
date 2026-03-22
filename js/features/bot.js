@@ -63,7 +63,7 @@ function updateNexusAgeSelection() {
 function acceptNexusAgreement() {
   const adult = document.getElementById('nexusAgeAdult');
   const minor = document.getElementById('nexusAgeMinor');
-  if (!adult && !minor) return;
+  if (!adult || !minor) return;
   if (!adult.checked && !minor.checked) {
     toast('Lütfen bir yaş seçeneği seç', 'w'); return;
   }

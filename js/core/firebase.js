@@ -60,10 +60,10 @@ const _processedDocs = new Set();
 const _localSent     = new Set();
 let   _unsubscribe   = null;
 
-window.sendToFirestore = async function(msg) {
+window.sendToFirestore = async function(msg, onSent) {
   _localSent.add(msg.realName + '|' + msg.text + '|' + msg.id);
   try {
-    await addDoc(collection(db, 'messages'), {
+    const ref = await addDoc(collection(db, 'messages'), {
       name:      msg.name,
       realName:  msg.realName,
       text:      msg.text    || '',
@@ -77,6 +77,7 @@ window.sendToFirestore = async function(msg) {
       mediaType: msg.mediaType || null,
       mediaName: msg.mediaName || null
     });
+    if (onSent) onSent(ref.id);
   } catch(e) { console.error('Firebase mesaj gönderme hatası:', e); }
 };
 
@@ -432,6 +433,26 @@ window.fbDeleteUserDoc = async function(uid) {
 window.fbCheckNickname = async function(nickname) {
   const snap = await getDocs(query(collection(db, 'users'), where('nickname', '==', nickname)));
   return !snap.empty; // true = alınmış
+};
+
+window.fbRequestDeletion = async function(uid, reason) {
+  try {
+    await updateDoc(doc(db, 'users', uid), {
+      deletionPending: true,
+      deletionReason: reason || '',
+      deletionRequestedAt: new Date().toISOString()
+    });
+  } catch(e) { console.error('Silme talebi hatası:', e); }
+};
+
+window.fbCancelDeletion = async function(uid) {
+  try {
+    await updateDoc(doc(db, 'users', uid), {
+      deletionPending: false,
+      deletionReason: null,
+      deletionRequestedAt: null
+    });
+  } catch(e) { console.error('Silme iptali hatası:', e); }
 };
 
 console.log('Firebase v6 modülü yüklendi ✓');
