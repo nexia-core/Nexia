@@ -65,7 +65,24 @@ function acceptNexusAgreement() {
   const minor = document.getElementById('nexusAgeMinor');
   if (!adult || !minor) return;
   if (!adult.checked && !minor.checked) {
-    toast('Lütfen bir yaş seçeneği seç', 'w'); return;
+    // Yaş seçimi yapılmamış — aşağı kaydır ve vurgula
+    const ageBox = document.getElementById('nexusAge18Label');
+    const scroll = document.getElementById('nexusAgreementScroll');
+    if (ageBox && scroll) {
+      scroll.scrollTo({ top: scroll.scrollHeight, behavior: 'smooth' });
+      setTimeout(function() {
+        const lbl18 = document.getElementById('nexusAge18Label');
+        const lbl17 = document.getElementById('nexusAge17Label');
+        if (lbl18) { lbl18.style.borderColor = 'var(--ac)'; lbl18.style.boxShadow = '0 0 0 2px rgba(249,115,22,.35)'; }
+        if (lbl17) { lbl17.style.borderColor = 'var(--ac)'; lbl17.style.boxShadow = '0 0 0 2px rgba(249,115,22,.35)'; }
+        setTimeout(function() {
+          if (lbl18) { lbl18.style.borderColor = ''; lbl18.style.boxShadow = ''; }
+          if (lbl17) { lbl17.style.borderColor = ''; lbl17.style.boxShadow = ''; }
+        }, 2000);
+      }, 400);
+    }
+    toast('Lütfen yaş beyanını seç ↑', 'w');
+    return;
   }
   const ageGroup = adult.checked ? 'adult' : 'minor';
   _saveNexusAgreement({ agreed: true, ageGroup, date: new Date().toISOString() });
@@ -73,12 +90,13 @@ function acceptNexusAgreement() {
   _updateNexusAgeSettingsSub();
   if (ageGroup === 'minor') _showNexusMinorBanner();
   toast('NEXUS sözleşmesi kaydedildi', 's');
+  // Onaylandıktan sonra NEXUS'a geç
+  if (typeof sw === 'function') sw('bot');
 }
 
 function declineNexusAgreement() {
+  // Sadece overlay'i kapat, bulunulan sayfada kal
   _hideNexusAgreementOverlay();
-  // Geri dön — global'e geç
-  if (typeof sw === 'function') sw('g');
 }
 
 function _showNexusMinorBanner() {

@@ -435,24 +435,23 @@ window.fbCheckNickname = async function(nickname) {
   return !snap.empty; // true = alınmış
 };
 
-window.fbRequestDeletion = async function(uid, reason) {
-  try {
-    await updateDoc(doc(db, 'users', uid), {
-      deletionPending: true,
-      deletionReason: reason || '',
-      deletionRequestedAt: new Date().toISOString()
-    });
-  } catch(e) { console.error('Silme talebi hatası:', e); }
+window.fbSendDeletionRequest = async function(uid, reason) {
+  await setDoc(doc(db, 'deletionRequests', uid), {
+    uid,
+    reason: reason || '',
+    requestedAt: new Date().toISOString(),
+    status: 'pending'
+  });
 };
 
-window.fbCancelDeletion = async function(uid) {
-  try {
-    await updateDoc(doc(db, 'users', uid), {
-      deletionPending: false,
-      deletionReason: null,
-      deletionRequestedAt: null
-    });
-  } catch(e) { console.error('Silme iptali hatası:', e); }
+window.fbCancelDeletionRequest = async function(uid) {
+  await deleteDoc(doc(db, 'deletionRequests', uid));
+};
+
+window.fbListenDeletionRequests = function(callback) {
+  return onSnapshot(collection(db, 'deletionRequests'), snap => {
+    callback(snap.docs.map(d => d.data()));
+  });
 };
 
 console.log('Firebase v6 modülü yüklendi ✓');

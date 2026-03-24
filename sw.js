@@ -3,8 +3,8 @@
 // Strateji: Cache-first (statik), Network-first (dinamik)
 // ══════════════════════════════════════════════════
 
-const CACHE_NAME    = 'okulnet-v3';
-const CACHE_STATIC  = 'okulnet-static-v3';
+const CACHE_NAME    = 'okulnet-v4';
+const CACHE_STATIC  = 'okulnet-static-v4';
 
 // Kurulumda önbelleğe al
 const PRECACHE_URLS = [

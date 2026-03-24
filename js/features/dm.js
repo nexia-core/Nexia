@@ -20,23 +20,39 @@ function startDm(targetName, forceAnon, note = '') {
 
 function ondm(preTarget) {
   if (preTarget) { openDmModeModal(preTarget); return; }
-  const targets = Object.values(codes).filter(c => c.name && c.name !== me.name && !c.banned).map(c => c.name);
-  if (!targets.length) { toast('Başka kullanıcı yok', 'w'); return; }
   const overlay = document.createElement('div'); overlay.className = 'prof-overlay op'; overlay.style.zIndex = '6000';
-  const box = document.createElement('div'); box.className = 'prof-card'; box.style.width = '280px';
-  let html = `<div style="font-size:16px;font-weight:700;margin-bottom:14px;">Sohbet İsteği Gönder</div>`;
-  targets.forEach(n => {
-    const avc = avColor(n, false), p = profiles[n] || {};
+  const box = document.createElement('div'); box.className = 'prof-card'; box.style.width = '300px';
+  box.innerHTML = `
+    <div style="font-size:16px;font-weight:700;margin-bottom:12px;">Sohbet İsteği Gönder</div>
+    <input id="_dmSearchInp" class="ci" placeholder="🔍 İsim ara..." style="width:100%;margin-bottom:10px;border-radius:8px;padding:9px 12px;font-size:13px;box-sizing:border-box;" oninput="_filterDmSearch(this.value)"/>
+    <div id="_dmSearchRes" style="min-height:48px;max-height:240px;overflow-y:auto;">
+      <div style="color:var(--t3);font-size:13px;padding:4px 2px;">Aramak için yazmaya başla...</div>
+    </div>
+    <button class="prof-btn pb-close" style="margin-top:10px;" onclick="this.closest('.prof-overlay').remove()">İptal</button>`;
+  overlay.appendChild(box);
+  overlay.onclick = e => { if (e.target === overlay) overlay.remove(); };
+  document.body.appendChild(overlay);
+  setTimeout(() => document.getElementById('_dmSearchInp')?.focus(), 60);
+}
+
+function _filterDmSearch(val) {
+  const res = document.getElementById('_dmSearchRes'); if (!res) return;
+  const v = val.trim().toLowerCase();
+  if (!v) { res.innerHTML = '<div style="color:var(--t3);font-size:13px;padding:4px 2px;">Aramak için yazmaya başla...</div>'; return; }
+  const targets = Object.values(codes).filter(c => c.name && c.name !== me.name && !c.banned && c.name.toLowerCase().includes(v));
+  if (!targets.length) { res.innerHTML = '<div style="color:var(--t3);font-size:13px;padding:4px 2px;">Kullanıcı bulunamadı</div>'; return; }
+  res.innerHTML = '';
+  targets.forEach(c => {
+    const n = c.name, avc = avColor(n, false), p = profiles[n] || {};
+    const inner = p.photo ? `<img src="${p.photo}" style="width:100%;height:100%;object-fit:cover;"/>` : n[0].toUpperCase();
     const actDot = p.actStatus === 'hidden'
       ? '<div style="width:6px;height:6px;border-radius:50%;background:var(--t3);"></div>'
       : '<div style="width:6px;height:6px;border-radius:50%;background:var(--gn);"></div>';
-    const inner = p.photo ? `<img src="${p.photo}" style="width:100%;height:100%;object-fit:cover;"/>` : n[0].toUpperCase();
-    html += `<div class="di" style="margin-bottom:6px;padding:9px 11px;" onclick="pickDmUser('${esc(n)}',this.closest('.prof-overlay'))"><div class="av ${avc}" style="flex-shrink:0;">${inner}</div><div class="di-i"><div class="din">${esc(n)}</div><div class="dip" style="display:flex;align-items:center;gap:4px;">${actDot}${p.actStatus === 'hidden' ? 'Gizli' : 'Aktif'}</div></div></div>`;
+    const d = document.createElement('div'); d.className = 'di'; d.style.cssText = 'margin-bottom:4px;padding:8px 10px;cursor:pointer;border-radius:8px;';
+    d.innerHTML = `<div class="av ${avc}" style="flex-shrink:0;">${inner}</div><div class="di-i"><div class="din">${esc(n)}</div><div class="dip" style="display:flex;align-items:center;gap:4px;">${actDot}${p.actStatus === 'hidden' ? 'Gizli' : 'Aktif'}</div></div>`;
+    d.onclick = () => { document.querySelector('.prof-overlay')?.remove(); openDmModeModal(n); };
+    res.appendChild(d);
   });
-  html += `<button class="prof-btn pb-close" style="margin-top:6px;" onclick="this.closest('.prof-overlay').remove()">İptal</button>`;
-  box.innerHTML = html; overlay.appendChild(box);
-  overlay.onclick = e => { if (e.target === overlay) overlay.remove(); };
-  document.body.appendChild(overlay);
 }
 
 function pickDmUser(name, overlayEl) { if (overlayEl) overlayEl.remove(); openDmModeModal(name); }

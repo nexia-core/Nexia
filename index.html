@@ -16,7 +16,7 @@
   <link rel="stylesheet" href="css/base.css?v=8"/>
   <link rel="stylesheet" href="css/layout.css?v=7"/>
   <link rel="stylesheet" href="css/components.css?v=14"/>
-  <link rel="stylesheet" href="css/features.css?v=33"/>
+  <link rel="stylesheet" href="css/features.css?v=36"/>
   <style>
     .jarvis-msg { margin-bottom: 12px; word-wrap: break-word; overflow-wrap: break-word; white-space: pre-wrap; word-break: break-word; }
     .jarvis-msg.user { color: #fff; opacity: 0.7; }
@@ -624,7 +624,7 @@
     <div style="font-size:13px;font-weight:600;">Nexia'yı yükle</div>
     <div style="font-size:11px;color:var(--t3);">Ana ekrana ekle, uygulama gibi kullan</div>
   </div>
-  <button class="ts tg" onclick="installPwa()" style="flex-shrink:0;">Ekle</button>
+  <button id="pwaInstallBtn" class="ts tg" onclick="installPwa()" style="flex-shrink:0;">Ekle</button>
   <button class="ts" onclick="hidePwaBanner()" style="flex-shrink:0;background:var(--sf2);color:var(--t2);">✕</button>
 </div>
 
@@ -830,6 +830,7 @@
       <button class="tbtn on" id="tg"      onclick="sw('g')">🌐 Global</button>
       <button class="tbtn"    id="td"      onclick="sw('d')">👤 1'e 1 Sohbetler<span class="nd" id="dmDot" style="display:none"></span></button>
       <button class="tbtn"    id="tch"     onclick="sw('ch')">👥 Gruplar</button>
+      <div style="height:1px;background:var(--bd);margin:6px 8px;opacity:.5;flex-shrink:0;"></div>
       <button class="tbtn"    id="tbot"    onclick="sw('bot')">⚡ NEXUS</button>
       <button class="tbtn"    id="tpr"     onclick="sw('pr')" style="display:none">👤 Profil</button>
       <button class="tbtn"    id="tfr"     onclick="sw('fr')" style="display:none">👥 Kullanıcılar</button>
@@ -1066,25 +1067,6 @@
       <div class="profile-page" id="profilePage"></div>
     </div>
 
-    <!-- Gönderi Ekleme Modalı -->
-    <div class="pp-add-modal" id="ppAddModal" onclick="if(event.target===this)closePostModal()">
-      <div class="pp-add-box">
-        <h3>Yeni Gönderi</h3>
-        <div class="pp-add-preview" id="ppAddPreview" onclick="q('#ppPostFileInput').click()">+</div>
-        <input type="file" id="ppPostFileInput" accept="image/*" style="display:none" onchange="onPostImgSelect(event)"/>
-        <div class="sett-row"><div class="sett-lbl">Açıklama</div><textarea class="sett-ta" id="ppPostCaption" placeholder="Bir şeyler yaz..." maxlength="500"></textarea></div>
-        <div class="psett-btns">
-          <button class="psb-ok" onclick="publishPost()">Paylaş</button>
-          <button class="psb-cancel" onclick="closePostModal()">İptal</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Gönderi Görüntüleme Modalı -->
-    <div class="pp-modal" id="ppViewModal">
-      <button class="pp-modal-close" onclick="closeViewModal()">✕</button>
-      <div class="pp-modal-card" id="ppViewCard"></div>
-    </div>
 
     <!-- DM MEDYA GALERİSİ MODAL -->
     <div class="modal" id="dmMediaModal" onclick="if(event.target===this)cm('dmMediaModal')">
@@ -1097,40 +1079,6 @@
       </div>
     </div>
 
-    <!-- Yorumlar Alt Paneli -->
-    <div class="cmt-backdrop" id="cmtBackdrop" onclick="closeCommentsSheet()"></div>
-    <div class="cmt-sheet" id="cmtSheet">
-      <div class="cmt-sheet-handle"></div>
-      <div class="cmt-sheet-header">
-        <span>Yorumlar</span>
-        <button onclick="closeCommentsSheet()">✕</button>
-      </div>
-      <div class="cmt-sheet-list" id="cmtList"></div>
-      <div class="cmt-sheet-bar" id="cmtInputBar"></div>
-    </div>
-
-    <!-- Öne Çıkan Ekleme Modalı -->
-    <div class="pp-hl-modal" id="ppHlAddModal" onclick="if(event.target===this)closeHlModal()">
-      <div class="pp-add-box">
-        <h3>Yeni Öne Çıkan</h3>
-        <div class="sett-row"><div class="sett-lbl">Başlık</div><input class="sett-inp" id="ppHlTitle" placeholder="Örn: Tatil, Okul..." maxlength="20"/></div>
-        <div class="pp-add-preview" id="ppHlCoverPreview" onclick="q('#ppHlCoverInput').click()">+</div>
-        <input type="file" id="ppHlCoverInput" accept="image/*" style="display:none" onchange="onHlCoverSelect(event)"/>
-        <div class="sett-row" style="margin-top:8px;"><div class="sett-lbl">İçerik Görselleri</div></div>
-        <div id="ppHlItemsList" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;"></div>
-        <button class="note-upload-file" onclick="q('#ppHlItemInput').click()" style="margin-bottom:10px;">+ Görsel Ekle</button>
-        <input type="file" id="ppHlItemInput" accept="image/*" style="display:none" onchange="onHlItemSelect(event)" multiple/>
-        <div class="psett-btns">
-          <button class="psb-ok" onclick="publishHighlight()">Oluştur</button>
-          <button class="psb-cancel" onclick="closeHlModal()">İptal</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Öne Çıkan Görüntüleyici -->
-    <div class="pp-hl-viewer" id="ppHlViewer" onclick="closeHlViewer()">
-      <div class="pp-hl-content" id="ppHlViewContent" onclick="event.stopPropagation()"></div>
-    </div>
 
     <!-- Profil Bilgi Paneli (Engellenenler / Beğeniler) -->
     <div class="ppi-overlay" id="ppInfoModal" onclick="if(event.target===this)closeProfileInfoPanel()">
@@ -1651,29 +1599,30 @@
 </div>
 
 <!-- ── FIREBASE MODULE ── -->
-<script type="module" src="js/core/firebase.js?v=7"></script>
+<script type="module" src="js/core/firebase.js?v=8"></script>
 
 <!-- ── CORE JS ── -->
 <script src="js/core/state.js?v=2"></script>
-<script src="js/core/utils.js?v=6"></script>
-<script src="js/core/auth.js?v=17"></script>
+<script src="js/core/utils.js?v=7"></script>
+<script src="js/core/auth.js?v=18"></script>
 
 <!-- ── FEATURES JS ── -->
 <script src="js/features/chat.js?v=15"></script>
-<script src="js/features/dm.js?v=14"></script>
+<script src="js/features/dm.js?v=15"></script>
 <script src="js/features/stories.js?v=2"></script>
-<script src="js/features/bot.js?v=13"></script>
+<script src="js/features/bot.js?v=14"></script>
 <script src="js/features/friends.js?v=2"></script>
 <script src="js/features/channels.js?v=10"></script>
-<script src="js/features/profile.js?v=19"></script>
+<script src="js/features/profile.js?v=22"></script>
 <script src="js/admin/jarvis.js?v=11"></script>
 
 <!-- ── ADMIN JS ── -->
-<script src="js/admin/panel.js?v=7"></script>
+<script src="js/admin/panel.js?v=8"></script>
 <script src="js/admin/monitor.js?v=2"></script>
 <script src="js/admin/stats.js?v=2"></script>
 <script>
 // ── MOBİL GEÇİŞ ─────────────────────────────────
+var _prevTab = 'g';
 (function() {
   const _titles = {g:'Global',d:"1'e 1 Sohbetler",ch:'Gruplar',bot:'NEXUS',pr:'Profil',w:'Yönetime Yaz',a:'Admin',settings:'Ayarlar',fr:'Kullanıcılar'};
   const _orig = sw;
@@ -1681,6 +1630,14 @@
     // NEXUS sözleşme kontrolü
     if (t === 'bot') {
       if (typeof checkNexusAgreement === 'function' && !checkNexusAgreement()) return;
+    }
+    // Profil sayfasına geçmeden önce mevcut sekmeyi kaydet
+    if (t === 'pr') {
+      const tabs = ['g','d','ch','bot','fr','w','a','settings'];
+      for (var i = 0; i < tabs.length; i++) {
+        var p = document.getElementById('p' + tabs[i]);
+        if (p && p.classList.contains('on')) { _prevTab = tabs[i]; break; }
+      }
     }
     _orig(t);
     // Ayarlar sayfası açılınca NEXUS alt başlığını güncelle
@@ -1690,16 +1647,21 @@
     if (window.innerWidth <= 768) {
       document.getElementById('app').classList.add('mob-chat-open');
       const el = document.getElementById('mobTitle');
-      if (el) el.textContent = _titles[t] || '';
+      if (el && t !== 'pr') el.textContent = _titles[t] || '';
+      const mobH = document.getElementById('mobHeader');
+      if (mobH) mobH.style.display = '';
     }
   };
 })();
 function mobBack() {
   const dml = document.querySelector('.dml');
   const pch = document.getElementById('pch');
+  const ppr = document.getElementById('ppr');
   const adminSub = document.querySelector('.admin-sub-view[style*="flex"]');
   if (adminSub) {
     backToAdminMain();
+  } else if (ppr && ppr.classList.contains('on')) {
+    sw(typeof _prevTab !== 'undefined' ? _prevTab : 'g');
   } else if (dml && dml.classList.contains('dm-conv-open')) {
     dml.classList.remove('dm-conv-open');
   } else if (pch && pch.classList.contains('ch-room-open')) {

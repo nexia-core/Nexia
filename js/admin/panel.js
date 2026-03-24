@@ -5,6 +5,8 @@
 /** Admin panelini yenile (tüm bölümler) */
 function rA() { rIbx(); rUT(); rSpy(); rAL(); rOG(); rML(); rStats(); }
 
+let _deletionRequests = [];
+
 // ──────────────────────────────────────────────────
 // BÖLÜM NAVİGASYONU
 // ──────────────────────────────────────────────────
@@ -304,43 +306,50 @@ function initAdminGoogleUsers() {
     rGoogleUsers();
     rPendingDeletions();
   });
+  if (typeof fbListenDeletionRequests === 'function') {
+    fbListenDeletionRequests(reqs => { _deletionRequests = reqs; rPendingDeletions(); });
+  }
 }
 
 function rPendingDeletions() {
   const el  = q('#pendingDeletionList'); if (!el) return;
   const cnt = q('#pendingDeletionCnt');
-  const list = _googleUsers.filter(u => u.deletionPending);
+  const list = _deletionRequests.filter(r => r.status === 'pending');
   if (cnt) cnt.textContent = list.length + ' kişi';
   if (!list.length) {
     el.innerHTML = '<div style="color:var(--t3);font-size:13px;">Silinme talebi yok ✅</div>';
     return;
   }
   el.innerHTML = '';
-  list.forEach(u => {
-    const reqAt  = u.deletionRequestedAt ? new Date(u.deletionRequestedAt) : null;
+  list.forEach(r => {
+    const u = _googleUsers.find(u => u.uid === r.uid) || {};
+    const reqAt  = r.requestedAt ? new Date(r.requestedAt) : null;
     const daysLeft = reqAt ? Math.max(0, 7 - Math.floor((Date.now() - reqAt.getTime()) / 86400000)) : 7;
     const dateStr  = reqAt ? reqAt.toLocaleDateString('tr-TR') : '?';
     const d = document.createElement('div');
     d.style.cssText = 'display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--bd);flex-wrap:wrap;';
     d.innerHTML = `
       <div style="flex:1;min-width:0;">
-        <div style="font-weight:600;font-size:14px;">${esc(u.nickname || u.email)}</div>
-        <div style="font-size:12px;color:var(--t3);margin-top:2px;">Neden: ${esc(u.deletionReason || 'Belirtilmedi')} · Talep: ${dateStr} · <strong style="color:var(--dg)">${daysLeft} gün kaldı</strong></div>
+        <div style="font-weight:600;font-size:14px;">${esc(u.nickname || r.uid)}</div>
+        <div style="font-size:12px;color:var(--t3);margin-top:2px;">Neden: ${esc(r.reason || 'Belirtilmedi')} · Talep: ${dateStr} · <strong style="color:var(--dg)">${daysLeft} gün kaldı</strong></div>
       </div>
-      <button onclick="adminCancelDeletion('${u.uid}')" style="padding:5px 10px;border-radius:7px;border:1px solid var(--gn);background:transparent;color:var(--gn);font-size:12px;cursor:pointer;">İptal Et</button>
-      <button onclick="adminExecuteDeletion('${u.uid}')" style="padding:5px 10px;border-radius:7px;border:none;background:var(--dg);color:#fff;font-size:12px;cursor:pointer;">Sil</button>`;
+      <button onclick="adminCancelDeletion('${r.uid}')" style="padding:5px 10px;border-radius:7px;border:1px solid var(--gn);background:transparent;color:var(--gn);font-size:12px;cursor:pointer;">İptal Et</button>
+      <button onclick="adminExecuteDeletion('${r.uid}')" style="padding:5px 10px;border-radius:7px;border:none;background:var(--dg);color:#fff;font-size:12px;cursor:pointer;">Sil</button>`;
     el.appendChild(d);
   });
 }
 
 async function adminCancelDeletion(uid) {
   if (!confirm('Bu kullanıcının silme talebini iptal etmek istediğine emin misin?')) return;
-  if (typeof fbCancelDeletion === 'function') await fbCancelDeletion(uid);
+  if (typeof fbCancelDeletionRequest === 'function') await fbCancelDeletionRequest(uid);
+  toast('Silme talebi iptal edildi', 's');
 }
 
 async function adminExecuteDeletion(uid) {
   if (!confirm('Bu hesabı KALICI olarak silmek istediğine emin misin? Bu işlem geri alınamaz!')) return;
+  if (typeof fbCancelDeletionRequest === 'function') await fbCancelDeletionRequest(uid);
   if (typeof fbDeleteUserDoc === 'function') await fbDeleteUserDoc(uid);
+  toast('Hesap silindi', 's');
 }
 
 function rPendingUsers() {

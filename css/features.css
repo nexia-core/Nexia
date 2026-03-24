@@ -388,35 +388,64 @@
 .profile-page::-webkit-scrollbar { width:4px; }
 .profile-page::-webkit-scrollbar-thumb { background:var(--bd2); border-radius:4px; }
 
-.pp-header { max-width:600px; margin:0 auto; padding:20px 20px 0; position:relative; }
-.pp-back-btn { position:absolute; top:20px; left:20px; width:34px; height:34px; border-radius:50%; border:none; background:var(--sf2); color:var(--t2); cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all .15s; }
-.pp-back-btn:hover { background:var(--sf3); color:var(--ac); }
-.pp-banner { height:120px; border-radius:16px; background:linear-gradient(135deg,var(--ac-d),var(--an-d)); position:relative; margin-bottom:50px; }
-.pp-avatar-wrap { position:absolute; bottom:-40px; left:20px; }
-.pp-avatar-standalone { display:flex; justify-content:center; padding:10px 0 16px; }
-.pp-avatar { width:80px; height:80px; border-radius:50%; border:4px solid var(--bg); display:flex; align-items:center; justify-content:center; font-size:28px; font-weight:700; overflow:hidden; cursor:pointer; }
+/* ═══ WhatsApp Profil Stili ═══ */
+.pp-wa-hero { display:flex; flex-direction:column; align-items:center; padding:32px 20px 24px; background:var(--sf); border-bottom:1px solid var(--bd); }
+.pp-wa-av-wrap { position:relative; margin-bottom:16px; }
+.pp-avatar { width:110px; height:110px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:38px; font-weight:700; overflow:hidden; box-shadow:0 4px 20px rgba(0,0,0,.25); }
 .pp-avatar img { width:100%; height:100%; object-fit:cover; }
+.pp-wa-av-edit { position:absolute; bottom:4px; right:4px; width:30px; height:30px; border-radius:50%; background:var(--ac); border:2px solid var(--sf); display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:14px; }
+.pp-wa-name { font-size:22px; font-weight:800; color:var(--tx); text-align:center; margin-bottom:4px; }
+.pp-wa-online { font-size:12px; color:var(--t3); text-align:center; }
+.pp-wa-online.active { color:#4ade80; }
 
-.pp-info { max-width:600px; margin:0 auto; padding:0 20px; }
-.pp-top-row { display:flex; align-items:center; gap:10px; margin-bottom:6px; }
-.pp-name { font-size:20px; font-weight:800; }
-.pp-me-btns { display:flex; gap:8px; margin-bottom:12px; }
-.pp-edit-btn { flex:1; padding:8px 16px; background:var(--ac); border:none; border-radius:10px; font-size:13px; font-weight:700; color:#fff; cursor:pointer; transition:all .2s; font-family:'Geist Mono',monospace; }
-.pp-edit-btn:hover { opacity:.85; transform:translateY(-1px); box-shadow:0 4px 14px rgba(249,115,22,.3); }
-.pp-share-btn { flex:1; padding:8px 16px; background:transparent; border:2px solid var(--ac); border-radius:10px; font-size:13px; font-weight:700; color:var(--ac); cursor:pointer; transition:all .2s; font-family:'Geist Mono',monospace; }
-.pp-share-btn:hover { background:var(--ac); color:#fff; transform:translateY(-1px); }
-.pp-action-btns { display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap; }
-.pp-follow-btn { flex:1; min-width:100px; padding:8px 16px; background:var(--ac); border:2px solid var(--ac); border-radius:10px; color:#fff; font-size:13px; font-weight:700; cursor:pointer; transition:all .2s; font-family:'Geist Mono',monospace; }
-.pp-follow-btn:hover { opacity:.85; }
-.pp-follow-btn.following { background:transparent; color:var(--ac); }
-.pp-follow-btn.following:hover { background:rgba(249,115,22,.1); }
-.pp-msg-btn { flex:1; min-width:100px; padding:8px 16px; background:var(--sf2); border:none; border-radius:10px; color:var(--tx); font-size:13px; font-weight:600; cursor:pointer; transition:all .2s; font-family:'Geist Mono',monospace; }
-.pp-msg-btn:hover { background:var(--sf3); color:var(--ac); }
-.pp-block-btn { padding:8px 14px; background:var(--sf2); border:none; border-radius:10px; color:var(--t3); font-size:12px; cursor:pointer; transition:all .2s; font-family:'Geist Mono',monospace; }
-.pp-block-btn:hover { background:var(--dg-d); color:var(--dg); }
-.pp-block-btn.blocked { color:var(--dg); background:var(--dg-d); }
-.pp-tag { font-size:12px; color:var(--t2); margin-bottom:8px; }
-.pp-bio { font-size:13px; color:var(--t2); line-height:1.5; margin-bottom:14px; white-space:pre-wrap; }
+.pp-wa-actions { display:flex; justify-content:center; gap:24px; padding:20px 16px; background:var(--sf); border-bottom:8px solid var(--bg); }
+.pp-wa-act-item { display:flex; flex-direction:column; align-items:center; gap:6px; cursor:pointer; }
+.pp-wa-act-icon { width:52px; height:52px; border-radius:50%; background:var(--ac-d); display:flex; align-items:center; justify-content:center; font-size:22px; transition:all .2s; border:1px solid var(--bd); }
+.pp-wa-act-item:hover .pp-wa-act-icon { background:var(--ac); transform:scale(1.06); }
+.pp-wa-act-icon.danger-icon { background:var(--dg-d); }
+.pp-wa-act-item:hover .pp-wa-act-icon.danger-icon { background:var(--dg); }
+.pp-wa-act-label { font-size:11px; color:var(--t2); font-weight:600; white-space:nowrap; }
+
+.pp-wa-sections { background:var(--bg); }
+.pp-wa-section { background:var(--sf); margin-bottom:8px; }
+.pp-wa-section-lbl { font-size:11px; color:var(--ac); font-weight:700; padding:14px 20px 4px; text-transform:uppercase; letter-spacing:.8px; }
+.pp-wa-row { display:flex; align-items:flex-start; gap:16px; padding:14px 20px; border-bottom:1px solid var(--bd); }
+.pp-wa-row:last-child { border-bottom:none; }
+.pp-wa-row-icon { width:22px; text-align:center; font-size:18px; flex-shrink:0; color:var(--t3); margin-top:1px; }
+.pp-wa-row-body { flex:1; min-width:0; }
+.pp-wa-row-val { font-size:14px; color:var(--tx); line-height:1.5; white-space:pre-wrap; word-break:break-word; }
+.pp-wa-row-lbl { font-size:11px; color:var(--t3); margin-top:2px; }
+.pp-wa-row-action { color:var(--t3); font-size:18px; cursor:pointer; align-self:center; flex-shrink:0; transition:color .15s; }
+.pp-wa-row-action:hover { color:var(--ac); }
+.pp-wa-row.tappable { cursor:pointer; transition:background .15s; }
+.pp-wa-row.tappable:hover { background:var(--sf2); }
+.pp-wa-row.danger .pp-wa-row-val { color:var(--dg); }
+.pp-wa-row.danger .pp-wa-row-icon { color:var(--dg); }
+
+.pp-wa-media-section { background:var(--sf); margin-bottom:8px; }
+.pp-wa-media-head { display:flex; align-items:center; justify-content:space-between; padding:14px 20px 10px; }
+.pp-wa-media-title { font-size:14px; font-weight:700; color:var(--tx); }
+.pp-wa-media-all { font-size:12px; color:var(--ac); cursor:pointer; font-weight:600; }
+.pp-wa-media-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:3px; padding:0 0 4px; }
+.pp-wa-media-thumb { aspect-ratio:1; overflow:hidden; cursor:pointer; background:var(--sf2); }
+.pp-wa-media-thumb img { width:100%; height:100%; object-fit:cover; display:block; transition:opacity .2s; }
+.pp-wa-media-thumb:hover img { opacity:.85; }
+.pp-wa-media-empty { padding:16px 20px; font-size:13px; color:var(--t3); }
+
+.pp-wa-own-edit { display:flex; gap:10px; padding:16px 20px; background:var(--sf); margin-bottom:8px; }
+.pp-wa-edit-btn { flex:1; padding:11px 16px; background:var(--ac); border:none; border-radius:12px; font-size:14px; font-weight:700; color:#fff; cursor:pointer; transition:all .2s; font-family:inherit; }
+.pp-wa-edit-btn:hover { opacity:.88; transform:translateY(-1px); }
+.pp-wa-share-btn { padding:11px 20px; background:var(--sf2); border:1px solid var(--bd2); border-radius:12px; font-size:14px; font-weight:600; color:var(--t2); cursor:pointer; transition:all .2s; font-family:inherit; }
+.pp-wa-share-btn:hover { background:var(--sf3); color:var(--tx); }
+
+/* compat — bazı eski referanslar için */
+.pp-avatar-standalone { display:none; }
+.pp-header { display:none; }
+.pp-info { display:none; }
+.pp-stats { display:none; }
+.pp-highlights { display:none; }
+.pp-tabs { display:none; }
+.pp-grid { display:none; }
 
 .pp-stats { display:flex; gap:24px; margin-bottom:16px; }
 .pp-stat { text-align:center; cursor:pointer; }
@@ -681,8 +710,9 @@
   .pp-avatar-standalone { padding:8px 0 12px; }
   .pp-name { font-size:17px; }
   .pp-stats { gap:16px; }
-  .pp-highlights { padding:10px 12px; gap:10px; }
-  .pp-hl-ring { width:56px; height:56px; }
-  .pp-grid { gap:2px; padding:2px; }
   .pp-add-box { margin:0 10px; padding:20px 16px; }
+  .pp-avatar { width:90px; height:90px; font-size:30px; }
+  .pp-wa-name { font-size:18px; }
+  .pp-wa-actions { gap:16px; }
+  .pp-wa-act-icon { width:46px; height:46px; font-size:20px; }
 }

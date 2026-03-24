@@ -1109,15 +1109,19 @@ async function submitDeletionRequest() {
   if (!selected) { toast('Lütfen bir neden seç', 'e'); return; }
   const reason = selected.value;
   closeDeletionModal();
-  if (typeof fbRequestDeletion === 'function') await fbRequestDeletion(me.uid, reason);
+  try {
+    if (typeof fbSendDeletionRequest === 'function') await fbSendDeletionRequest(me.uid, reason);
+  } catch(e) { toast('Hata: Talep gönderilemedi. Tekrar dene.', 'e'); return; }
   me._deletionPending = true;
   me._deletionRequestedAt = new Date().toISOString();
   _renderDeletionBanner();
-  toast('Silme talebine alındı. 7 gün içinde işlenecek.', 'w');
+  toast('Silme talebi alındı. 7 gün içinde işlenecek.', 'w');
 }
 
 async function cancelDeletionRequest() {
-  if (typeof fbCancelDeletion === 'function') await fbCancelDeletion(me.uid);
+  try {
+    if (typeof fbCancelDeletionRequest === 'function') await fbCancelDeletionRequest(me.uid);
+  } catch(e) {}
   me._deletionPending = false;
   me._deletionRequestedAt = null;
   _renderDeletionBanner();
@@ -1208,22 +1212,27 @@ function completeGoogleLogin(userData) {
 
 // ── PWA KURULUM BANNER ────────────────────────────
 let _pwaInstallPrompt = null;
-window.addEventListener('beforeinstallprompt', e => {
-  e.preventDefault();
-  _pwaInstallPrompt = e;
-});
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); _pwaInstallPrompt = e; });
 
 function _maybeShowPwaBanner() {
-  if (!_pwaInstallPrompt) return;
+  // Zaten uygulama modunda çalışıyorsa (yüklü) gösterme
+  if (window.matchMedia('(display-mode: standalone)').matches) return;
+  if (window.navigator.standalone) return;
   if (localStorage.getItem('nexia_pwa_dismissed')) return;
   const b = document.getElementById('pwaBanner'); if (!b) return;
+  // Ekle butonunu prompt varsa göster, yoksa gizle
+  const btn = b.querySelector('#pwaInstallBtn');
+  if (btn) btn.style.display = _pwaInstallPrompt ? '' : 'none';
   b.style.display = 'flex';
 }
 
 function installPwa() {
-  if (!_pwaInstallPrompt) return;
-  _pwaInstallPrompt.prompt();
-  _pwaInstallPrompt.userChoice.then(() => { _pwaInstallPrompt = null; hidePwaBanner(); });
+  if (_pwaInstallPrompt) {
+    _pwaInstallPrompt.prompt();
+    _pwaInstallPrompt.userChoice.then(() => { _pwaInstallPrompt = null; hidePwaBanner(); });
+  } else {
+    toast('Tarayıcı menüsü → "Ana Ekrana Ekle" seç 📱', 's');
+  }
 }
 
 function hidePwaBanner() {
