@@ -3,20 +3,58 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Nexia</title>
+  <title>Nexia Core — Okul İçi Güvenli Sohbet Platformu</title>
+  <meta name="description" content="Nexia Core, okul içi güvenli ve gerçek zamanlı iletişim platformu. Global sohbet, 1'e 1 mesajlaşma, gruplar ve yapay zeka destekli NEXUS ile tanış."/>
+  <meta name="keywords" content="nexia core, nexia, okul sohbet, okul iletişim, nexia uygulama, nexia chat, nexus ai, okul platformu, güvenli mesajlaşma"/>
+  <meta name="robots" content="index, follow"/>
+  <meta name="author" content="Nexia Core"/>
+  <link rel="canonical" href="https://nexia-navy.vercel.app/"/>
+
+  <!-- Open Graph (Facebook, WhatsApp, Discord vb.) -->
+  <meta property="og:type" content="website"/>
+  <meta property="og:url" content="https://nexia-navy.vercel.app/"/>
+  <meta property="og:title" content="Nexia Core — Okul İçi Güvenli Sohbet"/>
+  <meta property="og:description" content="Global sohbet, 1'e 1 mesajlaşma, gruplar ve yapay zeka NEXUS. Okulundaki herkesle güvenli ve hızlı iletişim."/>
+  <meta property="og:image" content="https://nexia-navy.vercel.app/images/logo.png"/>
+  <meta property="og:locale" content="tr_TR"/>
+  <meta property="og:site_name" content="Nexia Core"/>
+
+  <!-- Twitter / X Card -->
+  <meta name="twitter:card" content="summary"/>
+  <meta name="twitter:title" content="Nexia Core — Okul İçi Güvenli Sohbet"/>
+  <meta name="twitter:description" content="Global sohbet, 1'e 1 mesajlaşma, gruplar ve yapay zeka NEXUS."/>
+  <meta name="twitter:image" content="https://nexia-navy.vercel.app/images/logo.png"/>
+
+  <!-- JSON-LD Yapısal Veri -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "Nexia Core",
+    "alternateName": "Nexia",
+    "url": "https://nexia-navy.vercel.app/",
+    "description": "Okul içi güvenli iletişim platformu. Global sohbet, 1'e 1 mesajlaşma, gruplar ve yapay zeka destekli NEXUS.",
+    "applicationCategory": "CommunicationApplication",
+    "operatingSystem": "Web, Android, iOS",
+    "inLanguage": "tr",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "TRY" },
+    "keywords": "nexia core, okul sohbet, okul iletişim, nexus ai"
+  }
+  </script>
+
   <link rel="icon" href="images/logo.png" type="image/png"/>
   <link rel="manifest" href="manifest.json"/>
   <meta name="theme-color" content="#F97316"/>
   <meta name="mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-  <meta name="apple-mobile-web-app-title" content="Nexia"/>
+  <meta name="apple-mobile-web-app-title" content="Nexia Core"/>
 
   <!-- ── CSS ── -->
   <link rel="stylesheet" href="css/base.css?v=8"/>
   <link rel="stylesheet" href="css/layout.css?v=7"/>
   <link rel="stylesheet" href="css/components.css?v=14"/>
-  <link rel="stylesheet" href="css/features.css?v=36"/>
+  <link rel="stylesheet" href="css/features.css?v=37"/>
   <style>
     .jarvis-msg { margin-bottom: 12px; word-wrap: break-word; overflow-wrap: break-word; white-space: pre-wrap; word-break: break-word; }
     .jarvis-msg.user { color: #fff; opacity: 0.7; }
@@ -863,10 +901,6 @@
 
     <!-- GLOBAL PANEL -->
     <div class="panel on" id="pg">
-      <div class="stories-bar" id="storiesBar"></div>
-      <div class="stories-toggle" id="storiesToggle" onclick="toggleStoriesBar()" title="Durumları gizle/göster">
-        <svg id="storiesToggleArrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
-      </div>
       <div class="pinned-bar" id="pinnedBar" style="display:none" onclick="scrollToPinned()">
         <span class="pinned-icon">📌</span>
         <span class="pinned-label">SABİTLENDİ</span>
@@ -903,10 +937,6 @@
           <div class="dmsb-h">
           <h3>Sohbetler</h3>
           <div class="dm-actions">
-            <button class="dm-action-btn" onclick="openGrpModal()">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-              Grup Kur
-            </button>
             <button class="dm-action-btn" onclick="ondm(null)">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
               Sohbet İsteği
@@ -998,8 +1028,7 @@
         </div>
         <!-- Butonlar -->
         <div style="padding:16px 24px;border-top:1px solid var(--bd);flex-shrink:0;display:flex;flex-direction:column;gap:8px;">
-          <div id="nexusScrollHint" style="text-align:center;font-size:11px;color:var(--t3);margin-bottom:4px;">↓ Sözleşmeyi okumak için aşağı kaydır</div>
-          <button id="nexusAgreeBtn" onclick="acceptNexusAgreement()" disabled style="width:100%;padding:14px;background:var(--ac);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:not-allowed;opacity:0.4;transition:all .2s;font-family:'Instrument Sans',sans-serif;">Okudum, Kabul Ediyorum</button>
+          <button id="nexusAgreeBtn" onclick="acceptNexusAgreement()" style="width:100%;padding:14px;background:var(--ac);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;transition:all .2s;font-family:'Instrument Sans',sans-serif;">Okudum, Kabul Ediyorum</button>
           <button onclick="declineNexusAgreement()" style="width:100%;padding:12px;background:transparent;color:var(--t2);border:1px solid var(--bd);border-radius:12px;font-size:13px;font-weight:500;cursor:pointer;font-family:'Instrument Sans',sans-serif;">Kabul Etmiyorum (NEXUS kullanmayacağım)</button>
         </div>
       </div>
@@ -1604,13 +1633,13 @@
 <!-- ── CORE JS ── -->
 <script src="js/core/state.js?v=2"></script>
 <script src="js/core/utils.js?v=7"></script>
-<script src="js/core/auth.js?v=18"></script>
+<script src="js/core/auth.js?v=19"></script>
 
 <!-- ── FEATURES JS ── -->
 <script src="js/features/chat.js?v=15"></script>
-<script src="js/features/dm.js?v=15"></script>
+<script src="js/features/dm.js?v=17"></script>
 <script src="js/features/stories.js?v=2"></script>
-<script src="js/features/bot.js?v=14"></script>
+<script src="js/features/bot.js?v=15"></script>
 <script src="js/features/friends.js?v=2"></script>
 <script src="js/features/channels.js?v=10"></script>
 <script src="js/features/profile.js?v=22"></script>
@@ -1630,6 +1659,10 @@ var _prevTab = 'g';
     // NEXUS sözleşme kontrolü
     if (t === 'bot') {
       if (typeof checkNexusAgreement === 'function' && !checkNexusAgreement()) return;
+    } else {
+      // Başka sekmeye geçilince Nexus overlay'i kapat
+      var _nxOv = document.getElementById('nexusAgreementOverlay');
+      if (_nxOv && _nxOv.style.display !== 'none') _nxOv.style.display = 'none';
     }
     // Profil sayfasına geçmeden önce mevcut sekmeyi kaydet
     if (t === 'pr') {
@@ -1654,6 +1687,9 @@ var _prevTab = 'g';
   };
 })();
 function mobBack() {
+  // Nexus overlay açıksa önce kapat
+  const nxOv = document.getElementById('nexusAgreementOverlay');
+  if (nxOv && nxOv.style.display !== 'none') { nxOv.style.display = 'none'; return; }
   const dml = document.querySelector('.dml');
   const pch = document.getElementById('pch');
   const ppr = document.getElementById('ppr');
@@ -1852,25 +1888,6 @@ function saveFontSettings() {
   toast('Yazı boyutu kaydedildi', 's');
 }
 
-function toggleStoriesBar() {
-  const bar = document.getElementById('storiesBar');
-  const toggle = document.getElementById('storiesToggle');
-  if (!bar || !toggle) return;
-  const hidden = bar.classList.toggle('collapsed');
-  toggle.classList.toggle('collapsed', hidden);
-  localStorage.setItem('storiesBarHidden', hidden ? '1' : '0');
-}
-// Sayfa yüklenince durumu geri yükle
-(function() {
-  if (localStorage.getItem('storiesBarHidden') === '1') {
-    document.addEventListener('DOMContentLoaded', () => {
-      const bar = document.getElementById('storiesBar');
-      const toggle = document.getElementById('storiesToggle');
-      if (bar) bar.classList.add('collapsed');
-      if (toggle) toggle.classList.add('collapsed');
-    });
-  }
-})();
 
 function saveChatBg() {
   localStorage.setItem('chatBg', _activeChatBg);
