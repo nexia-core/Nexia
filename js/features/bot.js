@@ -37,17 +37,7 @@ function _hideNexusAgreementOverlay() {
 }
 
 function checkNexusScroll() {
-  const scroll = document.getElementById('nexusAgreementScroll');
-  const btn    = document.getElementById('nexusAgreeBtn');
-  const hint   = document.getElementById('nexusScrollHint');
-  if (!scroll || !btn) return;
-  const scrolled = scroll.scrollTop + scroll.clientHeight >= scroll.scrollHeight - 30;
-  if (scrolled) {
-    btn.disabled = false;
-    btn.style.opacity = '1';
-    btn.style.cursor = 'pointer';
-    if (hint) hint.style.display = 'none';
-  }
+  // Scroll kontrolü artık gerekmiyor, buton her zaman aktif
 }
 
 function updateNexusAgeSelection() {
@@ -81,7 +71,7 @@ function acceptNexusAgreement() {
         }, 2000);
       }, 400);
     }
-    toast('Lütfen yaş beyanını seç ↑', 'w');
+    toast('⚠️ 18+ mi 18- mi olduğunu seçmelisin!', 'w');
     return;
   }
   const ageGroup = adult.checked ? 'adult' : 'minor';

@@ -767,7 +767,11 @@ function showProfile(displayName, isAnonMsg) {
     return;
   }
 
-  // Anonim mesajlar için küçük modal göster
+  // Anonim mesajlar: profil gösterme, direkt mesaj gönder
+  if (typeof openDmModeModal === 'function') openDmModeModal(displayName);
+  return;
+
+  // Anonim mesajlar için küçük modal göster (kullanılmıyor)
   const realName = aReg[displayName] || null;
   const prof = realName ? profiles[realName] : null;
 

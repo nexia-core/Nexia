@@ -240,7 +240,7 @@ function rDM(c) {
     if (m.isSys) { el.appendChild(mkS(m.text)); return; }
     // Engellenen kullanıcının mesajlarını gizle
     if (typeof shouldHideMessage === 'function' && shouldHideMessage(m)) return;
-    const isMe = m.fromReal === me.name, avc = avColor(m.from, m.isAnon), nc = m.isAnon ? 'an' : (isMe ? 'me' : '');
+    const isMe = m.fromReal === me.name || (!m.fromReal && m.from === me.name), avc = avColor(m.from, m.isAnon), nc = m.isAnon ? 'an' : (isMe ? 'me' : '');
     let rev = ''; if (me.isAdmin && m.isAnon) { const r = aReg[m.from] || m.fromReal || '?'; rev = `<span class="rpill" onclick="ri(this,'${esc(r)}')">👁</span>`; }
     const p = profiles[m.fromReal] || {};
     const inner = m.isAnon ? '?' : (p.photo ? `<img src="${p.photo}" alt=""/>` : m.from[0]?.toUpperCase() || '?');
@@ -261,7 +261,7 @@ function rDM(c) {
       if (c.status === 'active') seenHTML = '<span class="msg-tick read" title="Okundu">✓✓</span>';
       else seenHTML = '<span class="msg-tick" title="Gönderildi">✓</span>';
     }
-    const d = document.createElement('div'); d.className = 'msg'; d.dataset.msgId = m.id; d.id = 'dmsg-' + c.id + '-' + m.id;
+    const d = document.createElement('div'); d.className = isMe ? 'msg msg-out' : 'msg msg-in'; d.dataset.msgId = m.id; d.id = 'dmsg-' + c.id + '-' + m.id;
     d.innerHTML = `<div class="msg-av ${avc}" onclick="showProfile('${esc(m.from)}',${m.isAnon})">${inner}</div>
     <div class="mb"><div class="mh"><span class="mn ${nc}" onclick="showProfile('${esc(m.from)}',${m.isAnon})">${esc(m.from)}</span>${rev}<span class="mt">${ft(m.time)}</span></div>${textContent}${reactHTML}${seenHTML}</div>
     ${!m.recalled && !m.editing ? `<div class="msg-actions"><button class="mac" onclick="showEmojiPicker(this.closest('.msg-actions'),${m.id},'dm','${c.id}')">😊</button><button class="mac" onclick="setDReply(convs['${c.id}'],convs['${c.id}'].msgs.find(x=>x.id===${m.id}))">↩</button>${isMe || me.isAdmin ? `<button class="mac" onclick="showCtx(event,${m.id},'${c.id}','dm')">⋯</button>` : ''}</div>` : ''}`;
