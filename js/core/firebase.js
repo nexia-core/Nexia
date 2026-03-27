@@ -7,7 +7,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebas
 import {
   getFirestore,
   collection, addDoc, serverTimestamp,
-  query, orderBy, limitToLast, onSnapshot,
+  query, orderBy, limitToLast, limit, onSnapshot,
   doc, setDoc, getDoc, deleteDoc, getDocs,
   where, updateDoc
 } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
@@ -15,6 +15,10 @@ import {
   getAuth, signInWithPopup, GoogleAuthProvider,
   signOut as _fbSignOut, onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+import {
+  initializeAppCheck,
+  ReCaptchaV3Provider
+} from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app-check.js";
 // imgbb kullanılıyor — Firebase Storage bu bölgede ücretsiz değil
 
 const firebaseConfig = {
@@ -28,6 +32,10 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
+initializeAppCheck(app, {
+  provider: new ReCaptchaV3Provider('6Ldi3posAAAAJuqhyABVJIyKb9XYmiJBoe5ixx6'),
+  isTokenAutoRefreshEnabled: true
+});
 const db  = getFirestore(app);
 
 // ══════════════════════════════════════════════════
@@ -470,6 +478,31 @@ window.fbListenDeletionRequests = function(callback) {
 
 window.fbOnAuthStateChanged = function(callback) {
   return onAuthStateChanged(_auth, callback);
+};
+
+// ══════════════════════════════════════════════════
+// 8 — NEXUS LOG (Firestore)
+// ══════════════════════════════════════════════════
+window.fbSaveNexusLog = async function(userName, entry) {
+  if (!userName || !entry) return;
+  try {
+    await addDoc(collection(db, 'nexusLogs'), {
+      name: userName,
+      u:    entry.u || '',
+      b:    entry.b || '',
+      t:    entry.t || Date.now(),
+      m:    entry.m || 'fast'
+    });
+  } catch(e) { console.error('Nexus log kayıt hatası:', e); }
+};
+
+window.fbGetNexusLogs = async function(userName) {
+  if (!userName) return [];
+  try {
+    const q    = query(collection(db, 'nexusLogs'), where('name', '==', userName), orderBy('t', 'desc'), limit(50));
+    const snap = await getDocs(q);
+    return snap.docs.map(d => d.data()).reverse();
+  } catch(e) { console.error('Nexus log okuma hatası:', e); return []; }
 };
 
 console.log('Firebase v6 modülü yüklendi ✓');

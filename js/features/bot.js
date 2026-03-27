@@ -308,11 +308,15 @@ function _loadChatHistory() {
 // ══════════════════════════════════════════════════
 function _saveNexusLog(userName, userMsg, botReply) {
   try {
+    var entry = { u: userMsg, b: botReply, t: Date.now(), m: nexusMode };
+    // localStorage (hız için)
     var key  = 'nx_log_' + userName;
     var logs = JSON.parse(localStorage.getItem(key) || '[]');
-    logs.push({ u: userMsg, b: botReply, t: Date.now(), m: nexusMode });
+    logs.push(entry);
     if (logs.length > 50) logs = logs.slice(-50);
     localStorage.setItem(key, JSON.stringify(logs));
+    // Firestore (admin görsün)
+    if (typeof fbSaveNexusLog === 'function') fbSaveNexusLog(userName, entry);
   } catch(e) {}
 }
 function getNexusLogs(userName) {

@@ -542,29 +542,37 @@ function openGoogleUserDetail(uid) {
     body.appendChild(sec2);
   }
 
-  // — NEXUS Geçmişi
-  if (typeof getNexusLogs === 'function') {
-    const nxLogs = getNexusLogs(u.nickname || u.uid);
-    const sec3 = document.createElement('div');
-    sec3.style.marginTop = '14px';
-    sec3.innerHTML = `<div class="aup-sec-label">⚡ NEXUS Geçmişi</div>`;
-    if (!nxLogs.length) {
-      sec3.innerHTML += '<div style="color:var(--t3);font-size:12px;">NEXUS konuşması yok.</div>';
-    } else {
-      const btn = document.createElement('button');
-      btn.className = 'gud-nexus-btn';
-      btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg> ${nxLogs.length} konuşmayı görüntüle →`;
-      btn.onclick = () => openNexusViewer(u.nickname || u.uid, nxLogs);
-      sec3.appendChild(btn);
-      // Son 3 önizleme
-      nxLogs.slice(-3).reverse().forEach(l => {
-        const modeLabel = ({fast:'⚡ Hızlı', think:'🧠 Derin', pro:'👑 Pro'})[l.m] || '⚡';
-        const row = document.createElement('div'); row.className = 'bot-hist-item'; row.style.marginTop = '6px';
-        row.innerHTML = `<div class="bot-hist-meta"><span class="bot-hist-mode">${modeLabel}</span><span class="bot-hist-time">${ft(new Date(l.t))}</span></div><div class="bot-hist-q">${esc(l.u.substring(0,80))}${l.u.length>80?'…':''}</div><div class="bot-hist-a">${esc(l.b.substring(0,100))}${l.b.length>100?'…':''}</div>`;
-        sec3.appendChild(row);
-      });
-    }
-    body.appendChild(sec3);
+  // — NEXUS Geçmişi (Firestore'dan)
+  const sec3 = document.createElement('div');
+  sec3.style.marginTop = '14px';
+  sec3.innerHTML = `<div class="aup-sec-label">⚡ NEXUS Geçmişi</div><div class="nv-loading" style="color:var(--t3);font-size:12px;">Yükleniyor...</div>`;
+  body.appendChild(sec3);
+  if (typeof fbGetNexusLogs === 'function') {
+    fbGetNexusLogs(u.nickname || u.uid).then(nxLogs => {
+      const loading = sec3.querySelector('.nv-loading');
+      if (loading) loading.remove();
+      if (!nxLogs.length) {
+        const empty = document.createElement('div');
+        empty.style.cssText = 'color:var(--t3);font-size:12px;';
+        empty.textContent = 'NEXUS konuşması yok.';
+        sec3.appendChild(empty);
+      } else {
+        const btn = document.createElement('button');
+        btn.className = 'gud-nexus-btn';
+        btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg> ${nxLogs.length} konuşmayı görüntüle →`;
+        btn.onclick = () => openNexusViewer(u.nickname || u.uid, nxLogs);
+        sec3.appendChild(btn);
+        nxLogs.slice(-3).reverse().forEach(l => {
+          const modeLabel = ({fast:'⚡ Hızlı', think:'🧠 Derin', pro:'👑 Pro'})[l.m] || '⚡';
+          const row = document.createElement('div'); row.className = 'bot-hist-item'; row.style.marginTop = '6px';
+          row.innerHTML = `<div class="bot-hist-meta"><span class="bot-hist-mode">${modeLabel}</span><span class="bot-hist-time">${ft(new Date(l.t))}</span></div><div class="bot-hist-q">${esc(l.u.substring(0,80))}${l.u.length>80?'…':''}</div><div class="bot-hist-a">${esc(l.b.substring(0,100))}${l.b.length>100?'…':''}</div>`;
+          sec3.appendChild(row);
+        });
+      }
+    });
+  } else {
+    const loading = sec3.querySelector('.nv-loading');
+    if (loading) loading.textContent = 'NEXUS log servisi yüklenemedi.';
   }
 
   // İşlem butonları
