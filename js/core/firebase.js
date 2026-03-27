@@ -78,7 +78,7 @@ window.sendToFirestore = async function(msg, onSent) {
       mediaName: msg.mediaName || null
     });
     if (onSent) onSent(ref.id);
-  } catch(e) { console.error('Firebase mesaj gönderme hatası:', e); }
+  } catch(e) { console.error('Firebase mesaj gönderme hatası:', e); if (typeof toast === 'function') toast('Mesaj gönderilemedi, bağlantını kontrol et', 'e'); }
 };
 
 window.startFirebaseChat = function() {
@@ -227,6 +227,20 @@ window.fbSendDmMsg = async function(convId, msg) {
       time:     serverTimestamp()
     });
   } catch(e) { console.error('DM gönderme hatası:', e); }
+};
+
+window.fbUnlistenConvMsgs = function(convId) {
+  if (_convMsgListeners[convId]) {
+    _convMsgListeners[convId]();
+    delete _convMsgListeners[convId];
+  }
+};
+
+window.fbUnlistenAllConvMsgs = function() {
+  Object.keys(_convMsgListeners).forEach(id => {
+    _convMsgListeners[id]();
+    delete _convMsgListeners[id];
+  });
 };
 
 window.fbListenConvMsgs = function(convId) {
@@ -452,6 +466,10 @@ window.fbListenDeletionRequests = function(callback) {
   return onSnapshot(collection(db, 'deletionRequests'), snap => {
     callback(snap.docs.map(d => d.data()));
   });
+};
+
+window.fbOnAuthStateChanged = function(callback) {
+  return onAuthStateChanged(_auth, callback);
 };
 
 console.log('Firebase v6 modülü yüklendi ✓');

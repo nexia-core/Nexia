@@ -318,16 +318,20 @@ function reportSuspiciousLogin() {
 // 24 — OTURUM SÜRESİ (30 DAKİKA)
 // ══════════════════════════════════════════════════
 
-let _sessionDeadline  = null;
-let _sessionInterval  = null;
-let _sessionWarned    = false;
+let _sessionDeadline        = null;
+let _sessionInterval        = null;
+let _sessionWarned          = false;
+let _sessionListenersAdded  = false;
 
 function _sessionStart() {
   _sessionDeadline = Date.now() + 30 * 60 * 1000;
   _sessionWarned   = false;
   if (_sessionInterval) clearInterval(_sessionInterval);
   _sessionInterval = setInterval(_sessionTick, 10000);
-  ['click','keypress','touchstart'].forEach(e => document.addEventListener(e, _sessionRefresh, { passive: true }));
+  if (!_sessionListenersAdded) {
+    ['click','keypress','touchstart'].forEach(e => document.addEventListener(e, _sessionRefresh, { passive: true }));
+    _sessionListenersAdded = true;
+  }
 }
 
 function _sessionRefresh() {
@@ -1079,6 +1083,7 @@ function acceptTermsModal() {
 
 async function doSignOut() {
   if (_pendingUnsubFn) { _pendingUnsubFn(); _pendingUnsubFn = null; }
+  if (typeof fbUnlistenAllConvMsgs === 'function') fbUnlistenAllConvMsgs();
   if (typeof fbSignOut === 'function') await fbSignOut();
   _gAuthUser = null;
   _showLsSection('ls-google');
@@ -1200,7 +1205,9 @@ function completeGoogleLogin(userData) {
 
   window.addEventListener('beforeunload', () => {
     if (typeof fbSetOffline === 'function' && me) fbSetOffline(me.name);
-    if (typeof fbSignOut    === 'function') fbSignOut();
+    // PWA modunda oturumu kapatma — bir sonraki açılışta otomatik giriş yapılsın
+    const _isPWA = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    if (!_isPWA && typeof fbSignOut === 'function') fbSignOut();
   });
 
   if (typeof recordLogin === 'function') recordLogin(name, 'Google', isAd);
@@ -1216,7 +1223,16 @@ function completeGoogleLogin(userData) {
 
 // ── PWA KURULUM BANNER ────────────────────────────
 let _pwaInstallPrompt = null;
-window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); _pwaInstallPrompt = e; });
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  _pwaInstallPrompt = e;
+  _updatePwaSettingsItem();
+});
+window.addEventListener('appinstalled', () => {
+  _pwaInstallPrompt = null;
+  _updatePwaSettingsItem();
+  toast('Uygulama yüklendi! Ana ekrana eklendi 🎉', 's');
+});
 
 function _maybeShowPwaBanner() {
   // Zaten uygulama modunda çalışıyorsa (yüklü) gösterme
@@ -1243,3 +1259,46 @@ function hidePwaBanner() {
   const b = document.getElementById('pwaBanner'); if (b) b.style.display = 'none';
   localStorage.setItem('nexia_pwa_dismissed', '1');
 }
+
+function _updatePwaSettingsItem() {
+  const label = document.getElementById('pwaSettingsLabel');
+  const sub   = document.getElementById('pwaSettingsSub');
+  const item  = document.getElementById('pwaSettingsItem');
+  if (!item) return;
+  const isPWA = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  if (isPWA) {
+    if (label) label.textContent = 'Uygulama Yüklü ✓';
+    if (sub)   sub.textContent   = 'Ana ekranda çalışıyor';
+    item.style.cursor = 'default';
+  } else if (_pwaInstallPrompt) {
+    if (label) label.textContent = 'Uygulamayı Yükle';
+    if (sub)   sub.textContent   = 'Ana ekrana ekle, tek tıkla aç';
+    item.style.cursor = 'pointer';
+  } else {
+    if (label) label.textContent = 'Uygulamayı Yükle';
+    if (sub)   sub.textContent   = 'Tarayıcı menüsünden "Ana Ekrana Ekle" seç';
+    item.style.cursor = 'pointer';
+  }
+}
+
+function triggerPwaFromSettings() {
+  const isPWA = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  if (isPWA) { toast('Uygulama zaten yüklü ✓', 's'); return; }
+  installPwa();
+}
+
+// ── PWA OTOMATİK GİRİŞ ───────────────────────────
+(function _initPwaAutoLogin() {
+  const isPWA = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  if (!isPWA) return;
+  function _trySetup() {
+    if (typeof fbOnAuthStateChanged !== 'function') { setTimeout(_trySetup, 150); return; }
+    fbOnAuthStateChanged(async (user) => {
+      if (user && !me) {
+        _gAuthUser = user;
+        await _handleGoogleUser(user);
+      }
+    });
+  }
+  _trySetup();
+})();
