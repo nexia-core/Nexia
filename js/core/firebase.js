@@ -12,7 +12,7 @@ import {
   where, updateDoc
 } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 import {
-  getAuth, signInWithPopup, GoogleAuthProvider,
+  getAuth, signInWithPopup, signInWithRedirect, getRedirectResult, GoogleAuthProvider,
   signOut as _fbSignOut, onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 import {
@@ -373,6 +373,10 @@ window.fbListenCodes = function() {
     snap.docChanges().forEach(change => {
       if (change.type === 'added' || change.type === 'modified') {
         codes[change.doc.id] = change.doc.data();
+        // Mevcut kullanıcı banlandıysa direk at
+        if (typeof me !== 'undefined' && me?.code === change.doc.id && change.doc.data().banned) {
+          if (typeof doSignOut === 'function') doSignOut();
+        }
       } else if (change.type === 'removed') {
         delete codes[change.doc.id];
       }
@@ -402,11 +406,27 @@ const _auth        = getAuth(app);
 const _gProvider   = new GoogleAuthProvider();
 
 window.fbGoogleSignIn = async function() {
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
   try {
-    const result = await signInWithPopup(_auth, _gProvider);
-    return result.user;
+    if (isMobile) {
+      await signInWithRedirect(_auth, _gProvider);
+      return null; // sayfa yönlendirilecek
+    } else {
+      const result = await signInWithPopup(_auth, _gProvider);
+      return result.user;
+    }
   } catch(e) {
     if (e.code !== 'auth/popup-closed-by-user') console.error('Google giriş hatası:', e);
+    return null;
+  }
+};
+
+window.fbGetRedirectResult = async function() {
+  try {
+    const result = await getRedirectResult(_auth);
+    return result ? result.user : null;
+  } catch(e) {
+    console.error('Redirect sonuç hatası:', e);
     return null;
   }
 };

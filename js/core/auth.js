@@ -1047,8 +1047,8 @@ async function doSetup() {
       if (taken) { errEl.textContent = 'Bu kullanıcı adı alınmış, başka bir tane seç.'; return; }
     }
   } catch(e) {
-    errEl.textContent = 'Bağlantı hatası, tekrar dene.';
-    return;
+    console.warn('Kullanıcı adı kontrolü yapılamadı, devam ediliyor:', e);
+    // Bağlantı hatası olsa bile kayıt devam etsin
   }
   errEl.textContent = 'Kaydediliyor...';
   await fbSaveUserDoc(_gAuthUser.uid, {
@@ -1206,6 +1206,12 @@ function completeGoogleLogin(userData) {
   if (!isAd) {
     if (typeof fbSetOnline     === 'function') fbSetOnline(name);
     if (typeof fbListenMyConvs === 'function') fbListenMyConvs(name);
+    // Banlanınca direk at
+    if (userData.uid && typeof fbListenUserDoc === 'function') {
+      fbListenUserDoc(userData.uid, d => {
+        if (d && d.status === 'banned' && typeof doSignOut === 'function') doSignOut();
+      });
+    }
   }
 
   window.addEventListener('beforeunload', () => {
@@ -1299,6 +1305,20 @@ function triggerPwaFromSettings() {
   function _trySetup() {
     if (typeof fbOnAuthStateChanged !== 'function') { setTimeout(_trySetup, 150); return; }
     fbOnAuthStateChanged(async (user) => {
+      if (user && !me) {
+        _gAuthUser = user;
+        await _handleGoogleUser(user);
+      }
+    });
+  }
+  _trySetup();
+})();
+
+// ── MOBİL REDIRECT GİRİŞ ─────────────────────────
+(function _initMobileRedirectLogin() {
+  function _trySetup() {
+    if (typeof fbGetRedirectResult !== 'function') { setTimeout(_trySetup, 150); return; }
+    fbGetRedirectResult().then(async (user) => {
       if (user && !me) {
         _gAuthUser = user;
         await _handleGoogleUser(user);
