@@ -957,11 +957,22 @@ async function doGoogleSignIn() {
   const errEl = q('#lerr');
   errEl.textContent = 'Bekleniyor...';
   if (typeof fbGoogleSignIn !== 'function') { errEl.textContent = 'Bağlantı hatası. Sayfayı yenile.'; return; }
-  const user = await fbGoogleSignIn();
-  if (!user) { errEl.textContent = ''; return; }
-  _gAuthUser = user;
-  errEl.textContent = 'Bilgiler alınıyor...';
-  await _handleGoogleUser(user);
+  try {
+    const user = await fbGoogleSignIn();
+    if (!user) { errEl.textContent = ''; return; }
+    _gAuthUser = user;
+    errEl.textContent = 'Bilgiler alınıyor...';
+    await _handleGoogleUser(user);
+  } catch(e) {
+    if (e.code === 'auth/popup-blocked') {
+      errEl.textContent = '🚫 Açılır pencere engellendi. Tarayıcı ayarlarından izin ver.';
+    } else if (e.code === 'auth/popup-closed-by-user') {
+      errEl.textContent = '';
+    } else {
+      errEl.textContent = 'Giriş başarısız: ' + (e.message || e.code || 'Bilinmeyen hata');
+      console.error('Google giriş hatası:', e);
+    }
+  }
 }
 
 async function _handleGoogleUser(user) {
@@ -1314,16 +1325,3 @@ function triggerPwaFromSettings() {
   _trySetup();
 })();
 
-// ── MOBİL REDIRECT GİRİŞ ─────────────────────────
-(function _initMobileRedirectLogin() {
-  function _trySetup() {
-    if (typeof fbGetRedirectResult !== 'function') { setTimeout(_trySetup, 150); return; }
-    fbGetRedirectResult().then(async (user) => {
-      if (user && !me) {
-        _gAuthUser = user;
-        await _handleGoogleUser(user);
-      }
-    });
-  }
-  _trySetup();
-})();
