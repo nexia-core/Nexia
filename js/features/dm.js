@@ -95,6 +95,7 @@ function renderIncomingPanel() {
 
 function toggleIncomingPanel() {
   const panel = q('#dmIncomingPanel'); if (!panel) return;
+  const sent = q('#dmSentPanel'); if (sent) sent.style.display = 'none';
   const isOpen = panel.style.display !== 'none';
   panel.style.display = isOpen ? 'none' : '';
   if (!isOpen) renderIncomingPanel();
@@ -104,6 +105,41 @@ function closeIncomingPanel() {
   const panel = q('#dmIncomingPanel'); if (panel) panel.style.display = 'none';
 }
 
+function renderSentPanel() {
+  const panel = q('#dmSentPanel'); if (!panel) return;
+  const badge = q('#dmSentBadge');
+  const sent = Object.values(convs).filter(c => !c.isGroup && c.status === 'pending' && c.fromReal === me.name);
+  if (badge) { badge.textContent = sent.length; badge.style.display = sent.length ? 'inline-flex' : 'none'; }
+  if (!panel.style || panel.style.display === 'none') return;
+  if (!sent.length) {
+    panel.innerHTML = '<div style="padding:12px;color:var(--t3);font-size:12px;text-align:center;">Gönderilmiş bekleyen istek yok.</div>';
+    return;
+  }
+  panel.innerHTML = sent.map(c => `
+    <div class="dm-req-item">
+      <div class="av avg" style="width:34px;height:34px;font-size:13px;flex-shrink:0;">${c.to[0]?.toUpperCase() || '?'}</div>
+      <div class="dm-req-info">
+        <div class="dm-req-name">${esc(c.to)}</div>
+        <div class="dm-req-sub">Yanıt bekleniyor...</div>
+      </div>
+      <div class="dm-req-btns">
+        <button onclick="rej('${c.id}');renderSentPanel();rDL()" class="ra rno" style="padding:4px 10px;font-size:11px;" title="İsteği Geri Al">✕</button>
+      </div>
+    </div>`).join('');
+}
+
+function toggleSentPanel() {
+  const panel = q('#dmSentPanel'); if (!panel) return;
+  const incoming = q('#dmIncomingPanel'); if (incoming) incoming.style.display = 'none';
+  const isOpen = panel.style.display !== 'none';
+  panel.style.display = isOpen ? 'none' : '';
+  if (!isOpen) renderSentPanel();
+}
+
+function closeSentPanel() {
+  const panel = q('#dmSentPanel'); if (panel) panel.style.display = 'none';
+}
+
 function rDL() {
   const el = q('#dmList'); if (!el) return; el.innerHTML = '';
   const mc = Object.values(convs).filter(c => c.isGroup ? c.members.includes(me.name) : (c.fromReal === me.name || c.toReal === me.name || me.isAdmin));
@@ -111,6 +147,10 @@ function rDL() {
   const pending = mc.filter(c => !c.isGroup && c.status === 'pending' && c.toReal === me.name);
   const badge = q('#dmReqBadge');
   if (badge) { badge.textContent = pending.length; badge.style.display = pending.length ? 'inline-flex' : 'none'; }
+  // Update sent badge
+  const sentPending = mc.filter(c => !c.isGroup && c.status === 'pending' && c.fromReal === me.name);
+  const sentBadge = q('#dmSentBadge');
+  if (sentBadge) { sentBadge.textContent = sentPending.length; sentBadge.style.display = sentPending.length ? 'inline-flex' : 'none'; }
   if (!mc.length) { el.innerHTML = '<div style="padding:12px;color:var(--t3);font-size:12px;">Henüz sohbet yok.</div>'; return; }
   mc.forEach(c => {
     // Gelen istekler panelinde gösteriliyor, listede tekrar gösterme

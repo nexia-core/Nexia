@@ -1041,9 +1041,14 @@ async function doSetup() {
   if (!school)                    { errEl.textContent = 'Okulunu seç.'; return; }
   if (!_gAuthUser)               { _showLsSection('ls-google'); return; }
   errEl.textContent = 'Kontrol ediliyor...';
-  if (typeof fbCheckNickname === 'function') {
-    const taken = await fbCheckNickname(nick);
-    if (taken) { errEl.textContent = 'Bu kullanıcı adı alınmış, başka bir tane seç.'; return; }
+  try {
+    if (typeof fbCheckNickname === 'function') {
+      const taken = await fbCheckNickname(nick);
+      if (taken) { errEl.textContent = 'Bu kullanıcı adı alınmış, başka bir tane seç.'; return; }
+    }
+  } catch(e) {
+    errEl.textContent = 'Bağlantı hatası, tekrar dene.';
+    return;
   }
   errEl.textContent = 'Kaydediliyor...';
   await fbSaveUserDoc(_gAuthUser.uid, {
