@@ -433,8 +433,7 @@ window.fbGetUserDoc = async function(uid) {
 };
 
 window.fbSaveUserDoc = async function(uid, data) {
-  try { await setDoc(doc(db, 'users', uid), data, { merge: true }); }
-  catch(e) { console.error('Kullanıcı kayıt hatası:', e); }
+  await setDoc(doc(db, 'users', uid), data, { merge: true });
 };
 
 window.fbListenUserDoc = function(uid, callback) {

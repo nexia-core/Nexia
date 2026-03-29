@@ -128,12 +128,16 @@ async function doRegister() {
       }
     }
 
-    errEl.textContent = '';
+    errEl.textContent = 'Giriş yapılıyor...';
     const userData = await fbGetUserDoc(user.uid);
-    if (userData) completeUserLogin(userData);
+    if (userData) { errEl.textContent = ''; completeUserLogin(userData); }
+    else errEl.textContent = 'Profil kaydedilemedi. Lütfen tekrar dene.';
   } catch(e) {
     if (e.code === 'auth/email-already-in-use') {
       errEl.textContent = 'Bu kullanıcı adı zaten kayıtlı. Giriş yapmayı dene.';
+    } else if (e.code === 'permission-denied' || (e.message && e.message.includes('permission'))) {
+      errEl.textContent = 'Kayıt izni hatası. Lütfen yöneticiyle iletişime geç.';
+      console.error('Firestore izin hatası:', e);
     } else {
       errEl.textContent = 'Kayıt başarısız: ' + (e.message || e.code || 'Bilinmeyen hata');
       console.error('Kayıt hatası:', e);
