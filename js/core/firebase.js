@@ -413,6 +413,11 @@ function _isMobile() {
   return false;
 }
 
+// Modül yüklendiği anda hemen getRedirectResult'ı başlat — bekletme
+const _redirectResultPromise = getRedirectResult(_auth)
+  .then(r => r ? r.user : null)
+  .catch(e => { console.error('Redirect result hatası:', e); return null; });
+
 window.fbGoogleSignIn = async function() {
   if (_isMobile()) {
     sessionStorage.setItem('_googleRedirectPending', '1');
@@ -424,13 +429,7 @@ window.fbGoogleSignIn = async function() {
 };
 
 window.fbCheckRedirectResult = async function() {
-  try {
-    const result = await getRedirectResult(_auth);
-    return result ? result.user : null;
-  } catch(e) {
-    console.error('Redirect sonucu alınamadı:', e);
-    return null;
-  }
+  return await _redirectResultPromise;
 };
 
 window.fbSignOut = async function() {

@@ -1327,10 +1327,17 @@ function triggerPwaFromSettings() {
 
 // ── MOBİL GOOGLE REDIRECT SONUCU ─────────────────
 // signInWithRedirect sonrası sayfa döndüğünde kullanıcıyı yakala.
-// Strateji 1: getRedirectResult (hızlı, ama Safari ITP'de başarısız olabilir)
-// Strateji 2: onAuthStateChanged fallback (her zaman çalışır)
+// Strateji 1: getRedirectResult (modül yüklendiğinde zaten başlatılmış)
+// Strateji 2: onAuthStateChanged fallback (Safari ITP için)
 (function _initRedirectResultCheck() {
   let _handled = false;
+  const _isPending = !!sessionStorage.getItem('_googleRedirectPending');
+
+  // Redirect bekleniyorsa hemen "kontrol ediliyor" göster
+  if (_isPending) {
+    const errEl = q('#lerr');
+    if (errEl) errEl.textContent = 'Giriş kontrol ediliyor...';
+  }
 
   async function _processUser(user) {
     if (_handled || me) return;
@@ -1342,25 +1349,36 @@ function triggerPwaFromSettings() {
     await _handleGoogleUser(user);
   }
 
-  // Strateji 1 — getRedirectResult
+  // Strateji 1 — getRedirectResult (firebase.js modülü yüklenince hazır)
   function _tryRedirect() {
-    if (typeof fbCheckRedirectResult !== 'function') { setTimeout(_tryRedirect, 200); return; }
-    fbCheckRedirectResult().then(user => { if (user) _processUser(user); });
-  }
-  _tryRedirect();
-
-  // Strateji 2 — onAuthStateChanged fallback (Safari ITP / getRedirectResult null döndüğünde)
-  function _tryAuthState() {
-    if (typeof fbOnAuthStateChanged !== 'function') { setTimeout(_tryAuthState, 200); return; }
-    // Sadece redirect sonrası için: localStorage'da flag kontrol et
-    if (!sessionStorage.getItem('_googleRedirectPending')) return;
-    fbOnAuthStateChanged(function(user) {
-      if (user && !me && !_handled) {
-        sessionStorage.removeItem('_googleRedirectPending');
-        _processUser(user);
+    if (typeof fbCheckRedirectResult !== 'function') { setTimeout(_tryRedirect, 100); return; }
+    fbCheckRedirectResult().then(user => {
+      if (user) _processUser(user);
+      else if (_isPending) {
+        // getRedirectResult null döndü, onAuthStateChanged'e bırak
+        _tryAuthState();
       }
     });
   }
-  _tryAuthState();
+
+  // Strateji 2 — onAuthStateChanged (Safari ITP / getRedirectResult null döndüğünde)
+  function _tryAuthState() {
+    if (typeof fbOnAuthStateChanged !== 'function') { setTimeout(_tryAuthState, 100); return; }
+    fbOnAuthStateChanged(function(user) {
+      if (user && !me && !_handled) _processUser(user);
+      else if (!user && _isPending && !_handled) {
+        // Henüz auth gelmedi, birkaç saniye daha bekle
+        setTimeout(() => {
+          if (!_handled && !me) {
+            sessionStorage.removeItem('_googleRedirectPending');
+            const errEl = q('#lerr');
+            if (errEl) errEl.textContent = 'Giriş tamamlanamadı. Tekrar dene.';
+          }
+        }, 5000);
+      }
+    });
+  }
+
+  if (_isPending) _tryRedirect();
 })();
 
