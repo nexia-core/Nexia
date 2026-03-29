@@ -1326,19 +1326,41 @@ function triggerPwaFromSettings() {
 })();
 
 // ── MOBİL GOOGLE REDIRECT SONUCU ─────────────────
-// signInWithRedirect kullandıktan sonra sayfa geri döndüğünde
-// getRedirectResult ile kullanıcıyı al ve girişi tamamla.
+// signInWithRedirect sonrası sayfa döndüğünde kullanıcıyı yakala.
+// Strateji 1: getRedirectResult (hızlı, ama Safari ITP'de başarısız olabilir)
+// Strateji 2: onAuthStateChanged fallback (her zaman çalışır)
 (function _initRedirectResultCheck() {
-  function _tryCheck() {
-    if (typeof fbCheckRedirectResult !== 'function') { setTimeout(_tryCheck, 200); return; }
-    fbCheckRedirectResult().then(async (user) => {
-      if (!user || me) return; // sonuç yok ya da zaten girilmiş
-      _gAuthUser = user;
-      const errEl = q('#lerr');
-      if (errEl) errEl.textContent = 'Bilgiler alınıyor...';
-      await _handleGoogleUser(user);
+  let _handled = false;
+
+  async function _processUser(user) {
+    if (_handled || me) return;
+    _handled = true;
+    sessionStorage.removeItem('_googleRedirectPending');
+    _gAuthUser = user;
+    const errEl = q('#lerr');
+    if (errEl) errEl.textContent = 'Bilgiler alınıyor...';
+    await _handleGoogleUser(user);
+  }
+
+  // Strateji 1 — getRedirectResult
+  function _tryRedirect() {
+    if (typeof fbCheckRedirectResult !== 'function') { setTimeout(_tryRedirect, 200); return; }
+    fbCheckRedirectResult().then(user => { if (user) _processUser(user); });
+  }
+  _tryRedirect();
+
+  // Strateji 2 — onAuthStateChanged fallback (Safari ITP / getRedirectResult null döndüğünde)
+  function _tryAuthState() {
+    if (typeof fbOnAuthStateChanged !== 'function') { setTimeout(_tryAuthState, 200); return; }
+    // Sadece redirect sonrası için: localStorage'da flag kontrol et
+    if (!sessionStorage.getItem('_googleRedirectPending')) return;
+    fbOnAuthStateChanged(function(user) {
+      if (user && !me && !_handled) {
+        sessionStorage.removeItem('_googleRedirectPending');
+        _processUser(user);
+      }
     });
   }
-  _tryCheck();
+  _tryAuthState();
 })();
 

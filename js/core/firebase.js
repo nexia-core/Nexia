@@ -415,6 +415,7 @@ function _isMobile() {
 
 window.fbGoogleSignIn = async function() {
   if (_isMobile()) {
+    sessionStorage.setItem('_googleRedirectPending', '1');
     await signInWithRedirect(_auth, _gProvider);
     return null; // sayfa yönlendirildi, sonuç load'da gelecek
   }
