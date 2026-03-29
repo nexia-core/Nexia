@@ -133,6 +133,7 @@ function _buildMsgEl(m) {
   }
   if (m.type === 'poll') return buildPollEl(m);
   if (typeof _isKickedUser === 'function' && _isKickedUser(m.realName || m.name)) return null;
+  if (typeof shouldHideMessage === 'function' && shouldHideMessage(m)) return null;
 
   const isMe = m.realName === me.name;
   const nc   = m.isAnon ? 'an' : (m.isAdmin ? 'adm' : (isMe ? 'me' : ''));

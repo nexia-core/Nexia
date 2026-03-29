@@ -1181,7 +1181,7 @@ function completeGoogleLogin(userData) {
 
   const savedAct = isAd ? 'hidden' : (savedActivity[name] || 'online');
   if (!profiles[name]) {
-    profiles[name] = { cls:'', age:'', bio:'', gender:'', orientation:'', visNormal:true, visAnon:false, photo: userData.photoURL || null, actStatus: savedAct };
+    profiles[name] = { cls: userData['class'] || '', age: '', bio: userData.bio || '', gender: userData.gender || '', orientation: userData.orientation || '', visNormal:true, visAnon:false, photo: userData.photoURL || null, actStatus: savedAct };
   } else {
     profiles[name].actStatus = savedAct;
     if (userData.photoURL && !profiles[name].photo) profiles[name].photo = userData.photoURL;

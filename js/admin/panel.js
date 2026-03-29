@@ -491,8 +491,8 @@ function openGoogleUserDetail(uid) {
     ['Okul', u.school || '—'],
     ['Cinsiyet', u.gender || '—'],
     ['Yönelim', u.orientation || '—'],
-    ['Sınıf', u.cls ? u.cls + '. Sınıf' : '—'],
-    ['Doğum Tarihi', u.birth || '—'],
+    ['Sınıf', u['class'] ? u['class'] + '. Sınıf' : '—'],
+    ['Doğum Tarihi', u.birthDate || '—'],
     ['Durum', u.status === 'approved' ? '✅ Onaylı' : u.status === 'banned' ? '⛔ Banlı' : '⏳ Bekliyor'],
     ['Kayıt', u.createdAt ? new Date(u.createdAt).toLocaleDateString('tr-TR') : '—'],
   ];

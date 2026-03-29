@@ -193,7 +193,7 @@ function openC(id) {
   // Bekleyen istek — alıcı görünümü
   if (!c.isGroup && c.status === 'pending' && c.toReal === me.name) {
     const noteHTML = c.note ? `<div class="req-note-card"><div class="req-note-lbl">📝 Not</div><div class="req-note-txt">${esc(c.note)}</div></div>` : '';
-    el.innerHTML = `<div class="dch"><div class="av avg">${c.from[0]?.toUpperCase()}</div><div><div class="dcn">${esc(c.from)}</div><div class="dcs">sohbet isteği gönderdi</div></div></div>
+    el.innerHTML = `<div class="dch"><div class="av avg">${c.from[0]?.toUpperCase() || '?'}</div><div><div class="dcn">${esc(c.from)}</div><div class="dcs">sohbet isteği gönderdi</div></div></div>
     ${noteHTML}<div style="flex:1;overflow-y:auto;padding:14px;"><div class="rcard"><h4>${esc(c.from)} sana istek gönderdi</h4>
     <p>${c.fromAnon ? '⚠️ Anonim modda istek attı.' : 'Kabul edersen mesajlaşabilirsiniz.'}</p>
     <div class="ra-wrap"><button class="ra rok" onclick="acc('${id}')">✓ Kabul Et</button><button class="ra rno" onclick="rej('${id}')">✕ Reddet</button></div></div></div>`;
@@ -202,7 +202,7 @@ function openC(id) {
 
   // Bekleyen istek — gönderen görünümü
   if (!c.isGroup && c.status === 'pending' && c.fromReal === me.name) {
-    el.innerHTML = `<div class="dch"><div class="av avg">${c.to[0]?.toUpperCase()}</div><div><div class="dcn">${esc(c.to)}</div><div class="dcs">bekleniyor...</div></div></div>
+    el.innerHTML = `<div class="dch"><div class="av avg">${c.to[0]?.toUpperCase() || '?'}</div><div><div class="dcn">${esc(c.to)}</div><div class="dcs">bekleniyor...</div></div></div>
     <div class="empty"><div class="eico">⏳</div><div>${esc(c.to)} onaylamasını bekliyor</div></div>`;
     return;
   }
@@ -234,7 +234,7 @@ function rAC(c) {
   const otReal = c.isGroup ? null : (c.fromReal === me.name ? c.toReal : c.fromReal);
   const ma = c.isGroup ? false : (c.fromReal === me.name ? c.fromAnon : c.toAnon);
   const p = otReal ? profiles[otReal] : null; const avc = avColor(ot, false);
-  const inner = c.isGroup ? '👥' : (p && p.photo ? `<img src="${p.photo}" style="width:100%;height:100%;object-fit:cover;"/>` : ot[0]?.toUpperCase());
+  const inner = c.isGroup ? '👥' : (p && p.photo ? `<img src="${p.photo}" style="width:100%;height:100%;object-fit:cover;"/>` : ot[0]?.toUpperCase() || '?');
   const memberInfo = c.isGroup ? `<div class="dcs">${c.members.join(', ')}</div>` : '';
   const profClick = !c.isGroup && otReal ? `onclick="showProfile('${esc(otReal)}',false)" style="overflow:hidden;cursor:pointer;"` : `style="overflow:hidden;"`;
   const muteIcon = !c.isGroup && isDmMuted(c.id) ? '🔕' : '🔔';
