@@ -959,7 +959,7 @@ async function doGoogleSignIn() {
   if (typeof fbGoogleSignIn !== 'function') { errEl.textContent = 'Bağlantı hatası. Sayfayı yenile.'; return; }
   try {
     const user = await fbGoogleSignIn();
-    if (!user) { errEl.textContent = ''; return; }
+    if (!user) { errEl.textContent = 'Yönlendiriliyor...'; return; } // mobilde redirect başladı
     _gAuthUser = user;
     errEl.textContent = 'Bilgiler alınıyor...';
     await _handleGoogleUser(user);
@@ -1323,5 +1323,22 @@ function triggerPwaFromSettings() {
     });
   }
   _trySetup();
+})();
+
+// ── MOBİL GOOGLE REDIRECT SONUCU ─────────────────
+// signInWithRedirect kullandıktan sonra sayfa geri döndüğünde
+// getRedirectResult ile kullanıcıyı al ve girişi tamamla.
+(function _initRedirectResultCheck() {
+  function _tryCheck() {
+    if (typeof fbCheckRedirectResult !== 'function') { setTimeout(_tryCheck, 200); return; }
+    fbCheckRedirectResult().then(async (user) => {
+      if (!user || me) return; // sonuç yok ya da zaten girilmiş
+      _gAuthUser = user;
+      const errEl = q('#lerr');
+      if (errEl) errEl.textContent = 'Bilgiler alınıyor...';
+      await _handleGoogleUser(user);
+    });
+  }
+  _tryCheck();
 })();
 

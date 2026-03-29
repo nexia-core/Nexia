@@ -12,8 +12,8 @@ import {
   where, updateDoc
 } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 import {
-  getAuth, signInWithPopup, GoogleAuthProvider,
-  signOut as _fbSignOut, onAuthStateChanged
+  getAuth, signInWithPopup, signInWithRedirect, getRedirectResult,
+  GoogleAuthProvider, signOut as _fbSignOut, onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 import {
   initializeAppCheck,
@@ -405,9 +405,31 @@ window.fbSeedCodes = async function() {
 const _auth        = getAuth(app);
 const _gProvider   = new GoogleAuthProvider();
 
+function _isMobile() {
+  const ua = navigator.userAgent || '';
+  if (/Android|iPhone|iPad|iPod/i.test(ua)) return true;
+  // iOS 13+ iPad reports as "Macintosh" but has touch
+  if (/Macintosh/i.test(ua) && navigator.maxTouchPoints > 1) return true;
+  return false;
+}
+
 window.fbGoogleSignIn = async function() {
+  if (_isMobile()) {
+    await signInWithRedirect(_auth, _gProvider);
+    return null; // sayfa yönlendirildi, sonuç load'da gelecek
+  }
   const result = await signInWithPopup(_auth, _gProvider);
   return result.user;
+};
+
+window.fbCheckRedirectResult = async function() {
+  try {
+    const result = await getRedirectResult(_auth);
+    return result ? result.user : null;
+  } catch(e) {
+    console.error('Redirect sonucu alınamadı:', e);
+    return null;
+  }
 };
 
 window.fbSignOut = async function() {
@@ -435,7 +457,16 @@ window.fbListenUserDoc = function(uid, callback) {
 window.fbListenAllUsers = function(callback) {
   return onSnapshot(
     query(collection(db, 'users'), orderBy('createdAt', 'desc')),
-    snap => { callback(snap.docs.map(d => ({ uid: d.id, ...d.data() }))); }
+    snap => { callback(snap.docs.map(d => ({ uid: d.id, ...d.data() }))); },
+    err => {
+      console.error('fbListenAllUsers hatası:', err);
+      // orderBy index yoksa veya hata varsa sırasız dene
+      onSnapshot(
+        collection(db, 'users'),
+        snap => { callback(snap.docs.map(d => ({ uid: d.id, ...d.data() }))); },
+        err2 => console.error('fbListenAllUsers fallback hatası:', err2)
+      );
+    }
   );
 };
 

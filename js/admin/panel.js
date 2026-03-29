@@ -299,7 +299,10 @@ function openUserDetail(name) {
 let _googleUsers = [];
 
 function initAdminGoogleUsers() {
-  if (typeof fbListenAllUsers !== 'function') return;
+  if (typeof fbListenAllUsers !== 'function') {
+    setTimeout(initAdminGoogleUsers, 300);
+    return;
+  }
   fbListenAllUsers(users => {
     _googleUsers = users;
     rPendingUsers();
