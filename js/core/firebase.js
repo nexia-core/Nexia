@@ -15,10 +15,6 @@ import {
   getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
   signOut as _fbSignOut, onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
-import {
-  initializeAppCheck,
-  ReCaptchaV3Provider
-} from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app-check.js";
 // imgbb kullanılıyor — Firebase Storage bu bölgede ücretsiz değil
 
 const firebaseConfig = {
@@ -32,10 +28,6 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-initializeAppCheck(app, {
-  provider: new ReCaptchaV3Provider('6Ldi3posAAAAJuqhyABVJIyKb9XYmiJBoe5ixx6'),
-  isTokenAutoRefreshEnabled: true
-});
 const db  = getFirestore(app);
 
 // ══════════════════════════════════════════════════
