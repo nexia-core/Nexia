@@ -405,10 +405,13 @@ window.fbSeedCodes = async function() {
 const _auth        = getAuth(app);
 const _gProvider   = new GoogleAuthProvider();
 
-function _isMobile() {
+function _needsRedirect() {
+  // Sadece Safari'de popup bloke olur — Chrome/Firefox popup kullanabilir
   const ua = navigator.userAgent || '';
-  if (/Android|iPhone|iPad|iPod/i.test(ua)) return true;
-  // iOS 13+ iPad reports as "Macintosh" but has touch
+  const isSafari = /Safari/i.test(ua) && !/Chrome|CriOS|FxiOS|EdgiOS/i.test(ua);
+  if (!isSafari) return false;
+  // Safari'de mobil/tablet ise redirect kullan
+  if (/iPhone|iPad|iPod/i.test(ua)) return true;
   if (/Macintosh/i.test(ua) && navigator.maxTouchPoints > 1) return true;
   return false;
 }
@@ -419,7 +422,7 @@ const _redirectResultPromise = getRedirectResult(_auth)
   .catch(e => { console.error('Redirect result hatası:', e); return null; });
 
 window.fbGoogleSignIn = async function() {
-  if (_isMobile()) {
+  if (_needsRedirect()) {
     sessionStorage.setItem('_googleRedirectPending', '1');
     await signInWithRedirect(_auth, _gProvider);
     return null; // sayfa yönlendirildi, sonuç load'da gelecek
