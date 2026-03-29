@@ -476,6 +476,35 @@ window.fbCheckNickname = async function(nickname) {
   return !snap.empty; // true = alınmış
 };
 
+// Toplam kullanıcı sayısını döner (banned dahil)
+window.fbGetUserCount = async function() {
+  try {
+    const snap = await getDocs(collection(db, 'users'));
+    return snap.size;
+  } catch(e) { return 0; }
+};
+
+// Admin bildirim mesajı Firestore'a kaydet
+window.fbSaveAdminNotice = async function(id, text) {
+  try {
+    await setDoc(doc(db, 'adminNotices', id), { text, time: new Date().toISOString(), read: false });
+  } catch(e) {}
+};
+
+// Admin bildirimleri Firestore'dan yükle (admin girişinde çağrılır)
+window.fbLoadAdminNotices = async function() {
+  try {
+    const snap = await getDocs(collection(db, 'adminNotices'));
+    snap.forEach(d => {
+      const data = d.data();
+      if (!inbox.find(m => m.id === d.id)) {
+        inbox.unshift({ id: d.id, type: 'security', from: 'Sistem',
+          text: data.text, time: new Date(data.time), read: data.read || false, reply: '' });
+      }
+    });
+  } catch(e) {}
+};
+
 window.fbSendDeletionRequest = async function(uid, reason) {
   await setDoc(doc(db, 'deletionRequests', uid), {
     uid,

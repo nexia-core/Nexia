@@ -264,21 +264,28 @@
         <button class="lfi-pw-eye" onclick="togglePw('regPw2',this)" tabindex="-1">👁</button>
       </div>
       <select class="lfi ls-school" id="regSchool">
-        <option value="">🏫 Okulunu seç...</option>
+        <option value="" disabled hidden selected>🏫 Okulunu seç...</option>
         <option value="Şehit Akın Sertçelik AİHL">🕌 Şehit Akın Sertçelik AİHL</option>
         <option value="Ataşehir Kız AİHL">🕌 Ataşehir Kız AİHL</option>
       </select>
       <select class="lfi ls-school" id="regClass">
-        <option value="">🎓 Sınıfını seç...</option>
+        <option value="" disabled hidden selected>🎓 Sınıfını seç...</option>
         <option value="9">9. Sınıf</option>
         <option value="10">10. Sınıf</option>
         <option value="11">11. Sınıf</option>
         <option value="12">12. Sınıf</option>
       </select>
       <select class="lfi ls-school" id="regGender">
-        <option value="">⚧ Cinsiyet seç...</option>
+        <option value="" disabled hidden selected>⚧ Cinsiyet seç...</option>
         <option value="Erkek">👦 Erkek</option>
         <option value="Kız">👧 Kız</option>
+        <option value="Belirtmek istemiyorum">🤐 Belirtmek istemiyorum</option>
+      </select>
+      <select class="lfi ls-school" id="regOrientation">
+        <option value="" disabled hidden selected>🏳️ Yönelim seç...</option>
+        <option value="Heteroseksüel">Heteroseksüel</option>
+        <option value="Eşcinsel">Eşcinsel</option>
+        <option value="Biseksüel">Biseksüel</option>
         <option value="Belirtmek istemiyorum">🤐 Belirtmek istemiyorum</option>
       </select>
       <input class="lfi" id="regBirth" type="date" style="color:var(--t2);" title="Doğum tarihi"/>

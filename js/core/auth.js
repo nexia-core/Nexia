@@ -68,8 +68,9 @@ async function doRegister() {
   const password2 = q('#regPw2')?.value  || '';
   const school    = q('#regSchool')?.value || '';
   const cls       = q('#regClass')?.value  || '';
-  const gender    = q('#regGender')?.value || '';
-  const birth     = q('#regBirth')?.value  || '';
+  const gender      = q('#regGender')?.value      || '';
+  const orientation = q('#regOrientation')?.value || '';
+  const birth       = q('#regBirth')?.value       || '';
   const terms     = q('#regTerms')?.checked;
 
   if (!firstName || firstName.length < 2) { errEl.textContent = 'İsim en az 2 karakter olmalı.'; return; }
@@ -90,22 +91,46 @@ async function doRegister() {
     }
   } catch(e) {}
 
+  // ── Kullanıcı sayısı kontrolü ──────────────────
+  errEl.textContent = 'Kontrol ediliyor...';
+  const USER_LIMIT = 400;
+  const USER_WARN  = 300;
+  let userCount = 0;
+  if (typeof fbGetUserCount === 'function') userCount = await fbGetUserCount();
+  if (userCount >= USER_LIMIT) {
+    errEl.textContent = 'Platform şu an kapasitesine ulaştı (400 kullanıcı). Daha sonra tekrar dene.';
+    return;
+  }
+
   errEl.textContent = 'Kayıt yapılıyor...';
   try {
     if (typeof fbRegister !== 'function') { errEl.textContent = 'Bağlantı hatası. Sayfayı yenile.'; return; }
     const user = await fbRegister(username, password);
     _currentUid = user.uid;
     const nickname = firstName + ' ' + lastName;
+    const newCount = userCount + 1;
     await fbSaveUserDoc(user.uid, {
       uid: user.uid, username, nickname, firstName, lastName, school,
-      class: cls || null, gender: gender || null, orientation: null,
+      class: cls || null, gender: gender || null, orientation: orientation || null,
       birthDate: birth || null, bio: null,
-      status: 'pending', isAdmin: false, photoURL: null,
+      status: 'approved', isAdmin: false, photoURL: null,
       createdAt: new Date().toISOString()
     });
+
+    // 300 kullanıcı uyarısı admin'e bildir
+    if (newCount >= USER_WARN && newCount < USER_WARN + 5) {
+      const noticeId = 'user_warn_300';
+      inbox.unshift({ id: noticeId, type: 'security', from: 'Sistem',
+        text: '⚠️ Kullanıcı sayısı ' + newCount + '\'e ulaştı! Limit: 400. Platform dolmadan önlem al.',
+        time: new Date(), read: false, reply: '' });
+      if (typeof fbSaveAdminNotice === 'function') {
+        fbSaveAdminNotice(noticeId, '⚠️ Kullanıcı sayısı ' + newCount + '\'e ulaştı! Limit: 400.');
+      }
+    }
+
     errEl.textContent = '';
-    _showLsSection('ls-pending');
-    _listenForApproval(user.uid);
+    const userData = await fbGetUserDoc(user.uid);
+    if (userData) completeUserLogin(userData);
   } catch(e) {
     if (e.code === 'auth/email-already-in-use') {
       errEl.textContent = 'Bu kullanıcı adı zaten kayıtlı. Giriş yapmayı dene.';
@@ -1017,6 +1042,11 @@ async function doSignOut() {
   if (typeof fbUnlistenAllConvMsgs === 'function') fbUnlistenAllConvMsgs();
   if (typeof fbSignOut === 'function') await fbSignOut();
   _currentUid = null;
+  me = null;
+  const appEl  = q('#app');
+  const lockEl = q('#lock');
+  if (appEl)  appEl.style.display  = 'none';
+  if (lockEl) lockEl.style.display = '';
   _showLsSection('ls-main');
 }
 
@@ -1127,6 +1157,7 @@ function completeUserLogin(userData) {
   if (isAd) {
     if (typeof fbListenReports       === 'function') fbListenReports();
     if (typeof initAdminGoogleUsers  === 'function') initAdminGoogleUsers();
+    if (typeof fbLoadAdminNotices    === 'function') fbLoadAdminNotices();
   }
   if (!isAd) {
     if (typeof fbSetOnline     === 'function') fbSetOnline(name);
