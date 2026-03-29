@@ -2,15 +2,7 @@
 // GİRİŞ (LOCK SCREEN)
 // ══════════════════════════════════════════════════
 
-// Kalıcı şifre değişikliklerini belleğe yükle
-(function _mergeCodeChanges() {
-  try {
-    const deleted = JSON.parse(localStorage.getItem('on_deleted_codes') || '[]');
-    const added   = JSON.parse(localStorage.getItem('on_added_codes')   || '{}');
-    deleted.forEach(c => { if (codes[c]) delete codes[c]; });
-    Object.assign(codes, added);
-  } catch(e) {}
-})();
+let _currentUid = null;  // Giriş yapan kullanıcının Firebase UID'si
 
 // Block-kick yayın dinleyicisi
 try {
@@ -20,68 +12,108 @@ try {
   });
 } catch(e) {}
 
-function chk() {
-  const c = q('#codeInp').value.trim().toUpperCase();
-  const err = q('#lerr');
-  if (!c) return;
-  if (c === ADMIN_CODE) { vCode = c; showStep2('Admin'); return; }
-  if (codes[c]) {
-    if (codes[c].banned) { err.textContent = 'Bu hesap engellendi.'; return; }
-    vCode = c; showStep2(codes[c].name); return;
-  }
-  err.textContent = 'Geçersiz kod.';
-  q('#codeInp').value = '';
-  q('#codeInp').style.borderColor = 'var(--dg)';
-  setTimeout(() => q('#codeInp').style.borderColor = '', 1500);
+function showLoginForm()    { _showLsSection('ls-login'); }
+function showRegisterForm() { _showLsSection('ls-register'); }
+
+function togglePw(inputId, btn) {
+  const inp = document.getElementById(inputId);
+  if (!inp) return;
+  const show = inp.type === 'password';
+  inp.type = show ? 'text' : 'password';
+  btn.textContent = show ? '🙈' : '👁';
 }
 
-function showStep2(name) {
-  q('#ltitle').textContent = 'Hoş Geldin!';
-  q('#ldesc').textContent = 'Kodun onaylandı.';
-  q('#nameInfo').textContent = name;
-  q('#ls1').style.display = 'none';
-  q('#ls2').style.display = 'block';
-  q('#lerr').textContent = '';
-}
+async function doLogin() {
+  const errEl = q('#lerr');
+  const username = (q('#loginUser')?.value || '').trim().toLowerCase();
+  const password = q('#loginPw')?.value || '';
+  if (!username) { errEl.textContent = 'Kullanıcı adını gir.'; return; }
+  if (!password) { errEl.textContent = 'Şifreni gir.'; return; }
 
-function enter() {
-  const isAd = vCode === ADMIN_CODE;
-  const name = isAd ? 'Admin' : codes[vCode].name;
-  if (!isAd && _isKickedUser(name)) { showKickedScreen(); return; }
-  if (!isAd && codes[vCode].firstLogin) {
-    q('#ltitle').textContent = 'Şifreni Değiştir';
-    q('#ldesc').style.display = 'none';
-    q('#ls2').style.display = 'none';
-    q('#ls_chpw').style.display = 'block';
-    q('#lerr').textContent = '';
+  // Admin kontrolü
+  if (username === 'admin') {
+    if (password !== ADMIN_CODE) { errEl.textContent = 'Hatalı şifre.'; return; }
+    vCode = ADMIN_CODE;
+    completeLogin(true, 'Admin');
     return;
   }
-  completeLogin(isAd, name);
+
+  errEl.textContent = 'Giriş yapılıyor...';
+  try {
+    if (typeof fbSignIn !== 'function') { errEl.textContent = 'Bağlantı hatası. Sayfayı yenile.'; return; }
+    const user = await fbSignIn(username, password);
+    _currentUid = user.uid;
+    errEl.textContent = 'Bilgiler alınıyor...';
+    const userData = await fbGetUserDoc(user.uid);
+    if (!userData) { errEl.textContent = 'Kullanıcı verisi bulunamadı.'; return; }
+    if (userData.status === 'banned')   { errEl.textContent = 'Bu hesap engellendi.'; if (typeof fbSignOut === 'function') fbSignOut(); return; }
+    if (userData.status === 'pending')  { _showLsSection('ls-pending'); _listenForApproval(user.uid); return; }
+    if (userData.status === 'approved') { completeUserLogin(userData); return; }
+  } catch(e) {
+    if (e.code === 'auth/user-not-found' || e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') {
+      errEl.textContent = 'Kullanıcı adı veya şifre hatalı.';
+    } else {
+      errEl.textContent = 'Hata: ' + (e.message || e.code || 'Bilinmeyen hata');
+      console.error('Giriş hatası:', e);
+    }
+  }
 }
 
-function doFirstPw() {
-  const np  = q('#newPwInp').value.trim().toUpperCase();
-  const np2 = q('#newPwInp2').value.trim().toUpperCase();
-  const err = q('#lerr');
-  if (!np || np.length < 4)         { err.textContent = 'En az 4 karakter gir.'; return; }
-  if (np !== np2)                    { err.textContent = 'Kodlar eşleşmiyor.'; return; }
-  if (np === ADMIN_CODE)             { err.textContent = 'Bu kodu kullanamazsın.'; return; }
-  if (codes[np] && np !== vCode)    { err.textContent = 'Bu kod zaten kullanılıyor.'; return; }
-  codes[np] = { ...codes[vCode], firstLogin: false };
-  delete codes[vCode];
-  // Kalıcı olarak kaydet
+async function doRegister() {
+  const errEl     = q('#lerr');
+  const firstName = (q('#regFirst')?.value || '').trim();
+  const lastName  = (q('#regLast')?.value  || '').trim();
+  const username  = (q('#regUser')?.value  || '').trim().toLowerCase();
+  const password  = q('#regPw')?.value   || '';
+  const password2 = q('#regPw2')?.value  || '';
+  const school    = q('#regSchool')?.value || '';
+  const cls       = q('#regClass')?.value  || '';
+  const gender    = q('#regGender')?.value || '';
+  const birth     = q('#regBirth')?.value  || '';
+  const terms     = q('#regTerms')?.checked;
+
+  if (!firstName || firstName.length < 2) { errEl.textContent = 'İsim en az 2 karakter olmalı.'; return; }
+  if (!lastName  || lastName.length  < 2) { errEl.textContent = 'Soyisim en az 2 karakter olmalı.'; return; }
+  if (!username  || username.length  < 3) { errEl.textContent = 'Kullanıcı adı en az 3 karakter olmalı.'; return; }
+  if (!/^[a-z0-9_]+$/.test(username))    { errEl.textContent = 'Kullanıcı adı sadece harf, rakam ve _ içerebilir.'; return; }
+  if (username === 'admin')               { errEl.textContent = 'Bu kullanıcı adını kullanamazsın.'; return; }
+  if (!password || password.length < 6)  { errEl.textContent = 'Şifre en az 6 karakter olmalı.'; return; }
+  if (password !== password2)            { errEl.textContent = 'Şifreler eşleşmiyor.'; return; }
+  if (!school)                           { errEl.textContent = 'Okulunu seç.'; return; }
+  if (!terms)                            { errEl.textContent = 'Kullanım şartlarını kabul etmelisin.'; return; }
+
+  errEl.textContent = 'Kontrol ediliyor...';
   try {
-    const deleted = JSON.parse(localStorage.getItem('on_deleted_codes') || '[]');
-    const added   = JSON.parse(localStorage.getItem('on_added_codes')   || '{}');
-    if (!deleted.includes(vCode)) deleted.push(vCode);
-    added[np] = { ...codes[np] };
-    delete added[vCode];
-    localStorage.setItem('on_deleted_codes', JSON.stringify(deleted));
-    localStorage.setItem('on_added_codes',   JSON.stringify(added));
+    if (typeof fbCheckUsername === 'function') {
+      const taken = await fbCheckUsername(username);
+      if (taken) { errEl.textContent = 'Bu kullanıcı adı alınmış.'; return; }
+    }
   } catch(e) {}
-  vCode = np;
-  toast('Şifren başarıyla değiştirildi!', 's');
-  completeLogin(false, codes[np].name);
+
+  errEl.textContent = 'Kayıt yapılıyor...';
+  try {
+    if (typeof fbRegister !== 'function') { errEl.textContent = 'Bağlantı hatası. Sayfayı yenile.'; return; }
+    const user = await fbRegister(username, password);
+    _currentUid = user.uid;
+    const nickname = firstName + ' ' + lastName;
+    await fbSaveUserDoc(user.uid, {
+      uid: user.uid, username, nickname, firstName, lastName, school,
+      class: cls || null, gender: gender || null, orientation: null,
+      birthDate: birth || null, bio: null,
+      status: 'pending', isAdmin: false, photoURL: null,
+      createdAt: new Date().toISOString()
+    });
+    errEl.textContent = '';
+    _showLsSection('ls-pending');
+    _listenForApproval(user.uid);
+  } catch(e) {
+    if (e.code === 'auth/email-already-in-use') {
+      errEl.textContent = 'Bu kullanıcı adı zaten kayıtlı. Giriş yapmayı dene.';
+    } else {
+      errEl.textContent = 'Kayıt başarısız: ' + (e.message || e.code || 'Bilinmeyen hata');
+      console.error('Kayıt hatası:', e);
+    }
+  }
 }
 
 function completeLogin(isAd, name) {
@@ -936,152 +968,35 @@ function openProfileSettings() {
 // ══════════════════════════════════════════════════
 
 // ══════════════════════════════════════════════════
-// GOOGLE AUTH SİSTEMİ
+// AUTH YARDIMCILAR
 // ══════════════════════════════════════════════════
 
-let _gAuthUser         = null;  // Firebase Auth kullanıcı nesnesi
-let _pendingUnsubFn    = null;  // Firestore onay dinleyici
+let _pendingUnsubFn = null;  // Firestore onay dinleyici
 
 function _showLsSection(id) {
-  ['ls-google','ls-admin','ls-setup','ls-pending'].forEach(s => {
+  ['ls-main','ls-login','ls-register','ls-pending'].forEach(s => {
     const el = document.getElementById(s); if (el) el.style.display = 'none';
   });
   const el = document.getElementById(id); if (el) el.style.display = '';
   const errEl = q('#lerr'); if (errEl) errEl.textContent = '';
 }
 
-function showAdminLogin() { _showLsSection('ls-admin'); }
-function showGoogleLogin() { _showLsSection('ls-google'); }
-
-async function doGoogleSignIn() {
-  const errEl = q('#lerr');
-  errEl.textContent = 'Bekleniyor...';
-  if (typeof fbGoogleSignIn !== 'function') { errEl.textContent = 'Bağlantı hatası. Sayfayı yenile.'; return; }
-  try {
-    const user = await fbGoogleSignIn();
-    if (!user) { errEl.textContent = 'Yönlendiriliyor...'; return; } // mobilde redirect başladı
-    _gAuthUser = user;
-    errEl.textContent = 'Bilgiler alınıyor...';
-    await _handleGoogleUser(user);
-  } catch(e) {
-    if (e.code === 'auth/popup-blocked') {
-      errEl.textContent = '🚫 Açılır pencere engellendi. Tarayıcı ayarlarından izin ver.';
-    } else if (e.code === 'auth/popup-closed-by-user') {
-      errEl.textContent = '';
-    } else {
-      errEl.textContent = 'Giriş başarısız: ' + (e.message || e.code || 'Bilinmeyen hata');
-      console.error('Google giriş hatası:', e);
-    }
-  }
-}
-
-async function _handleGoogleUser(user) {
-  const ADMIN_EMAIL = 'karabuluttalha154@gmail.com';
-  const errEl = q('#lerr');
-  if (typeof fbGetUserDoc !== 'function') { errEl.textContent = 'Firebase bağlantı hatası.'; return; }
-
-  // Yönetici e-postası → otomatik admin, onay gerekmez
-  if (user.email === ADMIN_EMAIL) {
-    const adminData = {
-      uid: user.uid, email: user.email, nickname: 'Admin',
-      school: '', status: 'approved', isAdmin: true,
-      photoURL: user.photoURL || null, createdAt: new Date().toISOString()
-    };
-    if (typeof fbSaveUserDoc === 'function') await fbSaveUserDoc(user.uid, adminData);
-    completeGoogleLogin(adminData);
-    return;
-  }
-
-  const userData = await fbGetUserDoc(user.uid);
-  errEl.textContent = '';
-  if (!userData) {
-    _showLsSection('ls-setup');
-    const nickInp = q('#setupNick');
-    if (nickInp && user.displayName) nickInp.value = user.displayName.split(' ')[0];
-    return;
-  }
-  if (userData.status === 'banned') {
-    errEl.textContent = 'Bu hesap engellendi.';
-    if (typeof fbSignOut === 'function') await fbSignOut();
-    _gAuthUser = null;
-    return;
-  }
-  if (userData.status === 'pending') {
-    _showLsSection('ls-pending');
-    _listenForApproval(user.uid);
-    return;
-  }
-  if (userData.status === 'approved') {
-    completeGoogleLogin(userData);
-  }
-}
-
 function _listenForApproval(uid) {
   if (_pendingUnsubFn) { _pendingUnsubFn(); _pendingUnsubFn = null; }
-  if (typeof fbListenUserDoc !== 'function') return;
+  if (typeof fbListenUserDoc !== 'function') { setTimeout(() => _listenForApproval(uid), 300); return; }
   _pendingUnsubFn = fbListenUserDoc(uid, userData => {
     if (!userData) return;
     if (userData.status === 'approved') {
       if (_pendingUnsubFn) { _pendingUnsubFn(); _pendingUnsubFn = null; }
-      completeGoogleLogin(userData);
+      completeUserLogin(userData);
     } else if (userData.status === 'banned') {
       if (_pendingUnsubFn) { _pendingUnsubFn(); _pendingUnsubFn = null; }
       const errEl = q('#lerr');
       if (errEl) errEl.textContent = 'Hesabın engellendi.';
       if (typeof fbSignOut === 'function') fbSignOut();
-      _showLsSection('ls-google');
+      _showLsSection('ls-main');
     }
   });
-}
-
-async function doSetup() {
-  const firstName = q('#setupFirstName')?.value.trim();
-  const lastName  = q('#setupLastName')?.value.trim();
-  const nick      = firstName && lastName ? firstName + ' ' + lastName : (firstName || lastName);
-  const school = q('#setupSchool')?.value;
-  const gender      = q('#setupGender')?.value;
-  const orientation = q('#setupOrientation')?.value;
-  const cls         = q('#setupClass')?.value;
-  const birth       = q('#setupBirth')?.value;
-  const bio         = q('#setupBio')?.value.trim();
-  const errEl  = q('#lerr');
-  const terms = q('#setupTerms')?.checked;
-  if (!terms) { errEl.textContent = 'Kullanım şartlarını kabul etmelisin.'; return; }
-  if (!firstName || firstName.length < 2) { errEl.textContent = 'İsim en az 2 karakter olmalı.'; return; }
-  if (!lastName  || lastName.length  < 2) { errEl.textContent = 'Soyisim en az 2 karakter olmalı.'; return; }
-  if (!school)                    { errEl.textContent = 'Okulunu seç.'; return; }
-  if (!_gAuthUser)               { _showLsSection('ls-google'); return; }
-  errEl.textContent = 'Kontrol ediliyor...';
-  try {
-    if (typeof fbCheckNickname === 'function') {
-      const taken = await fbCheckNickname(nick);
-      if (taken) { errEl.textContent = 'Bu kullanıcı adı alınmış, başka bir tane seç.'; return; }
-    }
-  } catch(e) {
-    console.warn('Kullanıcı adı kontrolü yapılamadı, devam ediliyor:', e);
-    // Bağlantı hatası olsa bile kayıt devam etsin
-  }
-  errEl.textContent = 'Kaydediliyor...';
-  await fbSaveUserDoc(_gAuthUser.uid, {
-    uid:       _gAuthUser.uid,
-    email:     _gAuthUser.email,
-    nickname:  nick,
-    firstName,
-    lastName,
-    school,
-    gender:      gender      || null,
-    orientation: orientation || null,
-    class:       cls         || null,
-    birthDate: birth  || null,
-    bio:       bio    || null,
-    status:    'pending',
-    isAdmin:   false,
-    photoURL:  _gAuthUser.photoURL || null,
-    createdAt: new Date().toISOString()
-  });
-  errEl.textContent = '';
-  _showLsSection('ls-pending');
-  _listenForApproval(_gAuthUser.uid);
 }
 
 function showTermsModal(e) {
@@ -1093,7 +1008,7 @@ function closeTermsModal() {
   const m = q('#termsModal'); if (m) m.style.display = 'none';
 }
 function acceptTermsModal() {
-  const cb = q('#setupTerms'); if (cb) cb.checked = true;
+  const cb = q('#regTerms'); if (cb) cb.checked = true;
   closeTermsModal();
 }
 
@@ -1101,8 +1016,8 @@ async function doSignOut() {
   if (_pendingUnsubFn) { _pendingUnsubFn(); _pendingUnsubFn = null; }
   if (typeof fbUnlistenAllConvMsgs === 'function') fbUnlistenAllConvMsgs();
   if (typeof fbSignOut === 'function') await fbSignOut();
-  _gAuthUser = null;
-  _showLsSection('ls-google');
+  _currentUid = null;
+  _showLsSection('ls-main');
 }
 
 // ── HESAP SİLME ──────────────────────────────────
@@ -1171,13 +1086,13 @@ function _renderDeletionBanner() {
   if (sub) sub.textContent = days + ' gün içinde silinecek — iptal etmek için tıkla';
 }
 
-function completeGoogleLogin(userData) {
+function completeUserLogin(userData) {
   if (_pendingUnsubFn) { _pendingUnsubFn(); _pendingUnsubFn = null; }
   const isAd = userData.isAdmin || false;
   const name = userData.nickname;
   const aid  = 'Anonim#' + Math.floor(1000 + Math.random() * 9000);
 
-  me = { name, uid: userData.uid, email: userData.email, school: userData.school || '', isAdmin: isAd, anonId: aid, photo: userData.photoURL || null, _deletionPending: userData.deletionPending || false, _deletionRequestedAt: userData.deletionRequestedAt || null };
+  me = { name, uid: userData.uid, username: userData.username || '', school: userData.school || '', isAdmin: isAd, anonId: aid, photo: userData.photoURL || null, _deletionPending: userData.deletionPending || false, _deletionRequestedAt: userData.deletionRequestedAt || null };
 
   const savedAct = isAd ? 'hidden' : (savedActivity[name] || 'online');
   if (!profiles[name]) {
@@ -1207,7 +1122,6 @@ function completeGoogleLogin(userData) {
   rG(); rDL(); buildThemeGrid(); rStories(); rChannels();
 
   if (typeof startFirebaseChat === 'function') startFirebaseChat();
-  if (typeof fbListenCodes     === 'function') fbListenCodes();
   if (typeof fbListenProfiles  === 'function') fbListenProfiles();
   if (typeof fbListenOnline    === 'function') fbListenOnline();
   if (isAd) {
@@ -1217,7 +1131,6 @@ function completeGoogleLogin(userData) {
   if (!isAd) {
     if (typeof fbSetOnline     === 'function') fbSetOnline(name);
     if (typeof fbListenMyConvs === 'function') fbListenMyConvs(name);
-    // Banlanınca direk at
     if (userData.uid && typeof fbListenUserDoc === 'function') {
       fbListenUserDoc(userData.uid, d => {
         if (d && d.status === 'banned' && typeof doSignOut === 'function') doSignOut();
@@ -1227,12 +1140,9 @@ function completeGoogleLogin(userData) {
 
   window.addEventListener('beforeunload', () => {
     if (typeof fbSetOffline === 'function' && me) fbSetOffline(me.name);
-    // PWA modunda oturumu kapatma — bir sonraki açılışta otomatik giriş yapılsın
-    const _isPWA = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-    if (!_isPWA && typeof fbSignOut === 'function') fbSignOut();
   });
 
-  if (typeof recordLogin === 'function') recordLogin(name, 'Google', isAd);
+  if (typeof recordLogin === 'function') recordLogin(name, userData.username || '', isAd);
   if (!isAd && typeof _sessionStart === 'function') _sessionStart();
   if (!isAd && typeof _concurrentLoginInit === 'function') _concurrentLoginInit(name);
 
@@ -1309,76 +1219,24 @@ function triggerPwaFromSettings() {
   installPwa();
 }
 
-// ── PWA OTOMATİK GİRİŞ ───────────────────────────
-(function _initPwaAutoLogin() {
-  const isPWA = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-  if (!isPWA) return;
+// ── OTURUM DEVAM ETTİRME (Firebase Auth session persistence) ──
+// Kullanıcı daha önce giriş yaptıysa Firebase Auth oturumu devam eder.
+// onAuthStateChanged ile yakalayıp otomatik giriş yapıyoruz.
+(function _initSessionRestore() {
   function _trySetup() {
-    if (typeof fbOnAuthStateChanged !== 'function') { setTimeout(_trySetup, 150); return; }
+    if (typeof fbOnAuthStateChanged !== 'function' || typeof fbGetUserDoc !== 'function') {
+      setTimeout(_trySetup, 200); return;
+    }
     fbOnAuthStateChanged(async (user) => {
-      if (user && !me) {
-        _gAuthUser = user;
-        await _handleGoogleUser(user);
-      }
+      if (!user || me) return; // oturum yok ya da zaten girilmiş
+      _currentUid = user.uid;
+      const userData = await fbGetUserDoc(user.uid);
+      if (!userData) return;
+      if (userData.status === 'banned')   { if (typeof fbSignOut === 'function') fbSignOut(); return; }
+      if (userData.status === 'pending')  { _showLsSection('ls-pending'); _listenForApproval(user.uid); return; }
+      if (userData.status === 'approved') completeUserLogin(userData);
     });
   }
   _trySetup();
-})();
-
-// ── MOBİL GOOGLE REDIRECT SONUCU ─────────────────
-// signInWithRedirect sonrası sayfa döndüğünde kullanıcıyı yakala.
-// Strateji 1: getRedirectResult (modül yüklendiğinde zaten başlatılmış)
-// Strateji 2: onAuthStateChanged fallback (Safari ITP için)
-(function _initRedirectResultCheck() {
-  let _handled = false;
-  const _isPending = !!sessionStorage.getItem('_googleRedirectPending');
-
-  // Redirect bekleniyorsa hemen "kontrol ediliyor" göster
-  if (_isPending) {
-    const errEl = q('#lerr');
-    if (errEl) errEl.textContent = 'Giriş kontrol ediliyor...';
-  }
-
-  async function _processUser(user) {
-    if (_handled || me) return;
-    _handled = true;
-    sessionStorage.removeItem('_googleRedirectPending');
-    _gAuthUser = user;
-    const errEl = q('#lerr');
-    if (errEl) errEl.textContent = 'Bilgiler alınıyor...';
-    await _handleGoogleUser(user);
-  }
-
-  // Strateji 1 — getRedirectResult (firebase.js modülü yüklenince hazır)
-  function _tryRedirect() {
-    if (typeof fbCheckRedirectResult !== 'function') { setTimeout(_tryRedirect, 100); return; }
-    fbCheckRedirectResult().then(user => {
-      if (user) _processUser(user);
-      else if (_isPending) {
-        // getRedirectResult null döndü, onAuthStateChanged'e bırak
-        _tryAuthState();
-      }
-    });
-  }
-
-  // Strateji 2 — onAuthStateChanged (Safari ITP / getRedirectResult null döndüğünde)
-  function _tryAuthState() {
-    if (typeof fbOnAuthStateChanged !== 'function') { setTimeout(_tryAuthState, 100); return; }
-    fbOnAuthStateChanged(function(user) {
-      if (user && !me && !_handled) _processUser(user);
-      else if (!user && _isPending && !_handled) {
-        // Henüz auth gelmedi, birkaç saniye daha bekle
-        setTimeout(() => {
-          if (!_handled && !me) {
-            sessionStorage.removeItem('_googleRedirectPending');
-            const errEl = q('#lerr');
-            if (errEl) errEl.textContent = 'Giriş tamamlanamadı. Tekrar dene.';
-          }
-        }, 5000);
-      }
-    });
-  }
-
-  if (_isPending) _tryRedirect();
 })();
 

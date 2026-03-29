@@ -12,8 +12,8 @@ import {
   where, updateDoc
 } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 import {
-  getAuth, signInWithPopup, signInWithRedirect, getRedirectResult,
-  GoogleAuthProvider, signOut as _fbSignOut, onAuthStateChanged
+  getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
+  signOut as _fbSignOut, onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 import {
   initializeAppCheck,
@@ -402,37 +402,23 @@ window.fbSeedCodes = async function() {
 // 7 — GOOGLE AUTH & KULLANICI YÖNETİMİ
 // ══════════════════════════════════════════════════
 
-const _auth        = getAuth(app);
-const _gProvider   = new GoogleAuthProvider();
+const _auth = getAuth(app);
 
-function _needsRedirect() {
-  // Sadece Safari'de popup bloke olur — Chrome/Firefox popup kullanabilir
-  const ua = navigator.userAgent || '';
-  const isSafari = /Safari/i.test(ua) && !/Chrome|CriOS|FxiOS|EdgiOS/i.test(ua);
-  if (!isSafari) return false;
-  // Safari'de mobil/tablet ise redirect kullan
-  if (/iPhone|iPad|iPod/i.test(ua)) return true;
-  if (/Macintosh/i.test(ua) && navigator.maxTouchPoints > 1) return true;
-  return false;
-}
-
-// Modül yüklendiği anda hemen getRedirectResult'ı başlat — bekletme
-const _redirectResultPromise = getRedirectResult(_auth)
-  .then(r => r ? r.user : null)
-  .catch(e => { console.error('Redirect result hatası:', e); return null; });
-
-window.fbGoogleSignIn = async function() {
-  if (_needsRedirect()) {
-    sessionStorage.setItem('_googleRedirectPending', '1');
-    await signInWithRedirect(_auth, _gProvider);
-    return null; // sayfa yönlendirildi, sonuç load'da gelecek
-  }
-  const result = await signInWithPopup(_auth, _gProvider);
+window.fbSignIn = async function(username, password) {
+  const result = await signInWithEmailAndPassword(_auth, username + '@nexia.app', password);
   return result.user;
 };
 
-window.fbCheckRedirectResult = async function() {
-  return await _redirectResultPromise;
+window.fbRegister = async function(username, password) {
+  const result = await createUserWithEmailAndPassword(_auth, username + '@nexia.app', password);
+  return result.user;
+};
+
+window.fbCheckUsername = async function(username) {
+  try {
+    const snap = await getDocs(query(collection(db, 'users'), where('username', '==', username)));
+    return !snap.empty;
+  } catch(e) { return false; }
 };
 
 window.fbSignOut = async function() {
