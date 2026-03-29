@@ -83,30 +83,29 @@ async function doRegister() {
   if (!school)                           { errEl.textContent = 'Okulunu seç.'; return; }
   if (!terms)                            { errEl.textContent = 'Kullanım şartlarını kabul etmelisin.'; return; }
 
-  errEl.textContent = 'Kontrol ediliyor...';
-  try {
-    if (typeof fbCheckUsername === 'function') {
-      const taken = await fbCheckUsername(username);
-      if (taken) { errEl.textContent = 'Bu kullanıcı adı alınmış.'; return; }
-    }
-  } catch(e) {}
+  // username kontrolü kayıt sonrası auth/email-already-in-use ile yakalanır
 
-  // ── Kullanıcı sayısı kontrolü ──────────────────
-  errEl.textContent = 'Kontrol ediliyor...';
   const USER_LIMIT = 400;
   const USER_WARN  = 300;
-  let userCount = 0;
-  if (typeof fbGetUserCount === 'function') userCount = await fbGetUserCount();
-  if (userCount >= USER_LIMIT) {
-    errEl.textContent = 'Platform şu an kapasitesine ulaştı (400 kullanıcı). Daha sonra tekrar dene.';
-    return;
-  }
 
   errEl.textContent = 'Kayıt yapılıyor...';
   try {
     if (typeof fbRegister !== 'function') { errEl.textContent = 'Bağlantı hatası. Sayfayı yenile.'; return; }
     const user = await fbRegister(username, password);
     _currentUid = user.uid;
+
+    // ── Kullanıcı sayısı kontrolü (auth sonrası — izin gerektirir) ──
+    let userCount = 0;
+    if (typeof fbGetUserCount === 'function') {
+      try { userCount = await fbGetUserCount(); } catch(e) {}
+    }
+    if (userCount >= USER_LIMIT) {
+      // Limit aşıldı — auth hesabını sil ve çık
+      if (typeof fbSignOut === 'function') await fbSignOut();
+      errEl.textContent = 'Platform şu an kapasitesine ulaştı (400 kullanıcı). Daha sonra tekrar dene.';
+      return;
+    }
+
     const nickname = firstName + ' ' + lastName;
     const newCount = userCount + 1;
     await fbSaveUserDoc(user.uid, {
